@@ -1,0 +1,90 @@
+name: DB Local Bootstrap And Migrate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+jobs:
+  bootstrap-and-migrate:
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_PID: "Developer"
+          MSSQL_SA_PASSWORD: "${{ secrets.WL_CHAT_SQL_SA_PASSWORD }}"
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/bin/bash -c 'echo > /dev/tcp/127.0.0.1/1433'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+
+    env:
+      SA_PASSWORD: ${{ secrets.WL_CHAT_SQL_SA_PASSWORD }}
+      APP_LOGIN: wl_chat_app
+      APP_PASSWORD: ${{ secrets.WL_CHAT_APP_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Wait for SQL Server
+        shell: bash
+        run: |
+          set -euo pipefail
+          container_id=$(docker ps -q --filter ancestor=mcr.microsoft.com/mssql/server:2022-latest | head -n 1)
+          if [[ -z "$container_id" ]]; then
+            echo "SQL Server service container not found"
+            exit 1
+          fi
+
+          for i in {1..90}; do
+            if docker exec "$container_id" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -Q "SELECT 1" >/dev/null 2>&1; then
+              echo "SQL Server is ready"
+              exit 0
+            fi
+            echo "Waiting for SQL Server... ($i/90)"
+            sleep 2
+          done
+
+          echo "SQL Server did not become ready in time"
+          docker logs "$container_id" || true
+          exit 1
+
+      - name: Bootstrap wl_chat database
+        shell: bash
+        run: |
+          set -euo pipefail
+          container_id=$(docker ps -q --filter ancestor=mcr.microsoft.com/mssql/server:2022-latest | head -n 1)
+          docker exec -i "$container_id" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -d master -b -i /dev/stdin < scripts/database/bootstrap/V0__create_wl_chat_database.sql
+
+      - name: Run Flyway migrations
+        run: |
+          docker run --rm --network host \
+            -v "$PWD/src/main/resources/db/migration:/flyway/sql" \
+            flyway/flyway:10.17.3 \
+            -url="jdbc:sqlserver://localhost:1433;databaseName=wl_chat;encrypt=true;trustServerCertificate=true" \
+            -user="sa" \
+            -password="${SA_PASSWORD}" \
+            -locations="filesystem:/flyway/sql" \
+            -placeholders.app_login="${APP_LOGIN}" \
+            -placeholders.app_password="${APP_PASSWORD}" \
+            migrate
+
+      - name: Verify app login connectivity
+        shell: bash
+        run: |
+          set -euo pipefail
+          container_id=$(docker ps -q --filter ancestor=mcr.microsoft.com/mssql/server:2022-latest | head -n 1)
+          docker exec "$container_id" /opt/mssql-tools18/bin/sqlcmd -S localhost -U "$APP_LOGIN" -P "$APP_PASSWORD" -C -d wl_chat -b -Q "SELECT DB_NAME() AS database_name, SUSER_SNAME() AS login_name;"
