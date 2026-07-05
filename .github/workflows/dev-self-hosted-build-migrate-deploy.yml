@@ -19,6 +19,8 @@ jobs:
         env:
             WL_CHAT_SECRETS_FILE: /Users/x3phantonpx3/.wl-chat/local.secrets.env
             WL_CHAT_APP_PORT: 8081
+            MSSQL_SA_PASSWORD: ${{ secrets.WL_CHAT_SQL_SA_PASSWORD }}
+            WL_CHAT_DB_PASSWORD: ${{ secrets.WL_CHAT_APP_PASSWORD }}
 
         steps:
             - name: Checkout
@@ -32,6 +34,14 @@ jobs:
                   docker compose version
                   if [[ ! -f "${WL_CHAT_SECRETS_FILE}" ]]; then
                       echo "Runner secrets file not found: ${WL_CHAT_SECRETS_FILE}"
+                      exit 1
+                  fi
+                  if [[ -z "${MSSQL_SA_PASSWORD:-}" ]]; then
+                      echo "Missing required secret: WL_CHAT_SQL_SA_PASSWORD"
+                      exit 1
+                  fi
+                  if [[ -z "${WL_CHAT_DB_PASSWORD:-}" ]]; then
+                      echo "Missing required secret: WL_CHAT_APP_PASSWORD"
                       exit 1
                   fi
 
