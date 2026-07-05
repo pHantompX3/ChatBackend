@@ -1,0 +1,58 @@
+name: Dev Self-Hosted Build Migrate Deploy
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: dev-self-hosted-deploy-main
+    cancel-in-progress: true
+
+jobs:
+    build-migrate-deploy:
+        runs-on: self-hosted
+        environment: dev
+        env:
+            WL_CHAT_SECRETS_FILE: /Users/x3phantonpx3/.wl-chat/local.secrets.env
+            WL_CHAT_APP_PORT: 8081
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Validate runner prerequisites
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  docker --version
+                  docker compose version
+                  if [[ ! -f "${WL_CHAT_SECRETS_FILE}" ]]; then
+                    echo "Runner secrets file not found: ${WL_CHAT_SECRETS_FILE}"
+                    exit 1
+                  fi
+
+            - name: Build app image
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  IMAGE_SHA="wl-chat-app-dev:${GITHUB_SHA}"
+                  IMAGE_LATEST="wl-chat-app-dev:latest"
+                  docker build -t "${IMAGE_SHA}" -t "${IMAGE_LATEST}" .
+                  echo "WL_CHAT_APP_IMAGE=${IMAGE_SHA}" >> "${GITHUB_ENV}"
+
+            - name: Deploy stack and run DB bootstrap/migrations
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  ./scripts/cicd/devdocker-up.sh
+
+            - name: Verify health endpoints
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  curl -fsS "http://localhost:${WL_CHAT_APP_PORT}/q/health/live" >/dev/null
+                  curl -fsS "http://localhost:${WL_CHAT_APP_PORT}/q/health/ready" >/dev/null

@@ -1,0 +1,45 @@
+name: wl-chat-devdocker
+
+services:
+  sqlserver-dev:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: wl-chat-sqlserver-dev
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?MSSQL_SA_PASSWORD is required}
+    ports:
+      - "127.0.0.1:1434:1433"
+    volumes:
+      - wl-chat-devdocker-sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" > /dev/null || exit 1',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  app-dev:
+    image: ${WL_CHAT_APP_IMAGE:-wl-chat-app-dev:latest}
+    container_name: wl-chat-app-devdocker
+    environment:
+      WL_CHAT_DB_URL: jdbc:sqlserver://sqlserver-dev:1433;databaseName=wl_chat;encrypt=true;trustServerCertificate=true
+      WL_CHAT_DB_USERNAME: ${WL_CHAT_DB_USERNAME:-wl_chat_app}
+      WL_CHAT_DB_PASSWORD: ${WL_CHAT_DB_PASSWORD:?WL_CHAT_DB_PASSWORD is required}
+      WL_CHAT_FLYWAY_MIGRATE_AT_START: "false"
+      WL_CHAT_FLYWAY_USERNAME: sa
+      WL_CHAT_FLYWAY_PASSWORD: ${MSSQL_SA_PASSWORD:?MSSQL_SA_PASSWORD is required}
+    ports:
+      - "127.0.0.1:${WL_CHAT_APP_PORT:-8081}:8080"
+    depends_on:
+      sqlserver-dev:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  wl-chat-devdocker-sqlserver-data:

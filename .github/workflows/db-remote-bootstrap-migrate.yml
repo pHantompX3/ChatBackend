@@ -1,0 +1,73 @@
+name: DB Remote Bootstrap And Migrate
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-db-remote-bootstrap-migrate
+  cancel-in-progress: true
+
+jobs:
+  bootstrap-and-migrate-remote:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      DB_HOST: ${{ secrets.WL_CHAT_REMOTE_SQL_HOST }}
+      DB_PORT: ${{ secrets.WL_CHAT_REMOTE_SQL_PORT }}
+      SA_PASSWORD: ${{ secrets.WL_CHAT_REMOTE_SQL_SA_PASSWORD }}
+      APP_LOGIN: wl_chat_app
+      APP_PASSWORD: ${{ secrets.WL_CHAT_REMOTE_APP_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${DB_HOST:?WL_CHAT_REMOTE_SQL_HOST is required}"
+          : "${DB_PORT:?WL_CHAT_REMOTE_SQL_PORT is required}"
+          : "${SA_PASSWORD:?WL_CHAT_REMOTE_SQL_SA_PASSWORD is required}"
+          : "${APP_PASSWORD:?WL_CHAT_REMOTE_APP_PASSWORD is required}"
+
+      - name: Bootstrap wl_chat database on remote SQL Server
+        shell: bash
+        run: |
+          set -euo pipefail
+          bootstrap_sql=$(cat scripts/database/bootstrap/V0__create_wl_chat_database.sql)
+
+          docker run --rm mcr.microsoft.com/mssql-tools18 \
+            /opt/mssql-tools18/bin/sqlcmd \
+            -S "${DB_HOST},${DB_PORT}" \
+            -U sa \
+            -P "${SA_PASSWORD}" \
+            -C \
+            -d master \
+            -b \
+            -Q "${bootstrap_sql}"
+
+      - name: Run Flyway migrations on remote SQL Server
+        run: |
+          docker run --rm \
+            -v "$PWD/src/main/resources/db/migration:/flyway/sql" \
+            flyway/flyway:10.17.3 \
+            -url="jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=wl_chat;encrypt=true;trustServerCertificate=true" \
+            -user="sa" \
+            -password="${SA_PASSWORD}" \
+            -locations="filesystem:/flyway/sql" \
+            -placeholders.app_login="${APP_LOGIN}" \
+            -placeholders.app_password="${APP_PASSWORD}" \
+            migrate
