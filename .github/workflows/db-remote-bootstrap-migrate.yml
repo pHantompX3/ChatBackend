@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   bootstrap-and-migrate-remote:
+    if: ${{ secrets.WL_CHAT_REMOTE_SQL_HOST != '' && secrets.WL_CHAT_REMOTE_SQL_PORT != '' && secrets.WL_CHAT_REMOTE_SQL_SA_PASSWORD != '' && secrets.WL_CHAT_REMOTE_APP_PASSWORD != '' }}
     runs-on: ubuntu-latest
     environment: dev
     env:
@@ -33,15 +34,6 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
-
-      - name: Validate required secrets
-        shell: bash
-        run: |
-          set -euo pipefail
-          : "${DB_HOST:?WL_CHAT_REMOTE_SQL_HOST is required}"
-          : "${DB_PORT:?WL_CHAT_REMOTE_SQL_PORT is required}"
-          : "${SA_PASSWORD:?WL_CHAT_REMOTE_SQL_SA_PASSWORD is required}"
-          : "${APP_PASSWORD:?WL_CHAT_REMOTE_APP_PASSWORD is required}"
 
       - name: Bootstrap wl_chat database on remote SQL Server
         shell: bash
