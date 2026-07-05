@@ -32,7 +32,35 @@ fi
 
 export WL_CHAT_APP_IMAGE="${APP_IMAGE}"
 
-docker compose -f "${COMPOSE_FILE}" up -d --wait sqlserver-dev
+if ! docker compose -f "${COMPOSE_FILE}" up -d --wait sqlserver-dev >/tmp/wl_chat_sql_up.log 2>&1; then
+  if grep -qiE 'unknown flag: --wait|unknown option: --wait|no such option: --wait' /tmp/wl_chat_sql_up.log; then
+    echo "docker compose '--wait' not supported, using manual SQL health wait..."
+    docker compose -f "${COMPOSE_FILE}" up -d sqlserver-dev
+
+    sql_cid="$(docker compose -f "${COMPOSE_FILE}" ps -q sqlserver-dev)"
+    if [[ -z "${sql_cid}" ]]; then
+      echo "Could not determine SQL Server container ID."
+      exit 1
+    fi
+
+    for i in {1..60}; do
+      health_status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}nohealth{{end}}' "${sql_cid}" 2>/dev/null || true)"
+      if [[ "${health_status}" == "healthy" ]]; then
+        break
+      fi
+      if [[ $i -eq 60 ]]; then
+        echo "SQL Server did not become healthy in time (status: ${health_status})."
+        docker compose -f "${COMPOSE_FILE}" logs --no-color --tail=120 sqlserver-dev || true
+        exit 1
+      fi
+      sleep 2
+    done
+  else
+    cat /tmp/wl_chat_sql_up.log
+    exit 1
+  fi
+fi
+
 "${REPO_ROOT}/scripts/database/init-devdocker.sh"
 docker compose -f "${COMPOSE_FILE}" up -d app-dev
 
