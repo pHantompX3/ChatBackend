@@ -14,7 +14,6 @@ concurrency:
 
 jobs:
   bootstrap-and-migrate-remote:
-    if: ${{ secrets.WL_CHAT_REMOTE_SQL_HOST != '' && secrets.WL_CHAT_REMOTE_SQL_PORT != '' && secrets.WL_CHAT_REMOTE_SQL_SA_PASSWORD != '' && secrets.WL_CHAT_REMOTE_APP_PASSWORD != '' }}
     runs-on: ubuntu-latest
     environment: dev
     env:
@@ -35,7 +34,20 @@ jobs:
           java-version: "25"
           cache: maven
 
+      - name: Check remote secret readiness
+        id: remote_secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${DB_HOST}" && -n "${DB_PORT}" && -n "${SA_PASSWORD}" && -n "${APP_PASSWORD}" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Remote SQL secrets are not fully configured; skipping remote bootstrap/migrate."
+          fi
+
       - name: Bootstrap wl_chat database on remote SQL Server
+        if: steps.remote_secrets.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -52,6 +64,7 @@ jobs:
             -Q "${bootstrap_sql}"
 
       - name: Run Flyway migrations on remote SQL Server
+        if: steps.remote_secrets.outputs.ready == 'true'
         run: |
           docker run --rm \
             -v "$PWD/src/main/resources/db/migration:/flyway/sql" \
