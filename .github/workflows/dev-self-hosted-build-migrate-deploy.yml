@@ -54,11 +54,11 @@ jobs:
                   docker build -t "${IMAGE_SHA}" -t "${IMAGE_LATEST}" .
                   echo "WL_CHAT_APP_IMAGE=${IMAGE_SHA}" >> "${GITHUB_ENV}"
 
-                        - name: Reset DevDocker stack state
-                            shell: bash
-                            run: |
-                                    set -euo pipefail
-                                    docker compose -f compose.devdocker.yaml down -v --remove-orphans || true
+            - name: Reset DevDocker stack state
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  docker compose -f compose.devdocker.yaml down -v --remove-orphans || true
 
             - name: Deploy stack and run DB bootstrap/migrations
               shell: bash
