@@ -16,6 +16,7 @@ fi
 
 APP_PORT="${WL_CHAT_APP_PORT:-8081}"
 APP_IMAGE="${WL_CHAT_APP_IMAGE:-wl-chat-app-dev:latest}"
+RESET_DB="${WL_CHAT_RESET_DB:-false}"
 
 if [[ -z "${MSSQL_SA_PASSWORD:-}" ]]; then
   echo "MSSQL_SA_PASSWORD is required."
@@ -31,6 +32,11 @@ if ! docker image inspect "${APP_IMAGE}" >/dev/null 2>&1; then
 fi
 
 export WL_CHAT_APP_IMAGE="${APP_IMAGE}"
+
+if [[ "${RESET_DB}" == "true" ]]; then
+  echo "WL_CHAT_RESET_DB=true: resetting DevDocker stack and SQL volume (destructive)."
+  docker compose -f "${COMPOSE_FILE}" down -v --remove-orphans || true
+fi
 
 if ! docker compose -f "${COMPOSE_FILE}" up -d --wait sqlserver-dev >/tmp/wl_chat_sql_up.log 2>&1; then
   if grep -qiE 'unknown flag: --wait|unknown option: --wait|no such option: --wait' /tmp/wl_chat_sql_up.log; then
