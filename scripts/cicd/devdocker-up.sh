@@ -35,7 +35,7 @@ export WL_CHAT_APP_IMAGE="${APP_IMAGE}"
 
 if [[ "${RESET_DB}" == "true" ]]; then
   echo "WL_CHAT_RESET_DB=true: resetting DevDocker stack and SQL volume (destructive)."
-  docker compose -f "${COMPOSE_FILE}" down -v --remove-orphans || true
+  docker compose -f "${COMPOSE_FILE}" down -v --remove-orphans
 fi
 
 if ! docker compose -f "${COMPOSE_FILE}" up -d --wait sqlserver-dev >/tmp/wl_chat_sql_up.log 2>&1; then
