@@ -172,7 +172,9 @@ Workflows in `.github/workflows` currently include both DB validation and a self
 - `dev-self-hosted-build-migrate-deploy.yml`
   - Trigger: push to `main` or manual dispatch
   - Runner: `self-hosted` (must run on this Dev machine)
-  - Execution order: build app image -> start Dev SQL container -> bootstrap DB -> run Flyway migrations -> roll app container -> health checks
+  - Execution order: build app image -> start/reuse Dev SQL container -> bootstrap DB (idempotent) -> run Flyway migrations -> roll app container -> health checks
+  - Default behavior preserves SQL volume and user data across deploys (migration-only updates)
+  - Optional manual reset: run with `workflow_dispatch` input `reset_db=true` to wipe SQL volume before deploy (destructive)
   - Uses runner-local secrets file path from `WL_CHAT_SECRETS_FILE` (default workflow value: `/Users/x3phantonpx3/.wl-chat/local.secrets.env`)
 
 ### Self-Hosted Runner Secrets File

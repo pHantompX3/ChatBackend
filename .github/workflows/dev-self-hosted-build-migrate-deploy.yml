@@ -4,6 +4,12 @@ on:
     push:
         branches: [main]
     workflow_dispatch:
+        inputs:
+            reset_db:
+                description: "Reset Dev DB volume before deploy (destructive)"
+                type: boolean
+                required: false
+                default: false
 
 permissions:
     contents: read
@@ -21,6 +27,7 @@ jobs:
             WL_CHAT_APP_PORT: 8081
             MSSQL_SA_PASSWORD: ${{ secrets.WL_CHAT_SQL_SA_PASSWORD }}
             WL_CHAT_DB_PASSWORD: ${{ secrets.WL_CHAT_APP_PASSWORD }}
+            WL_CHAT_RESET_DB: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_db && 'true' || 'false' }}
 
         steps:
             - name: Checkout
@@ -53,12 +60,6 @@ jobs:
                   IMAGE_LATEST="wl-chat-app-dev:latest"
                   docker build -t "${IMAGE_SHA}" -t "${IMAGE_LATEST}" .
                   echo "WL_CHAT_APP_IMAGE=${IMAGE_SHA}" >> "${GITHUB_ENV}"
-
-            - name: Reset DevDocker stack state
-              shell: bash
-              run: |
-                  set -euo pipefail
-                  docker compose -f compose.devdocker.yaml down -v --remove-orphans || true
 
             - name: Deploy stack and run DB bootstrap/migrations
               shell: bash
