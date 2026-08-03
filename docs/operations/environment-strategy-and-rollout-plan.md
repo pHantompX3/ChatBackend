@@ -28,11 +28,11 @@ This document formalizes the environment model and rollout sequence for ChatBack
 Two-phase model:
 
 1. Bootstrap (admin, one-time per environment)
-   - Script: `scripts/database/bootstrap/V0__create_wl_chat_database.sql`
+   - Script: `scripts/database/flyway/master/V1__create_wl_chat_database.sql`
    - Creates database `wl_chat` if missing
 
 2. Flyway migrations (versioned, immutable)
-   - Location: `src/main/resources/db/migration`
+   - Location: `scripts/database/flyway/wl_chat`
    - Current scripts:
      - `V1__create_app_login_and_user.sql`
      - `V2__grant_app_permissions.sql`

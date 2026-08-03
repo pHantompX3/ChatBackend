@@ -18,6 +18,7 @@ import org.jboss.logging.Logger;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Locale;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -72,11 +73,11 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
         requestAuditContext.putCustomAttribute("metadata.clientIpSource", clientIpResolution.source());
         requestAuditContext.putCustomAttribute("metadata.deviceTypeSource", deviceDetection.source());
 
-        LOG.infof(
+        LOG.debugf(
             "AUDIT FILTER: Step 1/3 - Captured request metadata (requestId=%s)",
             requestAuditContext.getRequestId()
         );
-        LOG.infof(
+        LOG.debugf(
             "AUDIT FILTER: Step 2/3 - Classified operation and client context (operation=%s)",
             requestAuditContext.getOperation()
         );
@@ -100,7 +101,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
         requestAuditContext.setResponseLength(length);
         requestAuditContext.setDurationMs(durationMs);
 
-        LOG.infof(
+        LOG.debugf(
             "AUDIT FILTER: Step 3/3 - Emitting audit snapshot (requestId=%s)",
             requestAuditContext.getRequestId()
         );
@@ -134,7 +135,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
         ));
         payload.put("metadata", requestAuditContext.getCustomAttributes());
 
-        LOG.infof(
+        LOG.debugf(
             "=== AUDIT FILTER: Request Audit Snapshot ===%n%s",
             toPrettyJson(payload)
         );
@@ -175,7 +176,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
             String[] parts = forwarded.split(";");
             for (String part : parts) {
                 String trimmed = part.trim();
-                if (trimmed.toLowerCase().startsWith("for=")) {
+                if (trimmed.toLowerCase(Locale.ROOT).startsWith("for=")) {
                     return new ClientIpResolution(trimmed.substring(4).replace("\"", "").trim(), "forwarded");
                 }
             }

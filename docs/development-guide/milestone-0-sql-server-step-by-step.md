@@ -7,7 +7,7 @@
 **Database:** Microsoft SQL Server in Docker  
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven  
 **Status:** Executable build guide  
-**Last reviewed:** 2026-07-05
+**Last reviewed:** 2026-08-03
 
 ---
 
@@ -22,8 +22,10 @@ The project currently uses this environment strategy:
 
 1. **Local**
 
-- App runs from terminal/IDE (`./mvnw quarkus:dev`)
+- App runs from terminal/IDE (`./mvnw quarkus:dev`) or the wrapper script (`./scripts/cicd/run-quarkus-dev.sh`)
 - SQL Server runs locally and is reachable at `localhost:1433`
+- Local secrets are loaded from `scripts/config/local.secrets.env`
+- Optional runtime overrides can be loaded from `config/application.properties`
 
 2. **DevDocker**
 
@@ -41,6 +43,7 @@ The project currently uses this environment strategy:
 - Database name: `wl_chat`
 - Application login/user: `wl_chat_app`
 - Runtime datasource defaults are defined in `src/main/resources/application.properties`
+- External runtime overrides can be supplied from `config/application.properties` or `WL_CHAT_CONFIG_FILE`
 
 ### 0.3 SQL initialization model
 
@@ -48,19 +51,20 @@ Initialization is split into two responsibilities:
 
 1. **Bootstrap script (admin, one-time per environment)**
 
-- `scripts/database/bootstrap/V0__create_wl_chat_database.sql`
+- `scripts/database/flyway/master/V1__create_wl_chat_database.sql`
 - Creates the `wl_chat` database if it does not exist
 
 2. **Flyway migrations (versioned, immutable)**
 
-- `src/main/resources/db/migration/V1__create_app_login_and_user.sql`
-- `src/main/resources/db/migration/V2__grant_app_permissions.sql`
+- `scripts/database/flyway/wl_chat/V1__create_app_login_and_user.sql`
+- `scripts/database/flyway/wl_chat/V2__grant_app_permissions.sql`
 
 ### 0.4 Quarkus runtime posture
 
 - `quarkus.datasource.devservices.enabled=false`
 - Flyway migrate-at-start is off by default and enabled explicitly per environment
 - Health endpoints are available at `/q/health`, `/q/health/live`, `/q/health/ready`
+- Local startup also reads `scripts/config/local.secrets.env` and `config/application.properties` when present
 
 ### 0.5 CI posture
 
@@ -76,8 +80,8 @@ All examples in this document now follow the current repository baseline:
 
 - Database: `wl_chat`
 - App login: `wl_chat_app`
-- Bootstrap script: `scripts/database/bootstrap/V0__create_wl_chat_database.sql`
-- Flyway scripts: `src/main/resources/db/migration/V*__*.sql`
+- Bootstrap script: `scripts/database/flyway/master/V*__*.sql`
+- Flyway scripts: `scripts/database/flyway/wl_chat/V*__*.sql`
 
 ---
 
@@ -379,7 +383,7 @@ target/
 *.log
 ```
 
-Do not ignore `.env.example`.
+Do not ignore `scripts/config/local.secrets.env.example`.
 
 ---
 
@@ -618,9 +622,9 @@ SpotBugs is the initial defect-oriented static analyser. A project-specific Chec
 
 ## 9. Create the SQL Server Compose Environment
 
-### 9.1 Local environment example
+### 9.1 Local secrets example
 
-Create `.env.example`:
+Create `scripts/config/local.secrets.env.example`:
 
 ```dotenv
 MSSQL_SA_PASSWORD=replace_with_sa_password
@@ -632,13 +636,13 @@ WL_CHAT_FLYWAY_USERNAME=sa
 WL_CHAT_FLYWAY_PASSWORD=replace_with_sa_password
 ```
 
-Create the local file:
+Create the local secrets file:
 
 ```bash
-cp .env.example .env
+cp scripts/config/local.secrets.env.example scripts/config/local.secrets.env
 ```
 
-The `.env` file is intentionally ignored by Git.
+The `scripts/config/local.secrets.env` file is intentionally ignored by Git.
 
 These are local-only development credentials. They must never be reused for a remotely accessible deployment.
 
@@ -647,10 +651,13 @@ These are local-only development credentials. They must never be reused for a re
 Use the existing repository scripts:
 
 1. Bootstrap (one-time, admin)
-   - `scripts/database/bootstrap/V0__create_wl_chat_database.sql`
+
+- `scripts/database/flyway/master/V1__create_wl_chat_database.sql`
+
 2. Flyway migrations (versioned)
-   - `src/main/resources/db/migration/V1__create_app_login_and_user.sql`
-   - `src/main/resources/db/migration/V2__grant_app_permissions.sql`
+
+- `scripts/database/flyway/wl_chat/V1__create_app_login_and_user.sql`
+- `scripts/database/flyway/wl_chat/V2__grant_app_permissions.sql`
 
 Bootstrap must run with an admin login (for example `sa`) so the target database exists before migrations are applied.
 
@@ -1066,7 +1073,7 @@ A global Maven installation is not required after project creation.
 ## First-time setup
 
 ```bash
-cp .env.example .env
+cp scripts/config/local.secrets.env.example scripts/config/local.secrets.env
 docker compose up -d --wait sqlserver
 ./scripts/database/init-local.sh
 ```
@@ -1184,10 +1191,10 @@ jobs:
         run: docker compose up -d --wait sqlserver
 
       - name: Bootstrap database
-        run: docker compose exec -T sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -d master -b -i /dev/stdin < scripts/database/bootstrap/V0__create_wl_chat_database.sql
+        run: docker compose exec -T sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -d master -b -i /dev/stdin < scripts/database/flyway/master/V1__create_wl_chat_database.sql
 
       - name: Run Flyway migrations
-        run: docker run --rm --network host -v "$PWD/src/main/resources/db/migration:/flyway/sql" flyway/flyway:10.17.3 -url="jdbc:sqlserver://localhost:1433;databaseName=wl_chat;encrypt=true;trustServerCertificate=true" -user="sa" -password="$MSSQL_SA_PASSWORD" -locations="filesystem:/flyway/sql" -placeholders.app_login="wl_chat_app" -placeholders.app_password="$WL_CHAT_DB_PASSWORD" migrate
+        run: docker run --rm --network host -v "$PWD/scripts/database/flyway/wl_chat:/flyway/sql" flyway/flyway:10.17.3 -url="jdbc:sqlserver://localhost:1433;databaseName=wl_chat;encrypt=true;trustServerCertificate=true" -user="sa" -password="$MSSQL_SA_PASSWORD" -locations="filesystem:/flyway/sql" -placeholders.app_login="wl_chat_app" -placeholders.app_password="$WL_CHAT_DB_PASSWORD" migrate
 
       - name: Build, test, format-check, and analyze
         run: ./mvnw --batch-mode --no-transfer-progress clean verify
@@ -1212,7 +1219,7 @@ From the repository root:
 ```bash
 docker compose down --volumes
 
-cp -n .env.example .env
+cp -n scripts/config/local.secrets.env.example scripts/config/local.secrets.env
 
 docker compose up -d --wait sqlserver
 ./scripts/database/init-local.sh
@@ -1285,7 +1292,7 @@ From another directory:
 git clone <repository-url> private-messenger-clean
 cd private-messenger-clean
 
-cp .env.example .env
+cp scripts/config/local.secrets.env.example scripts/config/local.secrets.env
 
 docker compose up -d --wait sqlserver
 ./scripts/database/init-local.sh
