@@ -48,26 +48,21 @@ jobs:
 
       - name: Bootstrap wl_chat database on remote SQL Server
         if: steps.remote_secrets.outputs.ready == 'true'
-        shell: bash
         run: |
-          set -euo pipefail
-          bootstrap_sql=$(cat scripts/database/bootstrap/V0__create_wl_chat_database.sql)
-
-          docker run --rm mcr.microsoft.com/mssql-tools18 \
-            /opt/mssql-tools18/bin/sqlcmd \
-            -S "${DB_HOST},${DB_PORT}" \
-            -U sa \
-            -P "${SA_PASSWORD}" \
-            -C \
-            -d master \
-            -b \
-            -Q "${bootstrap_sql}"
+          docker run --rm \
+            -v "$PWD/scripts/database/flyway/master:/flyway/sql" \
+            flyway/flyway:10.17.3 \
+            -url="jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=master;encrypt=true;trustServerCertificate=true" \
+            -user="sa" \
+            -password="${SA_PASSWORD}" \
+            -locations="filesystem:/flyway/sql" \
+            migrate
 
       - name: Run Flyway migrations on remote SQL Server
         if: steps.remote_secrets.outputs.ready == 'true'
         run: |
           docker run --rm \
-            -v "$PWD/src/main/resources/db/migration:/flyway/sql" \
+            -v "$PWD/scripts/database/flyway/wl_chat:/flyway/sql" \
             flyway/flyway:10.17.3 \
             -url="jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=wl_chat;encrypt=true;trustServerCertificate=true" \
             -user="sa" \

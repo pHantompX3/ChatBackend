@@ -3,8 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
-COMPOSE_FILE="${REPO_ROOT}/compose.devdocker.yaml"
-BOOTSTRAP_SCRIPT="${REPO_ROOT}/scripts/database/bootstrap/V0__create_wl_chat_database.sql"
+BOOTSTRAP_DIR="${REPO_ROOT}/scripts/database/flyway/master"
 
 DEFAULT_SECRETS_FILE="${REPO_ROOT}/scripts/config/local.secrets.env"
 SECRETS_FILE="${WL_CHAT_SECRETS_FILE:-${DEFAULT_SECRETS_FILE}}"
@@ -23,22 +22,22 @@ if [[ -z "${SA_PASSWORD}" ]]; then
   exit 1
 fi
 
-if [[ ! -f "${BOOTSTRAP_SCRIPT}" ]]; then
-  echo "Bootstrap script not found: ${BOOTSTRAP_SCRIPT}"
+if [[ ! -d "${BOOTSTRAP_DIR}" ]]; then
+  echo "Bootstrap directory not found: ${BOOTSTRAP_DIR}"
   exit 1
 fi
 
 cd "${REPO_ROOT}"
 
-echo "Bootstrapping wl_chat on DevDocker SQL Server (localhost:1434)..."
-docker compose -f "${COMPOSE_FILE}" exec -T sqlserver-dev \
-  /opt/mssql-tools18/bin/sqlcmd \
-  -S localhost \
-  -U sa \
-  -P "${SA_PASSWORD}" \
-  -C \
-  -d master \
-  -b \
-  -i /dev/stdin < "${BOOTSTRAP_SCRIPT}"
+echo "Bootstrapping wl_chat on DevDocker SQL Server (localhost:1434) using Flyway..."
+docker run --rm \
+  --add-host=host.docker.internal:host-gateway \
+  -v "${BOOTSTRAP_DIR}:/flyway/sql" \
+  flyway/flyway:10.17.3 \
+  -url="jdbc:sqlserver://host.docker.internal:1434;databaseName=master;encrypt=true;trustServerCertificate=true" \
+  -user="sa" \
+  -password="${SA_PASSWORD}" \
+  -locations="filesystem:/flyway/sql" \
+  migrate
 
 echo "DevDocker bootstrap complete."

@@ -1,0 +1,15 @@
+com/wayden/messenger/message/api/MessageResource.class
+com/wayden/messenger/common/api/ApiRoutes.class
+com/wayden/messenger/common/http/RequestAuditContext.class
+com/wayden/messenger/message/application/MessageServiceStub.class
+com/wayden/messenger/common/http/AuditOperation.class
+com/wayden/messenger/common/http/HttpAuditFilter$DeviceDetection.class
+com/wayden/messenger/common/http/HttpAuditFilter$ClientIpResolution.class
+com/wayden/messenger/message/api/SendMessageRequest.class
+com/wayden/messenger/bootstrap/service/PingService.class
+com/wayden/messenger/common/http/RequestIdFilter.class
+com/wayden/messenger/message/api/MessageResponse.class
+com/wayden/messenger/message/application/MessageService.class
+com/wayden/messenger/bootstrap/api/PingResponse.class
+com/wayden/messenger/bootstrap/api/PingResource.class
+com/wayden/messenger/common/http/HttpAuditFilter.class

@@ -14,10 +14,10 @@ if [[ -f "${SECRETS_FILE}" ]]; then
 fi
 
 DB_NAME="${WL_CHAT_DB_NAME:-wl_chat}"
+DB_PORT="${WL_CHAT_DB_PORT:-1433}"
+DB_HOST="${WL_CHAT_DB_HOST:-host.docker.internal}"
 SA_PASSWORD="${MSSQL_SA_PASSWORD:-}"
-BOOTSTRAP_SCRIPT="${REPO_ROOT}/scripts/database/bootstrap/V0__create_wl_chat_database.sql"
-COMPOSE_FILE="${REPO_ROOT}/compose.yaml"
-SQL_CONTAINER_NAME="${WL_CHAT_SQL_CONTAINER_NAME:-local_sql_server}"
+BOOTSTRAP_DIR="${REPO_ROOT}/scripts/database/flyway/master"
 
 if [[ -z "${SA_PASSWORD}" ]]; then
   echo "MSSQL_SA_PASSWORD is required."
@@ -25,41 +25,20 @@ if [[ -z "${SA_PASSWORD}" ]]; then
   exit 1
 fi
 
-if [[ ! -f "${BOOTSTRAP_SCRIPT}" ]]; then
-  echo "Bootstrap script not found: ${BOOTSTRAP_SCRIPT}"
+if [[ ! -d "${BOOTSTRAP_DIR}" ]]; then
+  echo "Bootstrap directory not found: ${BOOTSTRAP_DIR}"
   exit 1
 fi
 
-echo "Bootstrapping database '${DB_NAME}' via ${BOOTSTRAP_SCRIPT}..."
-
-# Prefer compose service if compose file is present and has sqlserver service.
-if [[ -s "${COMPOSE_FILE}" ]] && docker compose -f "${COMPOSE_FILE}" config --services 2>/dev/null | grep -qx "sqlserver"; then
-  docker compose -f "${COMPOSE_FILE}" exec -T sqlserver \
-    /opt/mssql-tools18/bin/sqlcmd \
-    -S localhost \
-    -U sa \
-    -P "${SA_PASSWORD}" \
-    -C \
-    -d master \
-    -b \
-    -i /dev/stdin < "${BOOTSTRAP_SCRIPT}"
-else
-  # Fallback for setups using an existing standalone SQL Server container.
-  if ! docker ps --format '{{.Names}}' | grep -qx "${SQL_CONTAINER_NAME}"; then
-    echo "No usable compose sqlserver service and container '${SQL_CONTAINER_NAME}' is not running."
-    echo "Start SQL Server container or set WL_CHAT_SQL_CONTAINER_NAME to your container name."
-    exit 1
-  fi
-
-  docker exec -i "${SQL_CONTAINER_NAME}" \
-    /opt/mssql-tools18/bin/sqlcmd \
-    -S localhost \
-    -U sa \
-    -P "${SA_PASSWORD}" \
-    -C \
-    -d master \
-    -b \
-    -i /dev/stdin < "${BOOTSTRAP_SCRIPT}"
-fi
+echo "Bootstrapping database '${DB_NAME}' with Flyway scripts in ${BOOTSTRAP_DIR}..."
+docker run --rm \
+  --add-host=host.docker.internal:host-gateway \
+  -v "${BOOTSTRAP_DIR}:/flyway/sql" \
+  flyway/flyway:10.17.3 \
+  -url="jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=master;encrypt=true;trustServerCertificate=true" \
+  -user="sa" \
+  -password="${SA_PASSWORD}" \
+  -locations="filesystem:/flyway/sql" \
+  migrate
 
 echo "Bootstrap complete."
