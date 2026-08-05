@@ -1,5 +1,12 @@
 # ChatBackend
 
+## Prerequisites
+
+- JDK 25
+- Docker with Docker Compose
+- Git
+- x86-64 Docker host for a supported SQL Server Linux container
+
 ## Current Baseline
 
 - Java: 25
@@ -145,6 +152,39 @@ Use these scripts instead of remembering the full bootstrap and migration sequen
   - Starts the DevDocker stack and initializes the database.
 - `./scripts/cicd/devdocker-down.sh`
   - Stops the DevDocker stack.
+
+## Build, Test, Run, Format, and Shutdown
+
+Build and verify:
+
+```bash
+./mvnw clean verify
+```
+
+Run tests only:
+
+```bash
+./mvnw test
+```
+
+Run application locally:
+
+```bash
+./mvnw quarkus:dev
+```
+
+Format source:
+
+```bash
+./mvnw spotless:apply
+```
+
+Shutdown local app and infrastructure:
+
+```bash
+# Stop Quarkus dev mode with Ctrl+C in its terminal
+./scripts/cicd/devdocker-down.sh
+```
 
 ### Local Path (app from terminal, DB on localhost:1433)
 

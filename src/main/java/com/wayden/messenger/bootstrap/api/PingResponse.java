@@ -1,4 +1,3 @@
 package com.wayden.messenger.bootstrap.api;
 
-public record PingResponse(String status) {
-}
+public record PingResponse(String status) {}

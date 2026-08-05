@@ -6,7 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class PingService {
 
-    public PingResponse ping() {
-        return new PingResponse("ok");
-    }
+  public PingResponse ping() {
+    return new PingResponse("ok");
+  }
 }
