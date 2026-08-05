@@ -295,7 +295,7 @@ Create the supporting directories:
 ```bash
 mkdir -p \
   .github/workflows \
-  docs/architecture/decisions \
+  docs/architecture/decision \
   docs/architecture/diagrams \
   docs/api \
   docs/database \
@@ -959,7 +959,7 @@ The tests intentionally require SQL Server. In Milestone 1, Testcontainers will 
 Create:
 
 ```text
-docs/architecture/decisions/ADR-0000-template.md
+docs/architecture/decision/ADR-0000-template.md
 ```
 
 ```markdown
@@ -1018,7 +1018,7 @@ State the evidence or change that would justify reconsidering this decision.
 Create the first decision:
 
 ```text
-docs/architecture/decisions/ADR-0001-use-modular-monolith.md
+docs/architecture/decision/ADR-0001-use-modular-monolith.md
 ```
 
 Decision summary:
@@ -1127,7 +1127,7 @@ The second command permanently removes local SQL Server data.
 Architecture decision records are stored under:
 
 ```text
-docs/architecture/decisions
+docs/architecture/decision
 ```
 
 ## Security
@@ -1309,76 +1309,76 @@ No IDE settings, global Maven version, hand-created database, or uncommitted sou
 
 ### Git repository
 
-- [ ] Repository initialized.
+- [x] Repository initialized.
 - [ ] `main` branch exists.
 - [ ] Initial commit pushed.
 - [ ] `.gitignore`, `.gitattributes`, and `.editorconfig` are committed.
 
 ### Maven Wrapper
 
-- [ ] `mvnw`, `mvnw.cmd`, and wrapper properties are committed.
-- [ ] Maven 3.9.16 is pinned.
-- [ ] `./mvnw --version` reports Java 25.
+- [x] `mvnw`, `mvnw.cmd`, and wrapper properties are committed.
+- [x] Maven 3.9.16 is pinned.
+- [x] `./mvnw --version` reports Java 25.
 
 ### Quarkus skeleton
 
-- [ ] Quarkus 3.33.2.1 LTS is used.
-- [ ] REST Jackson, SQL Server JDBC, and SmallRye Health extensions are present.
-- [ ] No sample greeting endpoint remains.
+- [x] Quarkus 3.33.2.1 LTS is used.
+- [x] REST Jackson, SQL Server JDBC, and SmallRye Health extensions are present.
+- [x] No sample greeting endpoint remains.
 
 ### Coding formatter
 
-- [ ] Spotless is bound to `validate`.
-- [ ] `./mvnw spotless:apply` formats code.
-- [ ] Formatting violations fail `./mvnw verify`.
+- [x] Spotless is bound to `validate`.
+- [x] `./mvnw spotless:apply` formats code.
+- [x] Formatting violations fail `./mvnw verify`.
 
 ### Static analysis
 
-- [ ] SpotBugs is bound to `verify`.
-- [ ] Medium-or-higher findings fail the build.
-- [ ] Static-analysis output is visible in the Maven build.
+- [x] SpotBugs is bound to `verify`.
+- [x] Medium-or-higher findings fail the build.
+- [x] Static-analysis output is visible in the Maven build.
 
 ### CI
 
-- [ ] GitHub Actions starts SQL Server.
-- [ ] CI bootstraps the database and applies Flyway migrations.
-- [ ] CI runs `./mvnw clean verify`.
+- [x] GitHub Actions starts SQL Server.
+- [x] CI bootstraps the database and applies Flyway migrations.
+- [x] CI runs `./mvnw clean verify`.
 - [ ] CI passes on `main` and pull requests.
 
 ### ADR
 
-- [ ] ADR template exists.
-- [ ] ADR-0001 records the modular-monolith decision.
+- [x] ADR template exists.
+- [x] ADR-0001 records the modular-monolith decision.
 
 ### SQL Server Compose
 
-- [ ] SQL Server starts from `compose.yaml`.
-- [ ] Data uses a named volume.
-- [ ] Port 1433 binds only to loopback.
-- [ ] Health check executes `SELECT 1`.
-- [ ] Application database and login are initialized idempotently.
-- [ ] Application does not use `sa`.
+- [x] SQL Server starts from `compose.devdocker.yaml` (current canonical DevDocker compose file).
+- [x] Data uses a named volume.
+- [x] SQL Server host port binds only to loopback.
+- [x] Health check executes `SELECT 1`.
+- [x] Application database and login are initialized idempotently.
+- [x] Application does not use `sa`.
 
 ### Health endpoints
 
-- [ ] `/q/health/live` reports `UP`.
-- [ ] `/q/health/ready` reports `UP` while SQL Server is reachable.
-- [ ] Readiness reports `DOWN` when SQL Server is stopped.
-- [ ] Automated health tests pass.
+- [x] `/q/health/live` reports `UP`.
+- [x] `/q/health/ready` reports `UP` while SQL Server is reachable.
+- [x] Readiness reports `DOWN` when SQL Server is stopped.
+- [x] Automated health tests pass.
 
 ### README
 
-- [ ] Prerequisites are documented.
-- [ ] First-time setup is documented.
-- [ ] Build, test, run, format, and shutdown commands are documented.
-- [ ] Security warning is included.
+- [x] Prerequisites are documented.
+- [x] First-time setup is documented.
+- [x] Build, test, run, format, and shutdown commands are documented.
+- [x] Security warning is included.
 
 ### Final exit criteria
 
 - [ ] Clean checkout builds.
-- [ ] Tests run.
-- [ ] Application starts.
-- [ ] Database is reachable.
+- [x] Tests run.
+- [x] Application starts.
+- [x] Database is reachable.
 - [ ] CI passes.
 
 ---

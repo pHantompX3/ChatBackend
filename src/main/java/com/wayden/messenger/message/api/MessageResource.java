@@ -13,9 +13,8 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import lombok.RequiredArgsConstructor;
-
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Path(ApiRoutes.API_V1)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -23,23 +22,21 @@ import java.util.List;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class MessageResource {
 
-    private final MessageService messageService;
+  private final MessageService messageService;
 
-    @POST
-    @Path("/messages")
-    @AuditOperation("send.message")
-    public MessageResponse sendMessage(@Valid SendMessageRequest request) {
-        return messageService.send(request);
-    }
+  @POST
+  @Path("/messages")
+  @AuditOperation("send.message")
+  public MessageResponse sendMessage(@Valid SendMessageRequest request) {
+    return messageService.send(request);
+  }
 
-    @GET
-    @Path("/conversations/{conversationId}/messages")
-    @AuditOperation("list.messages")
-    public List<MessageResponse> listMessages(
-            @PathParam("conversationId") String conversationId,
-            @QueryParam("limit") Integer limit
-    ) {
-        int resolvedLimit = (limit == null || limit <= 0) ? 50 : Math.min(limit, 200);
-        return messageService.listByConversation(conversationId, resolvedLimit);
-    }
+  @GET
+  @Path("/conversations/{conversationId}/messages")
+  @AuditOperation("list.messages")
+  public List<MessageResponse> listMessages(
+      @PathParam("conversationId") String conversationId, @QueryParam("limit") Integer limit) {
+    int resolvedLimit = (limit == null || limit <= 0) ? 50 : Math.min(limit, 200);
+    return messageService.listByConversation(conversationId, resolvedLimit);
+  }
 }

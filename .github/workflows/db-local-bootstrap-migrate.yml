@@ -92,3 +92,6 @@ jobs:
           set -euo pipefail
           container_id=$(docker ps -q --filter ancestor=mcr.microsoft.com/mssql/server:2022-latest | head -n 1)
           docker exec "$container_id" /opt/mssql-tools18/bin/sqlcmd -S localhost -U "$APP_LOGIN" -P "$APP_PASSWORD" -C -d wl_chat -b -Q "SELECT DB_NAME() AS database_name, SUSER_SNAME() AS login_name;"
+
+      - name: Build and verify
+        run: ./mvnw --batch-mode --no-transfer-progress clean verify

@@ -15,11 +15,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class PingResource {
 
-    private final PingService pingService;
+  private final PingService pingService;
 
-    @GET
-    @AuditOperation("health.ping")
-    public PingResponse ping() {
-        return pingService.ping();
-    }
+  @GET
+  @AuditOperation("health.ping")
+  public PingResponse ping() {
+    return pingService.ping();
+  }
 }
