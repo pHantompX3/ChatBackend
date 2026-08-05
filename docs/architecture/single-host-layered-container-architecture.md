@@ -284,18 +284,18 @@ flowchart TB
 
 The topology contains several logical tiers but only one physical failure domain.
 
-| Failure | Expected result |
-|---|---|
-| Frontend/midlayer A crashes | Edge NGINX can route new requests to frontend/midlayer B |
-| Backend A crashes | Internal API NGINX can route new requests to backend B |
-| Internal API NGINX crashes | All backend access through the midlayer fails |
-| Edge NGINX crashes | All public access fails |
-| SQL Server crashes | Durable application operations fail; backend readiness should report `DOWN` |
-| Docker daemon fails | All containers fail |
-| Physical host fails | Entire platform is unavailable |
-| Host SSD fails | Entire platform is unavailable and local data may be lost |
-| Router or ISP fails | Remote access fails |
-| Power fails without UPS | Entire platform stops abruptly |
+| Failure                     | Expected result                                                             |
+| --------------------------- | --------------------------------------------------------------------------- |
+| Frontend/midlayer A crashes | Edge NGINX can route new requests to frontend/midlayer B                    |
+| Backend A crashes           | Internal API NGINX can route new requests to backend B                      |
+| Internal API NGINX crashes  | All backend access through the midlayer fails                               |
+| Edge NGINX crashes          | All public access fails                                                     |
+| SQL Server crashes          | Durable application operations fail; backend readiness should report `DOWN` |
+| Docker daemon fails         | All containers fail                                                         |
+| Physical host fails         | Entire platform is unavailable                                              |
+| Host SSD fails              | Entire platform is unavailable and local data may be lost                   |
+| Router or ISP fails         | Remote access fails                                                         |
+| Power fails without UPS     | Entire platform stops abruptly                                              |
 
 The duplicate application instances therefore provide application-process resilience, deployment flexibility, and technical learning—not complete service availability.
 
@@ -513,17 +513,17 @@ database
 
 The intended membership is:
 
-| Service | `edge` | `application` | `backend` | `database` |
-|---|:---:|:---:|:---:|:---:|
-| Edge NGINX | Yes | No | No | No |
-| Frontend/midlayer A | Yes | Yes | No | No |
-| Frontend/midlayer B | Yes | Yes | No | No |
-| Internal API NGINX | No | Yes | Yes | No |
-| Quarkus backend A | No | No | Yes | Yes |
-| Quarkus backend B | No | No | Yes | Yes |
-| Migration job | No | No | No | Yes |
-| SQL Server | No | No | No | Yes |
-| Backup job | No | No | No | Yes |
+| Service             | `edge` | `application` | `backend` | `database` |
+| ------------------- | :----: | :-----------: | :-------: | :--------: |
+| Edge NGINX          |  Yes   |      No       |    No     |     No     |
+| Frontend/midlayer A |  Yes   |      Yes      |    No     |     No     |
+| Frontend/midlayer B |  Yes   |      Yes      |    No     |     No     |
+| Internal API NGINX  |   No   |      Yes      |    Yes    |     No     |
+| Quarkus backend A   |   No   |      No       |    Yes    |    Yes     |
+| Quarkus backend B   |   No   |      No       |    Yes    |    Yes     |
+| Migration job       |   No   |      No       |    No     |    Yes     |
+| SQL Server          |   No   |      No       |    No     |    Yes     |
+| Backup job          |   No   |      No       |    No     |    Yes     |
 
 ## 8.2 Isolation rules
 
@@ -538,17 +538,17 @@ The intended membership is:
 
 ## 8.3 Port matrix
 
-| Source | Destination | Port | Protocol | Purpose |
-|---|---|---:|---|---|
-| Internet | Edge NGINX | 443 | HTTPS/WSS | Public application traffic |
-| Internet | Edge NGINX | 80 | HTTP | Redirect or certificate challenge |
-| Edge NGINX | Frontend/midlayer A/B | 3000 | HTTP/WS | Frontend and BFF traffic |
-| Frontend/midlayer A/B | Internal API NGINX | 8080 | HTTP/WS | Internal backend requests |
-| Internal API NGINX | Quarkus backend A/B | 8080 | HTTP/WS | Backend API traffic |
-| Quarkus backend A/B | SQL Server | 1433 | TDS over TCP | Database access |
-| Migration job | SQL Server | 1433 | TDS over TCP | Schema migration |
-| Backup job | SQL Server | 1433 or local tool invocation | TDS/SQL | Native backup orchestration |
-| Administrator | Host | 22 | SSH | Restricted administration |
+| Source                | Destination           |                          Port | Protocol     | Purpose                           |
+| --------------------- | --------------------- | ----------------------------: | ------------ | --------------------------------- |
+| Internet              | Edge NGINX            |                           443 | HTTPS/WSS    | Public application traffic        |
+| Internet              | Edge NGINX            |                            80 | HTTP         | Redirect or certificate challenge |
+| Edge NGINX            | Frontend/midlayer A/B |                          3000 | HTTP/WS      | Frontend and BFF traffic          |
+| Frontend/midlayer A/B | Internal API NGINX    |                          8080 | HTTP/WS      | Internal backend requests         |
+| Internal API NGINX    | Quarkus backend A/B   |                          8080 | HTTP/WS      | Backend API traffic               |
+| Quarkus backend A/B   | SQL Server            |                          1433 | TDS over TCP | Database access                   |
+| Migration job         | SQL Server            |                          1433 | TDS over TCP | Schema migration                  |
+| Backup job            | SQL Server            | 1433 or local tool invocation | TDS/SQL      | Native backup orchestration       |
+| Administrator         | Host                  |                            22 | SSH          | Restricted administration         |
 
 Port `1433` shall not be forwarded through the router or published on a public host interface.
 
@@ -1441,7 +1441,8 @@ services:
       - edge
       - application
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/health/ready"]
+      test:
+        ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/health/ready"]
       interval: 10s
       timeout: 3s
       retries: 6
@@ -1459,7 +1460,8 @@ services:
       - edge
       - application
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/health/ready"]
+      test:
+        ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/health/ready"]
       interval: 10s
       timeout: 3s
       retries: 6
@@ -1506,7 +1508,14 @@ services:
       - wl_chat_db_username
       - wl_chat_db_password
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/q/health/ready"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "--silent",
+          "http://127.0.0.1:8080/q/health/ready",
+        ]
       interval: 10s
       timeout: 3s
       retries: 12
@@ -1532,7 +1541,14 @@ services:
       - wl_chat_db_username
       - wl_chat_db_password
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/q/health/ready"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "--silent",
+          "http://127.0.0.1:8080/q/health/ready",
+        ]
       interval: 10s
       timeout: 3s
       retries: 12
@@ -1577,7 +1593,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$(cat /run/secrets/mssql_sa_password)\" -C -Q \"SELECT 1\" >/dev/null || exit 1"
+          '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$(cat /run/secrets/mssql_sa_password)" -C -Q "SELECT 1" >/dev/null || exit 1',
         ]
       interval: 10s
       timeout: 5s
@@ -1643,7 +1659,7 @@ ChatBackend/
 │   │   └── api/
 │   │       └── nginx.conf
 │   └── env/
-│       └── production.env.example
+│       └── local.secrets.env.example
 ├── docs/
 │   ├── architecture/
 │   │   ├── decisions/
@@ -1709,17 +1725,17 @@ The complete stack includes Microsoft SQL Server. Supported SQL Server Linux con
 
 For a 32 GB host:
 
-| Component | Initial planning allocation |
-|---|---:|
-| SQL Server | 4–6 GB configured limit |
-| Quarkus backend A | 1–2 GB ceiling |
-| Quarkus backend B | 1–2 GB ceiling |
-| Frontend/midlayer A | 512 MB–1 GB ceiling |
-| Frontend/midlayer B | 512 MB–1 GB ceiling |
-| Two NGINX instances | Less than 512 MB combined under expected load |
-| Linux, Docker, filesystem cache | 4–8 GB |
-| Monitoring, backup, deployment operations | 2–4 GB |
-| Remaining capacity | Safety margin and future services |
+| Component                                 |                   Initial planning allocation |
+| ----------------------------------------- | --------------------------------------------: |
+| SQL Server                                |                       4–6 GB configured limit |
+| Quarkus backend A                         |                                1–2 GB ceiling |
+| Quarkus backend B                         |                                1–2 GB ceiling |
+| Frontend/midlayer A                       |                           512 MB–1 GB ceiling |
+| Frontend/midlayer B                       |                           512 MB–1 GB ceiling |
+| Two NGINX instances                       | Less than 512 MB combined under expected load |
+| Linux, Docker, filesystem cache           |                                        4–8 GB |
+| Monitoring, backup, deployment operations |                                        2–4 GB |
+| Remaining capacity                        |             Safety margin and future services |
 
 These are planning values, not measured requirements. Actual limits shall be tuned from observed metrics.
 
@@ -2373,25 +2389,25 @@ ADR-010-defer-kubernetes-and-multi-host-orchestration.md
 
 ## 33. Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-|---|---|---|
-| Single physical host failure | Total outage | Accept for initial scope; maintain off-host backups and replacement procedure |
-| Single SQL Server failure | All durable operations unavailable | Health checks, restart policy, backups, restore drill |
-| SSD failure | Data loss and outage | Quality NVMe, health monitoring, off-host backups |
-| Power failure | Abrupt shutdown and outage | UPS, graceful shutdown, automatic power restore |
-| Residential internet failure | Public service unavailable | Accept initially; external monitoring; optional secondary connectivity later |
-| CGNAT | Direct inbound access impossible | Public IP, VPN overlay, tunnel, or relay |
-| Duplicate scheduled jobs | Duplicate side effects | Database lease, idempotency, or dedicated worker |
-| Unsafe proxy retry | Duplicate writes | Idempotency keys and route-specific retry rules |
-| Version-skew incompatibility | Failed rolling deployment | Backward-compatible APIs and expand/contract migrations |
-| Destructive migration | Rollback impossible | Separate destructive changes and delay contraction |
-| Secret leakage in CI | Database or host compromise | Protected environments, least privilege, no secrets in build images |
-| Production host used as CI runner | Arbitrary workflow compromise | Build externally; production only pulls approved images |
-| Unbounded logs | Disk exhaustion | Docker log rotation, disk alerts, structured logging |
-| SQL Server takes host memory | Container or host instability | cgroup and SQL internal memory limits |
-| Local-only backup | Permanent data loss after host failure | Encrypted off-host copy and restore testing |
-| WebSocket state trapped in one backend | Missed live delivery | Shared event mechanism and durable reconciliation |
-| Overengineering distracts from domain correctness | Slow feature progress | Implement in phases; keep frontend and real-time layers deferred |
+| Risk                                              | Impact                                 | Mitigation                                                                    |
+| ------------------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------- |
+| Single physical host failure                      | Total outage                           | Accept for initial scope; maintain off-host backups and replacement procedure |
+| Single SQL Server failure                         | All durable operations unavailable     | Health checks, restart policy, backups, restore drill                         |
+| SSD failure                                       | Data loss and outage                   | Quality NVMe, health monitoring, off-host backups                             |
+| Power failure                                     | Abrupt shutdown and outage             | UPS, graceful shutdown, automatic power restore                               |
+| Residential internet failure                      | Public service unavailable             | Accept initially; external monitoring; optional secondary connectivity later  |
+| CGNAT                                             | Direct inbound access impossible       | Public IP, VPN overlay, tunnel, or relay                                      |
+| Duplicate scheduled jobs                          | Duplicate side effects                 | Database lease, idempotency, or dedicated worker                              |
+| Unsafe proxy retry                                | Duplicate writes                       | Idempotency keys and route-specific retry rules                               |
+| Version-skew incompatibility                      | Failed rolling deployment              | Backward-compatible APIs and expand/contract migrations                       |
+| Destructive migration                             | Rollback impossible                    | Separate destructive changes and delay contraction                            |
+| Secret leakage in CI                              | Database or host compromise            | Protected environments, least privilege, no secrets in build images           |
+| Production host used as CI runner                 | Arbitrary workflow compromise          | Build externally; production only pulls approved images                       |
+| Unbounded logs                                    | Disk exhaustion                        | Docker log rotation, disk alerts, structured logging                          |
+| SQL Server takes host memory                      | Container or host instability          | cgroup and SQL internal memory limits                                         |
+| Local-only backup                                 | Permanent data loss after host failure | Encrypted off-host copy and restore testing                                   |
+| WebSocket state trapped in one backend            | Missed live delivery                   | Shared event mechanism and durable reconciliation                             |
+| Overengineering distracts from domain correctness | Slow feature progress                  | Implement in phases; keep frontend and real-time layers deferred              |
 
 ---
 
@@ -2444,4 +2460,3 @@ The immediate implementation focus should remain the backend, SQL Server, migrat
 13. Quarkus, **Configure data sources**: <https://quarkus.io/guides/datasource>
 14. GitHub, **Self-hosted runner security considerations**: <https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners>
 15. ChatBackend repository baseline, `init` branch: <https://github.com/pHantompX3/ChatBackend/tree/init>
-
