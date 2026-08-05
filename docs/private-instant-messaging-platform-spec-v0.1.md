@@ -1,4 +1,5 @@
 # Private Instant Messaging Platform
+
 ## System Specification, Development Plan, and Coding Guide
 
 **Document version:** 0.1  
@@ -93,25 +94,25 @@ Raw benchmark throughput shall not override correctness, understandable code, or
 
 ### 5.1 Required stack
 
-| Area | Selection |
-|---|---|
-| Language | Java 25 |
-| Runtime framework | Quarkus 3.33 LTS |
-| Build | Maven Wrapper |
-| HTTP | Quarkus REST |
-| Concurrency model | Imperative services on virtual threads where appropriate |
-| Database | PostgreSQL 18 |
-| Database access | jOOQ with PostgreSQL JDBC |
-| Connection pool | Quarkus Agroal |
-| Migrations | Flyway |
-| JSON | Jackson |
-| Validation | Jakarta Bean Validation |
-| API description | OpenAPI |
-| Real-time transport | Quarkus WebSockets Next, introduced later |
-| Testing | JUnit, REST Assured, Testcontainers |
-| Telemetry | OpenTelemetry and Micrometer integration |
-| Local orchestration | Docker Compose |
-| Source control | Git |
+| Area                | Selection                                                |
+| ------------------- | -------------------------------------------------------- |
+| Language            | Java 25                                                  |
+| Runtime framework   | Quarkus 3.33 LTS                                         |
+| Build               | Maven Wrapper                                            |
+| HTTP                | Quarkus REST                                             |
+| Concurrency model   | Imperative services on virtual threads where appropriate |
+| Database            | PostgreSQL 18                                            |
+| Database access     | jOOQ with PostgreSQL JDBC                                |
+| Connection pool     | Quarkus Agroal                                           |
+| Migrations          | Flyway                                                   |
+| JSON                | Jackson                                                  |
+| Validation          | Jakarta Bean Validation                                  |
+| API description     | OpenAPI                                                  |
+| Real-time transport | Quarkus WebSockets Next, introduced later                |
+| Testing             | JUnit, REST Assured, Testcontainers                      |
+| Telemetry           | OpenTelemetry and Micrometer integration                 |
+| Local orchestration | Docker Compose                                           |
+| Source control      | Git                                                      |
 
 ### 5.2 Why this stack
 
@@ -495,7 +496,7 @@ The application shall not rely solely on pre-insert checks for uniqueness becaus
 ### 11.1 Migration directory
 
 ```text
-src/main/resources/db/migration
+scripts/database/flyway/wl_chat
 ```
 
 ### 11.2 Version naming
@@ -750,18 +751,18 @@ Every protected operation shall verify authorization server-side.
 
 Examples:
 
-| Operation | Required authorization |
-|---|---|
-| Create invitation | System administrator |
-| Create direct conversation | Active user |
-| Create group | Active user |
-| Add group member | Conversation owner/admin |
-| Remove group member | Conversation owner/admin |
-| Read history | Active conversation member |
-| Send message | Active conversation member |
-| Edit message | Original sender, subject to policy |
-| Delete message | Original sender or permitted admin |
-| Advance read position | The authenticated member only |
+| Operation                  | Required authorization             |
+| -------------------------- | ---------------------------------- |
+| Create invitation          | System administrator               |
+| Create direct conversation | Active user                        |
+| Create group               | Active user                        |
+| Add group member           | Conversation owner/admin           |
+| Remove group member        | Conversation owner/admin           |
+| Read history               | Active conversation member         |
+| Send message               | Active conversation member         |
+| Edit message               | Original sender, subject to policy |
+| Delete message             | Original sender or permitted admin |
+| Advance read position      | The authenticated member only      |
 
 An inaccessible conversation should normally return `404` rather than confirming the existence of a private resource.
 

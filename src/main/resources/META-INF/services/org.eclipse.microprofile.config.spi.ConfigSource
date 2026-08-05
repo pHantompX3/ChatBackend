@@ -1,0 +1,2 @@
+com.wayden.messenger.bootstrap.config.LocalSecretsConfigSource
+com.wayden.messenger.bootstrap.config.RuntimeFileConfigSource

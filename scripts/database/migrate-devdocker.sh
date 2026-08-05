@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
-MIGRATIONS_DIR="${REPO_ROOT}/src/main/resources/db/migration"
+MIGRATIONS_DIR="${REPO_ROOT}/scripts/database/flyway/wl_chat"
 
 DEFAULT_SECRETS_FILE="${REPO_ROOT}/scripts/config/local.secrets.env"
 SECRETS_FILE="${WL_CHAT_SECRETS_FILE:-${DEFAULT_SECRETS_FILE}}"

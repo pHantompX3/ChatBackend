@@ -20,6 +20,7 @@ This document formalizes the environment model and rollout sequence for ChatBack
 3. Production (future)
    - Persistent hosted environment
    - API reachable by real clients
+   - Fronted by an API gateway/load balancer on the remote host, with Apache APISIX as the preferred future-state edge layer
    - Deployment automation enabled only after provisioning
 
 ## Database Initialization Strategy
@@ -27,11 +28,11 @@ This document formalizes the environment model and rollout sequence for ChatBack
 Two-phase model:
 
 1. Bootstrap (admin, one-time per environment)
-   - Script: `scripts/database/bootstrap/V0__create_wl_chat_database.sql`
+   - Script: `scripts/database/flyway/master/V1__create_wl_chat_database.sql`
    - Creates database `wl_chat` if missing
 
 2. Flyway migrations (versioned, immutable)
-   - Location: `src/main/resources/db/migration`
+   - Location: `scripts/database/flyway/wl_chat`
    - Current scripts:
      - `V1__create_app_login_and_user.sql`
      - `V2__grant_app_permissions.sql`
@@ -92,14 +93,17 @@ Exit criteria:
 
 1. Provision persistent hosted runtime and database.
 2. Add secure secrets management and network policy.
-3. Activate remote migration workflow with production safeguards.
-4. Add deployment + post-deploy health checks.
+3. Add Apache APISIX on the remote machine as the API gateway/load balancer in front of the application.
+4. Route public traffic through APISIX and keep the application on an internal-only port.
+5. Activate remote migration workflow with production safeguards.
+6. Add deployment + post-deploy health checks.
 
 Exit criteria:
 
 - Merged `main` changes can migrate and deploy to persistent environment.
 - Rollback and recovery procedures are documented.
 - Observability and alerting are in place.
+- APISIX handles edge routing and load balancing for the remote machine before traffic reaches the app.
 
 ## Guardrails
 
@@ -113,3 +117,4 @@ Exit criteria:
 1. Final hosting target for Production.
 2. Whether Production database is containerized SQL Server or managed SQL.
 3. Whether migration execution should be a dedicated job before app rollout.
+4. Whether APISIX should terminate TLS on the remote machine or sit behind another external proxy layer.

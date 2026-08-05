@@ -85,6 +85,7 @@ The delivery lifecycle is currently organized into three environments:
 
 3. **Production (future)**
    - Persistent hosted environment with externally reachable API.
+   - Future remote host fronted by an API gateway/load balancer, with Apache APISIX as the preferred edge layer.
    - Activated only after infrastructure provisioning and operational controls are in place.
 
 ### Current automation boundary
@@ -617,7 +618,7 @@ Flyway schema creation or bootstrap SQL shall ensure that the `platform` schema 
 ### 11.2 Migration directory
 
 ```text
-src/main/resources/db/migration
+scripts/database/flyway/wl_chat
 ```
 
 ### 11.3 Version naming

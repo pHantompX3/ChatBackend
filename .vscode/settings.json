@@ -6,5 +6,6 @@
       "path": "/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home",
       "default": true
     }
-  ]
+  ],
+  "java.configuration.updateBuildConfiguration": "automatic"
 }

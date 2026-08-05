@@ -19,7 +19,7 @@ DB_HOST="${WL_CHAT_DB_HOST:-host.docker.internal}"
 APP_LOGIN="${WL_CHAT_DB_USERNAME:-wl_chat_app}"
 APP_PASSWORD="${WL_CHAT_DB_PASSWORD:-}"
 SA_PASSWORD="${MSSQL_SA_PASSWORD:-}"
-MIGRATIONS_DIR="${REPO_ROOT}/src/main/resources/db/migration"
+MIGRATIONS_DIR="${REPO_ROOT}/scripts/database/flyway/wl_chat"
 
 if [[ -z "${SA_PASSWORD}" ]]; then
   echo "MSSQL_SA_PASSWORD is required."
