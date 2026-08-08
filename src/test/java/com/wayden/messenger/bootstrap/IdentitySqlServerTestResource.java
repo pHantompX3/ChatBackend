@@ -14,18 +14,26 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
   private static final String APP_PASSWORD = "AppPassw0rd!";
 
   private static MSSQLServerContainer<?> sqlServer;
+  private static final Object CONTAINER_LOCK = new Object();
+  private boolean ownsContainer;
 
   @Override
+  @SuppressWarnings("resource")
   public Map<String, String> start() {
-    if (sqlServer == null) {
-      sqlServer =
-          new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:2022-latest")
-              .acceptLicense()
-              .withPassword(DB_PASSWORD);
-      sqlServer.start();
-      retry("migrate master bootstrap", this::migrateMaster, 5, Duration.ofSeconds(2));
-      retry(
-          "migrate application schemas", this::migrateApplicationSchemas, 5, Duration.ofSeconds(2));
+    synchronized (CONTAINER_LOCK) {
+      if (sqlServer == null) {
+        sqlServer =
+            new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:2022-latest")
+                .acceptLicense()
+                .withPassword(DB_PASSWORD);
+        ownsContainer = true;
+        sqlServer.start();
+        retry("migrate master bootstrap", this::migrateMaster, 5, Duration.ofSeconds(2));
+        retry(
+            "migrate application schemas", this::migrateApplicationSchemas, 5, Duration.ofSeconds(2));
+      } else {
+        ownsContainer = false;
+      }
     }
 
     return Map.of(
@@ -45,9 +53,12 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
 
   @Override
   public void stop() {
-    if (sqlServer != null) {
-      sqlServer.stop();
-      sqlServer = null;
+    synchronized (CONTAINER_LOCK) {
+      if (ownsContainer && sqlServer != null) {
+        sqlServer.stop();
+        sqlServer = null;
+      }
+      ownsContainer = false;
     }
   }
 
