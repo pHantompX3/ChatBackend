@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -106,7 +105,7 @@ class IdentitySqlServerTestResourceTest {
     follower.stop();
 
     assertThrows(
-        SQLException.class,
+        IllegalStateException.class,
         () ->
             DriverManager.getConnection(
                 IdentitySqlServerTestResource.jdbcUrl("master"),

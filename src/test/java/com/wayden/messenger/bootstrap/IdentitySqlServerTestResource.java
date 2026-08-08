@@ -73,6 +73,11 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
   }
 
   public static String jdbcUrl(String databaseName) {
+    if (sqlServer == null) {
+      throw new IllegalStateException(
+          "SQL Server test container is not available because no active test resources remain");
+    }
+
     return TestSqlSupport.jdbcUrl(sqlServer.getHost(), sqlServer.getMappedPort(1433), databaseName);
   }
 
