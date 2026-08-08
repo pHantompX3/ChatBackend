@@ -91,6 +91,12 @@ Prepare local secrets if needed:
 cp -n scripts/config/local.secrets.env.example scripts/config/local.secrets.env
 ```
 
+For queue-enabled runs, also define RabbitMQ admin credentials in local secrets:
+
+```dotenv
+RABBITMQ_ADMIN_PASSWORD=<strong-admin-password>
+```
+
 Work only on a feature branch. Do not push directly to `main`.
 
 ---
@@ -329,6 +335,285 @@ Audit payload rules:
 - include safe metadata only
 - never include raw secret/token/password values
 
+### 9.1 Step 5A - Add Asynchronous Audit Delivery
+
+Implement asynchronous delivery for request and response audit events so user-facing latency is not coupled to audit persistence availability.
+
+Tool decision for Milestone 2:
+
+- Choose RabbitMQ as the message queue broker.
+- Rationale: lighter operational footprint than IBM MQ, fast local startup in Docker, and simple environment isolation with virtual hosts.
+
+Deployment shape:
+
+- Run a single RabbitMQ server container.
+- Use separate virtual hosts instead of separate broker instances:
+  - `/local` for local app runs
+  - `/devdocker` for devdocker app runs
+- Use dedicated exchanges and queues per environment namespace.
+
+Queue design baseline:
+
+- Exchange: `audit.events`
+- Primary queue: `audit.events.primary`
+- Dead-letter queue: `audit.events.dlq`
+- Message envelope should include request id, trace id, operation, method, path, status, duration, and event time.
+
+Producer behavior (application side):
+
+- The HTTP audit filter publishes non-blocking, best-effort telemetry messages.
+- Application use cases publish security/business audit events after successful state changes.
+- If publish fails, do not fail user requests; log structured fallback entries and increment a metric.
+
+Consumer behavior (background listener):
+
+- Listener processes messages and writes audit rows to the audit schema.
+- Use bounded retries and send poison messages to the dead-letter queue.
+- Keep consumer idempotent for duplicate message delivery.
+
+Implementation notes:
+
+- Keep authoritative security audit semantics in application services.
+- Treat filter-emitted events as transport telemetry unless explicitly promoted.
+- If strict durability is later required for business audit events, add an outbox table and outbox processor.
+
+### 9.2 Docker Compose snippets (single broker, two virtual hosts)
+
+Use one RabbitMQ container and isolate environments with virtual hosts.
+
+Compose service snippet:
+
+```yaml
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: wl-chat-rabbitmq
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_ADMIN_PASSWORD:?RABBITMQ_ADMIN_PASSWORD is required}
+      RABBITMQ_DEFAULT_VHOST: /local
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: >-
+        -rabbitmq_management load_definitions "/etc/rabbitmq/definitions.json"
+    volumes:
+      - wl-chat-rabbitmq-data:/var/lib/rabbitmq
+      - ./config/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  wl-chat-rabbitmq-data:
+```
+
+RabbitMQ definitions snippet (`config/rabbitmq/definitions.json`):
+
+```json
+{
+  "vhosts": [{ "name": "/local" }, { "name": "/devdocker" }],
+  "users": [
+    { "name": "audit_local", "password": "change-me-local", "tags": "" },
+    { "name": "audit_devdocker", "password": "change-me-devdocker", "tags": "" }
+  ],
+  "permissions": [
+    {
+      "user": "audit_local",
+      "vhost": "/local",
+      "configure": "^audit\\..*",
+      "write": "^audit\\..*",
+      "read": "^audit\\..*"
+    },
+    {
+      "user": "audit_devdocker",
+      "vhost": "/devdocker",
+      "configure": "^audit\\..*",
+      "write": "^audit\\..*",
+      "read": "^audit\\..*"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "audit.events",
+      "vhost": "/local",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "audit.events",
+      "vhost": "/devdocker",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "audit.events.dlx",
+      "vhost": "/local",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "audit.events.dlx",
+      "vhost": "/devdocker",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "audit.events.primary",
+      "vhost": "/local",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "audit.events.dlx",
+        "x-dead-letter-routing-key": "audit.dead"
+      }
+    },
+    {
+      "name": "audit.events.primary",
+      "vhost": "/devdocker",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "audit.events.dlx",
+        "x-dead-letter-routing-key": "audit.dead"
+      }
+    },
+    {
+      "name": "audit.events.dlq",
+      "vhost": "/local",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "audit.events.dlq",
+      "vhost": "/devdocker",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "vhost": "/local",
+      "source": "audit.events",
+      "destination": "audit.events.primary",
+      "destination_type": "queue",
+      "routing_key": "audit.#",
+      "arguments": {}
+    },
+    {
+      "vhost": "/devdocker",
+      "source": "audit.events",
+      "destination": "audit.events.primary",
+      "destination_type": "queue",
+      "routing_key": "audit.#",
+      "arguments": {}
+    },
+    {
+      "vhost": "/local",
+      "source": "audit.events.dlx",
+      "destination": "audit.events.dlq",
+      "destination_type": "queue",
+      "routing_key": "audit.dead",
+      "arguments": {}
+    },
+    {
+      "vhost": "/devdocker",
+      "source": "audit.events.dlx",
+      "destination": "audit.events.dlq",
+      "destination_type": "queue",
+      "routing_key": "audit.dead",
+      "arguments": {}
+    }
+  ]
+}
+```
+
+Application environment snippet:
+
+```dotenv
+# local app
+WL_CHAT_AUDIT_AMQP_HOST=localhost
+WL_CHAT_AUDIT_AMQP_PORT=5672
+WL_CHAT_AUDIT_AMQP_VHOST=/local
+WL_CHAT_AUDIT_AMQP_USERNAME=audit_local
+WL_CHAT_AUDIT_AMQP_PASSWORD=<local-audit-password>
+
+# devdocker app
+WL_CHAT_AUDIT_AMQP_VHOST=/devdocker
+WL_CHAT_AUDIT_AMQP_USERNAME=audit_devdocker
+WL_CHAT_AUDIT_AMQP_PASSWORD=<devdocker-audit-password>
+```
+
+### 9.3 Startup checks
+
+After startup, verify:
+
+```bash
+docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+curl -u admin:$RABBITMQ_ADMIN_PASSWORD http://localhost:15672/api/vhosts
+curl -u admin:$RABBITMQ_ADMIN_PASSWORD http://localhost:15672/api/queues/%2Flocal
+curl -u admin:$RABBITMQ_ADMIN_PASSWORD http://localhost:15672/api/queues/%2Fdevdocker
+```
+
+### 9.4 Audit event contract and delivery policy
+
+Define a versioned audit message contract before implementation.
+
+Required message fields:
+
+- `schemaVersion`
+- `eventId`
+- `eventType`
+- `occurredAt`
+- `requestId`
+- `traceId`
+- `operation`
+- `method`
+- `path`
+- `responseStatus`
+- `durationMs`
+- `actorUserId` (nullable)
+- `targetType` (nullable)
+- `targetId` (nullable)
+- `metadata` (sanitized key-value map)
+
+Delivery policy for Milestone 2:
+
+- API request handling is fail-open relative to queue availability.
+- If publish fails, continue request processing, emit structured fallback logs, and increment a publish-failure metric.
+- Consumer persistence failures use bounded retries, then route to dead-letter queue.
+
+### 9.5 Pre-implementation decision checklist
+
+Before writing queue integration code, mark these as decided:
+
+- [ ] Final event schema version and required fields.
+- [ ] Sensitive-field redaction rules for `metadata`.
+- [ ] Queue publish timeout and retry policy.
+- [ ] Consumer retry count and backoff strategy.
+- [ ] Dead-letter triage process (who inspects and how often).
+- [ ] Metric names and alert thresholds for publish and consumer failures.
+- [ ] Local and devdocker credential rotation process for queue users.
+
 ---
 
 ## 10. Step 6 - Tests for Functional and Concurrency Behavior
@@ -424,6 +709,9 @@ Mark complete only when all checks are true:
 - [ ] Argon2id hash and verify paths are covered by tests.
 - [ ] Concurrency tests prove single success for redemption and duplicate username races.
 - [ ] Security audit events are persisted/emitted with safe metadata.
+- [ ] Asynchronous audit queue is configured with environment isolation and dead-letter handling.
+- [ ] Audit message schema version is documented and validated in tests.
+- [ ] Fail-open request behavior and dead-letter flow are covered by tests.
 - [ ] Postman artifacts are updated and validated.
 - [ ] `./mvnw clean verify` passes on Milestone 2 branch.
 
