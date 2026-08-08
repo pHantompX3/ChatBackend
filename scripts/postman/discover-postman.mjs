@@ -220,6 +220,228 @@ function buildPathArray(urlPath) {
     .map((segment) => toCollectionPathParam(segment));
 }
 
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+const endpointExampleTemplates = new Map([
+  [
+    "POST /api/v1/bootstrap/admin",
+    {
+      requestBody:
+        '{\n  "username": "Admin Root",\n  "password": "AdminPassw0rd!"\n}',
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: '{\n  "userId": "{{admin_user_id}}",\n  "username": "Admin Root"\n}',
+        },
+        {
+          name: "409 Conflict",
+          status: "Conflict",
+          code: 409,
+          body: '{\n  "type": "about:blank",\n  "title": "Bootstrap already completed",\n  "status": 409,\n  "detail": "Bootstrap already completed",\n  "code": "BOOTSTRAP_ALREADY_COMPLETED"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/invitations",
+    {
+      requestBody:
+        '{\n  "actorUserId": "{{admin_user_id}}",\n  "expiresAt": "2030-01-01T00:00:00Z"\n}',
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: '{\n  "invitationId": "{{invitation_id}}",\n  "invitationToken": "invite-token-abc123"\n}',
+        },
+        {
+          name: "403 Forbidden",
+          status: "Forbidden",
+          code: 403,
+          body: '{\n  "type": "about:blank",\n  "title": "Invitation actor forbidden",\n  "status": 403,\n  "detail": "Invitation actor forbidden",\n  "code": "INVITATION_ACTOR_FORBIDDEN"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/invitations/{invitationId}/revoke",
+    {
+      requestBody: '{\n  "actorUserId": "{{admin_user_id}}"\n}',
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
+        },
+        {
+          name: "404 Not Found",
+          status: "Not Found",
+          code: 404,
+          body: '{\n  "type": "about:blank",\n  "title": "Invitation not found",\n  "status": 404,\n  "detail": "Invitation not found",\n  "code": "INVITATION_NOT_FOUND"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/invitations/redeem",
+    {
+      requestBody:
+        '{\n  "invitationToken": "{{invitation_token}}",\n  "username": "member-user",\n  "password": "MemberPassw0rd!"\n}',
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: '{\n  "userId": "11111111-1111-1111-1111-111111111111",\n  "username": "member-user"\n}',
+        },
+        {
+          name: "422 Unprocessable Entity",
+          status: "Unprocessable Entity",
+          code: 422,
+          body: '{\n  "type": "about:blank",\n  "title": "Invitation revoked",\n  "status": 422,\n  "detail": "Invitation revoked",\n  "code": "INVITATION_REVOKED"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+]);
+
+function getEndpointTemplate(method, pathValue) {
+  const methodUpper = String(method || "").toUpperCase();
+  const normalizedPath = normalizePath(pathValue);
+  const direct = endpointExampleTemplates.get(`${methodUpper} ${normalizedPath}`);
+  if (direct) {
+    return direct;
+  }
+
+  const canonicalizeTemplatePath = (value) =>
+    normalizePath(value)
+      .replace(/\{\{[^}]+\}\}/g, "{param}")
+      .replace(/\{[^}]+\}/g, "{param}");
+
+  const canonicalPath = canonicalizeTemplatePath(normalizedPath);
+  for (const [templateKey, templateValue] of endpointExampleTemplates.entries()) {
+    const [templateMethod, ...templatePathParts] = templateKey.split(" ");
+    if (templateMethod !== methodUpper) {
+      continue;
+    }
+    const templatePath = templatePathParts.join(" ");
+    if (canonicalizeTemplatePath(templatePath) === canonicalPath) {
+      return templateValue;
+    }
+  }
+
+  return undefined;
+}
+
+function buildResponseExamples(endpoint, request, template) {
+  if (!template?.responses?.length) {
+    return [
+      {
+        name: "Example",
+        originalRequest: {
+          method: endpoint.method,
+          header: request.header,
+          body: request.body,
+          url: request.url,
+        },
+        status: "OK",
+        code: endpoint.method === "POST" ? 201 : 200,
+        _postman_previewlanguage: "json",
+        header: [{ key: "Content-Type", value: "application/json" }],
+        body: "{}",
+      },
+    ];
+  }
+
+  return template.responses.map((responseTemplate) => ({
+    name: responseTemplate.name,
+    originalRequest: {
+      method: endpoint.method,
+      header: request.header,
+      body: request.body,
+      url: request.url,
+    },
+    status: responseTemplate.status,
+    code: responseTemplate.code,
+    _postman_previewlanguage:
+      String(responseTemplate.body || "").trim().length > 0 ? "json" : undefined,
+    header:
+      responseTemplate.contentType === null
+        ? []
+        : [
+            {
+              key: "Content-Type",
+              value: responseTemplate.contentType || "application/json",
+            },
+          ],
+    body: responseTemplate.body,
+  }));
+}
+
+function buildFallbackRequestBody(endpoint) {
+  const normalizedPath = normalizePath(endpoint.path);
+
+  if (normalizedPath === "/api/v1/invitations") {
+    return '{\n  "actorUserId": "{{admin_user_id}}",\n  "expiresAt": "2030-01-01T00:00:00Z"\n}';
+  }
+  if (normalizedPath === "/api/v1/invitations/redeem") {
+    return '{\n  "invitationToken": "{{invitation_token}}",\n  "username": "member-user",\n  "password": "MemberPassw0rd!"\n}';
+  }
+  if (/\/api\/v1\/invitations\/\{[^/]+\}\/revoke$/.test(normalizedPath)) {
+    return '{\n  "actorUserId": "{{admin_user_id}}"\n}';
+  }
+  if (normalizedPath === "/api/v1/bootstrap/admin") {
+    return '{\n  "username": "Admin Root",\n  "password": "AdminPassw0rd!"\n}';
+  }
+  return '{\n  "exampleField": "replace_me"\n}';
+}
+
+function buildFallbackResponseExamples(endpoint, request) {
+  const successCode = 200;
+  const successBody = '{\n  "status": "ok"\n}';
+
+  return [
+    {
+      name: `${successCode} Example`,
+      originalRequest: {
+        method: endpoint.method,
+        header: request.header,
+        body: request.body,
+        url: request.url,
+      },
+      status: "OK",
+      code: successCode,
+      _postman_previewlanguage: "json",
+      header: [{ key: "Content-Type", value: "application/json" }],
+      body: successBody,
+    },
+  ];
+}
+
+function isEmptyJsonObjectBody(text) {
+  return String(text || "").trim() === "{}";
+}
+
+function hasMeaningfulResponseBodies(responses) {
+  if (!Array.isArray(responses) || responses.length === 0) {
+    return false;
+  }
+  return responses.some((response) => {
+    const bodyText = String(response?.body ?? "").trim();
+    return bodyText.length > 0 && bodyText !== "{}";
+  });
+}
+
 function canonicalizeRawUrl(rawUrl) {
   const text = String(rawUrl || "").trim();
   if (!text) {
@@ -269,15 +491,24 @@ function extractSourceGroupFromRequest(entry) {
   return "Misc";
 }
 
-function buildDefaultEvent(method) {
+function buildDefaultEvent(method, expectedStatusCodes = [200, 201]) {
+  const sortedCodes = Array.from(new Set(expectedStatusCodes)).sort((a, b) => a - b);
+  const hasSingleCode = sortedCodes.length === 1;
+  const expectationText = hasSingleCode
+    ? `pm.response.to.have.status(${sortedCodes[0]});`
+    : `pm.expect([${sortedCodes.join(", ")}]).to.include(pm.response.code);`;
+  const assertionTitle = hasSingleCode
+    ? `Status code is ${sortedCodes[0]}`
+    : `Status code is one of ${sortedCodes.join(", ")}`;
+
   return [
     {
       listen: "test",
       script: {
         type: "text/javascript",
         exec: [
-          "pm.test('Status code is 200 or 201', function () {",
-          "  pm.expect([200, 201]).to.include(pm.response.code);",
+          `pm.test('${assertionTitle}', function () {`,
+          `  ${expectationText}`,
           "});",
           "",
           "pm.test('Response is JSON when body is present', function () {",
@@ -309,11 +540,16 @@ function buildDiscoveredRequest(endpoint) {
     description: `Auto-discovered from ${endpoint.source}.`,
   };
 
+  const template = getEndpointTemplate(endpoint.method, endpoint.path);
+  const templateStatusCodes = Array.isArray(template?.responses)
+    ? template.responses.map((response) => response.code).filter(Number.isInteger)
+    : [];
+
   if (isWrite) {
     request.header.unshift({ key: "Content-Type", value: "application/json" });
     request.body = {
       mode: "raw",
-      raw: "{}",
+      raw: template?.requestBody || buildFallbackRequestBody(endpoint),
       options: {
         raw: { language: "json" },
       },
@@ -323,24 +559,72 @@ function buildDiscoveredRequest(endpoint) {
   return {
     name: `${endpoint.method} ${endpoint.path}`,
     request,
-    response: [
-      {
-        name: "Example",
-        originalRequest: {
-          method: endpoint.method,
-          header: request.header,
-          body: request.body,
-          url: request.url,
-        },
-        status: "OK",
-        code: endpoint.method === "POST" ? 201 : 200,
-        _postman_previewlanguage: "json",
-        header: [{ key: "Content-Type", value: "application/json" }],
-        body: "{}",
-      },
-    ],
-    event: buildDefaultEvent(endpoint.method),
+    response:
+      template?.responses?.length > 0
+        ? buildResponseExamples(endpoint, request, template)
+        : buildFallbackResponseExamples(endpoint, request),
+    event: buildDefaultEvent(endpoint.method, templateStatusCodes),
   };
+}
+
+function applyEndpointTemplatesToExistingRequests(collection) {
+  const allRequests = collectRequests(collection);
+  let updatedCount = 0;
+
+  for (const requestItem of allRequests) {
+    const requestMethod = String(
+      requestItem?.request?.method || "",
+    ).toUpperCase();
+    const requestPath = extractPathFromRawUrl(requestItem?.request?.url?.raw);
+    const endpoint = { method: requestMethod, path: requestPath };
+    const template = getEndpointTemplate(requestMethod, requestPath);
+    const isDiscovered = String(requestItem?.request?.description || "").includes(
+      "Auto-discovered from ",
+    );
+
+    if (!isDiscovered) {
+      continue;
+    }
+
+    let changed = false;
+
+    if (requestItem?.request?.body?.mode === "raw") {
+      const currentBody = String(requestItem.request.body.raw || "");
+      const nextBody = template?.requestBody || buildFallbackRequestBody(endpoint);
+      if (isEmptyJsonObjectBody(currentBody) || template?.requestBody) {
+        requestItem.request.body.raw = nextBody;
+        changed = true;
+      }
+      if (!requestItem.request.body.options) {
+        requestItem.request.body.options = { raw: { language: "json" } };
+        changed = true;
+      }
+    }
+
+    if (!Array.isArray(requestItem.response) || requestItem.response.length === 0) {
+      requestItem.response = buildFallbackResponseExamples(endpoint, requestItem.request);
+      changed = true;
+    }
+
+    if (template?.responses?.length > 0) {
+      requestItem.response = buildResponseExamples(endpoint, requestItem.request, template);
+      const templateStatusCodes = template.responses
+        .map((response) => response.code)
+        .filter(Number.isInteger);
+      requestItem.event = buildDefaultEvent(requestMethod, templateStatusCodes);
+      changed = true;
+    } else if (!hasMeaningfulResponseBodies(requestItem.response)) {
+      requestItem.response = buildFallbackResponseExamples(endpoint, requestItem.request);
+      changed = true;
+    }
+
+    if (changed) {
+      requestItem.response = cloneJson(requestItem.response);
+      updatedCount += 1;
+    }
+  }
+
+  return updatedCount;
 }
 
 function buildHealthTemplate(name, rawPath, description, testName) {
@@ -571,12 +855,14 @@ function run() {
     collection,
     discoveredEndpoints,
   );
+  const templatedCount = applyEndpointTemplatesToExistingRequests(collection);
 
   if (
     healthAdded === 0 &&
     addedCount === 0 &&
     movedCount === 0 &&
-    cleanedCount === 0
+    cleanedCount === 0 &&
+    templatedCount === 0
   ) {
     console.log("Postman discovery completed: no collection changes needed.");
     return;
@@ -584,7 +870,7 @@ function run() {
 
   writeJson(collectionPath, collection);
   console.log(
-    `Postman discovery completed: added ${healthAdded} protected health request(s), added ${addedCount} discovered API request(s), moved ${movedCount} discovered request(s) into domain folders, cleaned ${cleanedCount} duplicate/stale discovered request(s).`,
+    `Postman discovery completed: added ${healthAdded} protected health request(s), added ${addedCount} discovered API request(s), moved ${movedCount} discovered request(s) into domain folders, cleaned ${cleanedCount} duplicate/stale discovered request(s), refreshed ${templatedCount} endpoint example template(s).`,
   );
 }
 
