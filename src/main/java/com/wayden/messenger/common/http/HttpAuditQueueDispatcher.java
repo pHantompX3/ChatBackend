@@ -12,6 +12,7 @@ import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +33,7 @@ public class HttpAuditQueueDispatcher {
   private final String rabbitHost;
   private final int rabbitPort;
   private final String rabbitUsername;
-  private final String rabbitPassword;
+  private final Optional<String> rabbitPassword;
   private final String rabbitVhost;
   private final String rabbitExchange;
   private final String rabbitRoutingKey;
@@ -69,8 +70,7 @@ public class HttpAuditQueueDispatcher {
       @ConfigProperty(name = "chat.audit.rabbitmq.port", defaultValue = "5672") int rabbitPort,
       @ConfigProperty(name = "chat.audit.rabbitmq.username", defaultValue = "wl_chat_queue")
           String rabbitUsername,
-      @ConfigProperty(name = "chat.audit.rabbitmq.password", defaultValue = "")
-          String rabbitPassword,
+      @ConfigProperty(name = "chat.audit.rabbitmq.password") Optional<String> rabbitPassword,
       @ConfigProperty(name = "chat.audit.rabbitmq.vhost", defaultValue = "/") String rabbitVhost,
       @ConfigProperty(name = "chat.audit.rabbitmq.exchange", defaultValue = "audit.events")
           String rabbitExchange,
@@ -115,7 +115,7 @@ public class HttpAuditQueueDispatcher {
         "localhost",
         5672,
         "wl_chat_queue",
-        "",
+        Optional.empty(),
         "/",
         "audit.events",
         "audit.completed",
@@ -201,7 +201,8 @@ public class HttpAuditQueueDispatcher {
   }
 
   private boolean initializeRabbit() {
-    if (rabbitPassword == null || rabbitPassword.isBlank()) {
+    String password = rabbitPassword.map(String::trim).orElse("");
+    if (password.isBlank()) {
       LOG.warn(
           "RabbitMQ audit transport enabled but password is empty; falling back to local mode");
       return false;
@@ -212,7 +213,7 @@ public class HttpAuditQueueDispatcher {
       factory.setHost(rabbitHost);
       factory.setPort(rabbitPort);
       factory.setUsername(rabbitUsername);
-      factory.setPassword(rabbitPassword);
+      factory.setPassword(password);
       factory.setVirtualHost(rabbitVhost);
       rabbitConnection = factory.newConnection("chat-backend-audit");
       rabbitPublishChannel = rabbitConnection.createChannel();
