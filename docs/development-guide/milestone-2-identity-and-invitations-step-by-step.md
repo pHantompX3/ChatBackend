@@ -194,6 +194,180 @@ Add baseline audit table for security events in `audit` schema with:
 
 Do not persist raw passwords, raw invitation tokens, or full private message bodies.
 
+### 5.4 Exact SQL definition for Milestone 2 audit table
+
+Use this as the baseline DDL for the audit migration file (`V20260808121000__create_audit_security_event.sql`).
+
+```sql
+IF SCHEMA_ID(N'audit') IS NULL
+  EXEC(N'CREATE SCHEMA audit AUTHORIZATION dbo');
+
+CREATE TABLE audit.http_audit_event (
+  event_id UNIQUEIDENTIFIER NOT NULL,
+  schema_version NVARCHAR(16) NOT NULL,
+  event_type NVARCHAR(120) NOT NULL,
+  occurred_at DATETIME2(7) NOT NULL,
+
+  request_id NVARCHAR(80) NOT NULL,
+  trace_id NVARCHAR(80) NULL,
+  operation NVARCHAR(200) NOT NULL,
+  method VARCHAR(12) NOT NULL,
+  route_template NVARCHAR(300) NULL,
+  path NVARCHAR(2048) NOT NULL,
+  query NVARCHAR(2048) NULL,
+
+  response_status INT NOT NULL,
+  response_code NVARCHAR(120) NULL,
+  duration_ms BIGINT NOT NULL,
+  request_timestamp DATETIME2(7) NOT NULL,
+  response_timestamp DATETIME2(7) NOT NULL,
+
+  actor_user_id UNIQUEIDENTIFIER NULL,
+  actor_username NVARCHAR(160) NULL,
+  actor_auth_type NVARCHAR(40) NULL,
+
+  target_type NVARCHAR(120) NULL,
+  target_id NVARCHAR(120) NULL,
+
+  source_ip VARCHAR(45) NULL,
+  remote_ip VARCHAR(45) NULL,
+  ip_resolution_source NVARCHAR(40) NULL,
+
+  user_agent NVARCHAR(1024) NULL,
+  device_type NVARCHAR(40) NULL,
+  device_platform NVARCHAR(80) NULL,
+  device_model NVARCHAR(120) NULL,
+  os_family NVARCHAR(80) NULL,
+  browser_family NVARCHAR(80) NULL,
+
+  request_headers NVARCHAR(MAX) NULL,
+  response_headers NVARCHAR(MAX) NULL,
+
+  error_code NVARCHAR(120) NULL,
+  error_message NVARCHAR(256) NULL,
+
+  metadata NVARCHAR(MAX) NULL,
+  record_hash VARBINARY(32) NOT NULL,
+
+  created_at DATETIME2(7) NOT NULL
+    CONSTRAINT df_http_audit_event_created_at DEFAULT SYSUTCDATETIME(),
+
+  CONSTRAINT pk_http_audit_event
+    PRIMARY KEY NONCLUSTERED (event_id),
+
+  CONSTRAINT ck_http_audit_event_schema_version
+    CHECK (LEN(TRIM(schema_version)) > 0),
+
+  CONSTRAINT ck_http_audit_event_event_type
+    CHECK (LEN(TRIM(event_type)) > 0),
+
+  CONSTRAINT ck_http_audit_event_method
+    CHECK (method IN ('GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS')),
+
+  CONSTRAINT ck_http_audit_event_response_status
+    CHECK (response_status BETWEEN 100 AND 599),
+
+  CONSTRAINT ck_http_audit_event_duration_ms
+    CHECK (duration_ms >= 0),
+
+  CONSTRAINT ck_http_audit_event_response_time
+    CHECK (response_timestamp >= request_timestamp),
+
+  CONSTRAINT ck_http_audit_event_request_headers_json
+    CHECK (request_headers IS NULL OR ISJSON(request_headers) = 1),
+
+  CONSTRAINT ck_http_audit_event_response_headers_json
+    CHECK (response_headers IS NULL OR ISJSON(response_headers) = 1),
+
+  CONSTRAINT ck_http_audit_event_metadata_json
+    CHECK (metadata IS NULL OR ISJSON(metadata) = 1),
+
+  CONSTRAINT fk_http_audit_event_actor_user
+    FOREIGN KEY (actor_user_id)
+    REFERENCES identity.user_account(id)
+);
+
+CREATE UNIQUE CLUSTERED INDEX cix_http_audit_event_occurred_at
+  ON audit.http_audit_event (occurred_at, event_id);
+
+CREATE INDEX ix_http_audit_event_request_id
+  ON audit.http_audit_event (request_id);
+
+CREATE INDEX ix_http_audit_event_trace_id
+  ON audit.http_audit_event (trace_id)
+  WHERE trace_id IS NOT NULL;
+
+CREATE INDEX ix_http_audit_event_actor_user
+  ON audit.http_audit_event (actor_user_id, occurred_at)
+  WHERE actor_user_id IS NOT NULL;
+
+CREATE INDEX ix_http_audit_event_event_type
+  ON audit.http_audit_event (event_type, occurred_at);
+
+CREATE INDEX ix_http_audit_event_source_ip
+  ON audit.http_audit_event (source_ip, occurred_at)
+  WHERE source_ip IS NOT NULL;
+```
+
+### 5.5 Exact companion GRANT statements (migrator + runtime)
+
+Use the following SQL after table creation to apply least-privilege permissions for migrator and runtime users.
+
+```sql
+/*
+  Replace login/user names if your environment uses different principal names.
+  Defaults in this guide:
+    migrator: messenger_migrator
+    runtime : wl_chat_app
+*/
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'messenger_migrator')
+    CREATE USER [messenger_migrator] FOR LOGIN [messenger_migrator];
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'wl_chat_app')
+    CREATE USER [wl_chat_app] FOR LOGIN [wl_chat_app];
+
+/* Runtime permissions: insert/read only, append-only enforced */
+GRANT INSERT ON audit.http_audit_event TO [wl_chat_app];
+GRANT SELECT ON audit.http_audit_event TO [wl_chat_app];
+DENY UPDATE ON audit.http_audit_event TO [wl_chat_app];
+DENY DELETE ON audit.http_audit_event TO [wl_chat_app];
+
+/* Migrator permissions: read-only verification on target table */
+GRANT SELECT ON audit.http_audit_event TO [messenger_migrator];
+
+/* Optional hardening for runtime role scope within audit schema */
+DENY ALTER ON SCHEMA::audit TO [wl_chat_app];
+DENY CONTROL ON SCHEMA::audit TO [wl_chat_app];
+```
+
+Permission verification query:
+
+```sql
+SELECT
+    pr.name AS principal_name,
+    pe.state_desc,
+    pe.permission_name,
+    OBJECT_SCHEMA_NAME(pe.major_id) AS schema_name,
+    OBJECT_NAME(pe.major_id) AS object_name
+FROM sys.database_permissions pe
+JOIN sys.database_principals pr ON pe.grantee_principal_id = pr.principal_id
+WHERE pr.name IN (N'messenger_migrator', N'wl_chat_app')
+  AND (
+      OBJECT_NAME(pe.major_id) = N'http_audit_event'
+      OR pe.class_desc = 'SCHEMA'
+  )
+ORDER BY pr.name, pe.permission_name;
+```
+
+Notes for implementation alignment:
+
+- Persist `request_headers`, `response_headers`, and `metadata` as sanitized JSON text.
+- Keep `error_message` sanitized and bounded to 256 characters.
+- Compute `record_hash` from a canonicalized event payload before insert.
+- Keep the table append-only for application roles (no update/delete grants).
+- If your user table name differs from `identity.user_account`, update `fk_http_audit_event_actor_user` to match the final user table name from migration step 5.1.
+
 ---
 
 ## 6. Step 2 - Implement Identity Domain and Application Services
