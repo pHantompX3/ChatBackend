@@ -15,6 +15,7 @@
 - Database: Microsoft SQL Server 2022
 - Active local database name: `wl_chat`
 - Active app login: `wl_chat_app`
+- Audit transport: RabbitMQ-backed delivery is optional; if the audit transport is not configured, the app falls back to local async persistence and still boots cleanly
 
 ## Environment Model
 
@@ -67,6 +68,13 @@ WL_CHAT_QUEUE_PORT=5672
 WL_CHAT_QUEUE_MGMT_PORT=15672
 WL_CHAT_QUEUE_HOST_IP=0.0.0.0
 WL_CHAT_QUEUE_MGMT_HOST_IP=127.0.0.1
+
+# Optional RabbitMQ-backed audit transport
+WL_CHAT_AUDIT_RABBITMQ_ENABLED=true
+WL_CHAT_AUDIT_RABBITMQ_HOST=queue-dev
+WL_CHAT_AUDIT_RABBITMQ_PORT=5672
+WL_CHAT_AUDIT_RABBITMQ_USERNAME=wl_chat_queue
+WL_CHAT_AUDIT_RABBITMQ_PASSWORD=replace_with_audit_password
 ```
 
 Notes:

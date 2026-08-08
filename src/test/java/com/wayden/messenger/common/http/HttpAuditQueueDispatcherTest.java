@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -87,6 +88,41 @@ final class HttpAuditQueueDispatcherTest {
       releaseSink.countDown();
       dispatcher.shutdown();
     }
+  }
+
+  @Test
+  void startShouldRetryRabbitConnectionUntilAvailable() throws Exception {
+    AtomicInteger initializationAttempts = new AtomicInteger();
+    CountDownLatch connectionSucceeded = new CountDownLatch(1);
+
+    HttpAuditQueueDispatcher dispatcher =
+        new HttpAuditQueueDispatcher(
+            event -> {},
+            (event, exception) -> {},
+            false,
+            8,
+            () -> {
+              int attempt = initializationAttempts.incrementAndGet();
+              if (attempt >= 2) {
+                connectionSucceeded.countDown();
+                return true;
+              }
+              return false;
+            });
+
+    dispatcher.start();
+    try {
+      assertTrue(connectionSucceeded.await(3, TimeUnit.SECONDS));
+      assertTrue(isRabbitActive(dispatcher));
+    } finally {
+      dispatcher.shutdown();
+    }
+  }
+
+  private static boolean isRabbitActive(HttpAuditQueueDispatcher dispatcher) throws Exception {
+    Field rabbitActiveField = HttpAuditQueueDispatcher.class.getDeclaredField("rabbitActive");
+    rabbitActiveField.setAccessible(true);
+    return rabbitActiveField.getBoolean(dispatcher);
   }
 
   private static HttpAuditEvent sampleEvent() {

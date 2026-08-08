@@ -6,7 +6,7 @@
 **Milestone:** 2 - Identity and invitations  
 **Database:** Microsoft SQL Server 2022  
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven  
-**Status:** Planned implementation guide  
+**Status:** Completed and verified in CI  
 **Last reviewed:** 2026-08-08
 
 ---
@@ -25,6 +25,12 @@ This milestone is complete only when the project can:
 6. emit security audit events without leaking sensitive values.
 
 Milestone 2 does not include session token lifecycle (Milestone 3), conversations (Milestone 4), or messaging behavior (Milestone 5).
+
+Current implementation status:
+
+- The milestone 2 feature set is implemented and verified in CI.
+- Quarkus now starts successfully even when the RabbitMQ-backed audit transport is not configured with a password; the dispatcher falls back to local async persistence instead of aborting startup.
+- The GitHub Actions workflow validates startup, Flyway migration, and health/integration test behavior end to end.
 
 Milestone 3 handoff note:
 
@@ -98,11 +104,17 @@ Prepare local secrets if needed:
 cp -n scripts/config/local.secrets.env.example scripts/config/local.secrets.env
 ```
 
-For queue-enabled runs, also define RabbitMQ admin credentials in local secrets:
+For queue-enabled runs, define the audit transport settings in local secrets when you want RabbitMQ-backed delivery:
 
 ```dotenv
-RABBITMQ_ADMIN_PASSWORD=<strong-admin-password>
+WL_CHAT_AUDIT_RABBITMQ_ENABLED=true
+WL_CHAT_AUDIT_RABBITMQ_HOST=queue-dev
+WL_CHAT_AUDIT_RABBITMQ_PORT=5672
+WL_CHAT_AUDIT_RABBITMQ_USERNAME=wl_chat_queue
+WL_CHAT_AUDIT_RABBITMQ_PASSWORD=<strong-password>
 ```
+
+If the password is omitted or blank, the application still starts and falls back to local async persistence instead of failing boot.
 
 Work only on a feature branch. Do not push directly to `main`.
 

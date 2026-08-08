@@ -21,6 +21,7 @@
 /Users/x3phantonpx3/Documents/ChatBE/ChatBackend/src/main/java/com/wayden/messenger/identity/api/CreateInvitationRequest.java
 /Users/x3phantonpx3/Documents/ChatBE/ChatBackend/src/main/java/com/wayden/messenger/identity/api/CreateInvitationResponse.java
 /Users/x3phantonpx3/Documents/ChatBE/ChatBackend/src/main/java/com/wayden/messenger/identity/api/IdentityExceptionMapper.java
+/Users/x3phantonpx3/Documents/ChatBE/ChatBackend/src/main/java/com/wayden/messenger/identity/api/IdentityValidationExceptionMapper.java
 /Users/x3phantonpx3/Documents/ChatBE/ChatBackend/src/main/java/com/wayden/messenger/identity/api/InvitationResource.java
 /Users/x3phantonpx3/Documents/ChatBE/ChatBackend/src/main/java/com/wayden/messenger/identity/api/RedeemInvitationRequest.java
 /Users/x3phantonpx3/Documents/ChatBE/ChatBackend/src/main/java/com/wayden/messenger/identity/api/RedeemInvitationResponse.java

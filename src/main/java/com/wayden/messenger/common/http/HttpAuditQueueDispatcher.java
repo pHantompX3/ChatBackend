@@ -6,7 +6,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -16,6 +15,7 @@ import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -41,20 +41,19 @@ public class HttpAuditQueueDispatcher {
   private final boolean rabbitConsumerEnabled;
   private final int rabbitPrefetch;
 
+  private final BooleanSupplier rabbitInitializer;
+
   private volatile boolean running;
   private volatile boolean rabbitActive;
   private BlockingQueue<HttpAuditEvent> localQueue;
   private Thread localWorkerThread;
   private Thread rabbitConsumerThread;
+  private Thread rabbitRetryThread;
   private Connection rabbitConnection;
   private Channel rabbitPublishChannel;
   private Channel rabbitConsumeChannel;
 
   @Inject
-  @SuppressFBWarnings(
-      value = "EI_EXPOSE_REP2",
-      justification =
-          "ObjectMapper is a CDI-managed singleton dependency intentionally shared across components.")
   public HttpAuditQueueDispatcher(
       HttpAuditEventSink eventSink,
       HttpAuditDeadLetterHandler deadLetterHandler,
@@ -82,6 +81,44 @@ public class HttpAuditQueueDispatcher {
           boolean rabbitConsumerEnabled,
       @ConfigProperty(name = "chat.audit.rabbitmq.consumer.prefetch", defaultValue = "25")
           int rabbitPrefetch) {
+    this(
+        eventSink,
+        deadLetterHandler,
+        objectMapper,
+        asyncEnabled,
+        queueCapacity,
+        rabbitEnabled,
+        rabbitHost,
+        rabbitPort,
+        rabbitUsername,
+        rabbitPassword,
+        rabbitVhost,
+        rabbitExchange,
+        rabbitRoutingKey,
+        rabbitQueue,
+        rabbitConsumerEnabled,
+        rabbitPrefetch,
+        null);
+  }
+
+  private HttpAuditQueueDispatcher(
+      HttpAuditEventSink eventSink,
+      HttpAuditDeadLetterHandler deadLetterHandler,
+      ObjectMapper objectMapper,
+      boolean asyncEnabled,
+      int queueCapacity,
+      boolean rabbitEnabled,
+      String rabbitHost,
+      int rabbitPort,
+      String rabbitUsername,
+      Optional<String> rabbitPassword,
+      String rabbitVhost,
+      String rabbitExchange,
+      String rabbitRoutingKey,
+      String rabbitQueue,
+      boolean rabbitConsumerEnabled,
+      int rabbitPrefetch,
+      BooleanSupplier rabbitInitializer) {
     this.eventSink = eventSink;
     this.deadLetterHandler = deadLetterHandler;
     this.objectMapper = objectMapper;
@@ -98,6 +135,7 @@ public class HttpAuditQueueDispatcher {
     this.rabbitQueue = rabbitQueue;
     this.rabbitConsumerEnabled = rabbitConsumerEnabled;
     this.rabbitPrefetch = rabbitPrefetch;
+    this.rabbitInitializer = rabbitInitializer == null ? this::initializeRabbit : rabbitInitializer;
   }
 
   HttpAuditQueueDispatcher(
@@ -121,29 +159,55 @@ public class HttpAuditQueueDispatcher {
         "audit.completed",
         "audit.events",
         false,
-        25);
+        25,
+        null);
+  }
+
+  HttpAuditQueueDispatcher(
+      HttpAuditEventSink eventSink,
+      HttpAuditDeadLetterHandler deadLetterHandler,
+      boolean asyncEnabled,
+      int queueCapacity,
+      BooleanSupplier rabbitInitializer) {
+    this(
+        eventSink,
+        deadLetterHandler,
+        new ObjectMapper(),
+        asyncEnabled,
+        queueCapacity,
+        true,
+        "localhost",
+        5672,
+        "wl_chat_queue",
+        Optional.empty(),
+        "/",
+        "audit.events",
+        "audit.completed",
+        "audit.events",
+        false,
+        25,
+        rabbitInitializer);
   }
 
   @PostConstruct
   void start() {
     running = true;
-    if (rabbitEnabled && initializeRabbit()) {
-      rabbitActive = true;
-      if (rabbitConsumerEnabled) {
-        startRabbitConsumer();
+    if (rabbitEnabled) {
+      if (rabbitInitializer.getAsBoolean()) {
+        rabbitActive = true;
+        if (rabbitConsumerEnabled) {
+          startRabbitConsumer();
+        }
+        LOG.infof(
+            "HTTP audit RabbitMQ transport enabled host=%s port=%d exchange=%s queue=%s",
+            rabbitHost, rabbitPort, rabbitExchange, rabbitQueue);
+      } else {
+        startRabbitRetryLoop();
       }
-      LOG.infof(
-          "HTTP audit RabbitMQ transport enabled host=%s port=%d exchange=%s queue=%s",
-          rabbitHost, rabbitPort, rabbitExchange, rabbitQueue);
-      return;
     }
 
     if (asyncEnabled) {
-      localQueue = new LinkedBlockingQueue<>(queueCapacity);
-      localWorkerThread = new Thread(this::runLocalWorker, "http-audit-dispatcher");
-      localWorkerThread.setDaemon(true);
-      localWorkerThread.start();
-      LOG.infof("HTTP audit local async dispatcher started capacity=%d", queueCapacity);
+      startLocalWorker();
     }
   }
 
@@ -182,7 +246,23 @@ public class HttpAuditQueueDispatcher {
         Thread.currentThread().interrupt();
       }
     }
+    if (rabbitRetryThread != null) {
+      rabbitRetryThread.interrupt();
+      try {
+        rabbitRetryThread.join(500L);
+      } catch (InterruptedException interruptedException) {
+        Thread.currentThread().interrupt();
+      }
+    }
     closeRabbitResources();
+  }
+
+  private void startLocalWorker() {
+    localQueue = new LinkedBlockingQueue<>(queueCapacity);
+    localWorkerThread = new Thread(this::runLocalWorker, "http-audit-dispatcher");
+    localWorkerThread.setDaemon(true);
+    localWorkerThread.start();
+    LOG.infof("HTTP audit local async dispatcher started capacity=%d", queueCapacity);
   }
 
   private void runLocalWorker() {
@@ -196,6 +276,45 @@ public class HttpAuditQueueDispatcher {
       } catch (InterruptedException interruptedException) {
         Thread.currentThread().interrupt();
         break;
+      }
+    }
+  }
+
+  private void startRabbitRetryLoop() {
+    if (rabbitRetryThread != null && rabbitRetryThread.isAlive()) {
+      return;
+    }
+    rabbitRetryThread = new Thread(this::runRabbitRetryLoop, "http-audit-rabbit-retry");
+    rabbitRetryThread.setDaemon(true);
+    rabbitRetryThread.start();
+  }
+
+  private void runRabbitRetryLoop() {
+    while (running && rabbitEnabled && !rabbitActive) {
+      try {
+        if (rabbitInitializer.getAsBoolean()) {
+          rabbitActive = true;
+          if (rabbitConsumerEnabled
+              && (rabbitConsumerThread == null || !rabbitConsumerThread.isAlive())) {
+            startRabbitConsumer();
+          }
+          LOG.infof(
+              "HTTP audit RabbitMQ transport enabled host=%s port=%d exchange=%s queue=%s",
+              rabbitHost, rabbitPort, rabbitExchange, rabbitQueue);
+          return;
+        }
+        TimeUnit.SECONDS.sleep(2L);
+      } catch (InterruptedException interruptedException) {
+        Thread.currentThread().interrupt();
+        return;
+      } catch (Exception exception) {
+        LOG.warn("Failed to initialize RabbitMQ audit transport; will retry", exception);
+        try {
+          TimeUnit.SECONDS.sleep(2L);
+        } catch (InterruptedException interruptedException) {
+          Thread.currentThread().interrupt();
+          return;
+        }
       }
     }
   }

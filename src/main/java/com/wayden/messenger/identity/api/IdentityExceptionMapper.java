@@ -1,6 +1,7 @@
 package com.wayden.messenger.identity.api;
 
 import com.wayden.messenger.identity.application.IdentityExceptions;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -12,6 +13,10 @@ public class IdentityExceptionMapper implements ExceptionMapper<RuntimeException
 
   @Override
   public Response toResponse(RuntimeException exception) {
+    if (exception instanceof BadRequestException badRequestException) {
+      return problem(
+          400, "Validation failed", "VALIDATION_ERROR", badRequestException.getMessage());
+    }
     if (exception instanceof WebApplicationException webApplicationException) {
       return webApplicationException.getResponse();
     }

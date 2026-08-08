@@ -17,6 +17,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +32,7 @@ public class InvitationResource {
   @POST
   @AuditOperation("identity.invitation.create")
   public CreateInvitationResponse createInvitation(@Valid CreateInvitationRequest request) {
+    validateCreateInvitationRequest(request);
     var result =
         invitationService.createInvitation(
             new CreateInvitationCommand(parseUserId(request.actorUserId()), request.expiresAt()));
@@ -43,6 +45,7 @@ public class InvitationResource {
   @AuditOperation("identity.invitation.revoke")
   public void revokeInvitation(
       @PathParam("invitationId") String invitationId, @Valid RevokeInvitationRequest request) {
+    validateRevokeInvitationRequest(request);
     invitationService.revokeInvitation(
         new RevokeInvitationCommand(
             parseInvitationId(invitationId), parseUserId(request.actorUserId())));
@@ -52,12 +55,52 @@ public class InvitationResource {
   @Path("/redeem")
   @AuditOperation("identity.invitation.redeem")
   public RedeemInvitationResponse redeemInvitation(@Valid RedeemInvitationRequest request) {
+    validateRedeemInvitationRequest(request);
     var result =
         invitationService.redeemInvitation(
             new RedeemInvitationCommand(
                 request.invitationToken(), request.username(), request.password()));
 
     return new RedeemInvitationResponse(result.userId().value(), result.username());
+  }
+
+  private static void validateCreateInvitationRequest(CreateInvitationRequest request) {
+    if (request == null) {
+      throw new BadRequestException("Request body must not be empty");
+    }
+    if (request.actorUserId() == null || request.actorUserId().isBlank()) {
+      throw new BadRequestException("actorUserId must not be blank");
+    }
+    if (request.expiresAt() == null) {
+      throw new BadRequestException("expiresAt must not be null");
+    }
+    if (!request.expiresAt().isAfter(Instant.now())) {
+      throw new BadRequestException("expiresAt must be in the future");
+    }
+  }
+
+  private static void validateRevokeInvitationRequest(RevokeInvitationRequest request) {
+    if (request == null) {
+      throw new BadRequestException("Request body must not be empty");
+    }
+    if (request.actorUserId() == null || request.actorUserId().isBlank()) {
+      throw new BadRequestException("actorUserId must not be blank");
+    }
+  }
+
+  private static void validateRedeemInvitationRequest(RedeemInvitationRequest request) {
+    if (request == null) {
+      throw new BadRequestException("Request body must not be empty");
+    }
+    if (request.invitationToken() == null || request.invitationToken().isBlank()) {
+      throw new BadRequestException("invitationToken must not be blank");
+    }
+    if (request.username() == null || request.username().isBlank()) {
+      throw new BadRequestException("username must not be blank");
+    }
+    if (request.password() == null || request.password().isBlank()) {
+      throw new BadRequestException("password must not be blank");
+    }
   }
 
   private static UserId parseUserId(String raw) {

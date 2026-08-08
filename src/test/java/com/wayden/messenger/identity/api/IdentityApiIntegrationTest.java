@@ -221,6 +221,26 @@ final class IdentityApiIntegrationTest {
   }
 
   @Test
+  void createInvitationWithPastExpiryShouldBeRejected() {
+    String adminUserId = bootstrapAdmin("Admin Owner Past");
+
+    given()
+        .contentType(ContentType.JSON)
+        .body(
+            Map.of(
+                "actorUserId",
+                adminUserId,
+                "expiresAt",
+                Instant.now().minus(1, ChronoUnit.MINUTES).toString()))
+        .when()
+        .post("/api/v1/invitations")
+        .then()
+        .statusCode(400)
+        .contentType(startsWith("application/problem+json"))
+        .body("code", equalTo("VALIDATION_ERROR"));
+  }
+
+  @Test
   void createInvitationWithUnknownActorShouldReturnForbidden() {
     bootstrapAdmin("Admin Owner Six");
 
