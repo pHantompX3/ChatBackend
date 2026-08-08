@@ -50,14 +50,8 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/ping",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "ping"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ping"]
             },
             "description": "Returns service reachability status from PingResource."
           },
@@ -74,14 +68,8 @@
                 ],
                 "url": {
                   "raw": "{{base_url}}/api/v1/ping",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "ping"
-                  ]
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "ping"]
                 }
               },
               "status": "OK",
@@ -130,14 +118,8 @@
             ],
             "url": {
               "raw": "{{base_url}}/q/health/live",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "q",
-                "health",
-                "live"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["q", "health", "live"]
             },
             "description": "Quarkus liveness endpoint. Indicates process is alive."
           },
@@ -154,14 +136,8 @@
                 ],
                 "url": {
                   "raw": "{{base_url}}/q/health/live",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "q",
-                    "health",
-                    "live"
-                  ]
+                  "host": ["{{base_url}}"],
+                  "path": ["q", "health", "live"]
                 }
               },
               "status": "OK",
@@ -210,14 +186,8 @@
             ],
             "url": {
               "raw": "{{base_url}}/q/health/ready",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "q",
-                "health",
-                "ready"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["q", "health", "ready"]
             },
             "description": "Quarkus readiness endpoint. Includes DB connectivity readiness checks."
           },
@@ -234,14 +204,8 @@
                 ],
                 "url": {
                   "raw": "{{base_url}}/q/health/ready",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "q",
-                    "health",
-                    "ready"
-                  ]
+                  "host": ["{{base_url}}"],
+                  "path": ["q", "health", "ready"]
                 }
               },
               "status": "OK",
@@ -290,13 +254,8 @@
             ],
             "url": {
               "raw": "{{base_url}}/q/health",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "q",
-                "health"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["q", "health"]
             },
             "description": "Quarkus aggregate health endpoint (includes readiness/liveness summary)."
           },
@@ -313,13 +272,8 @@
                 ],
                 "url": {
                   "raw": "{{base_url}}/q/health",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "q",
-                    "health"
-                  ]
+                  "host": ["{{base_url}}"],
+                  "path": ["q", "health"]
                 }
               },
               "status": "OK",
@@ -387,14 +341,8 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/messages",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "messages"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "messages"]
             },
             "description": "Creates a message in a conversation and returns the created message payload."
           },
@@ -419,14 +367,8 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/messages",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "messages"
-                  ]
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "messages"]
                 }
               },
               "status": "OK",
@@ -477,9 +419,7 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages?limit={{message_limit}}",
-              "host": [
-                "{{base_url}}"
-              ],
+              "host": ["{{base_url}}"],
               "path": [
                 "api",
                 "v1",
@@ -516,9 +456,7 @@
                 ],
                 "url": {
                   "raw": "{{base_url}}/api/v1/conversations/conversation-123/messages?limit=50",
-                  "host": [
-                    "{{base_url}}"
-                  ],
+                  "host": ["{{base_url}}"],
                   "path": [
                     "api",
                     "v1",
@@ -590,17 +528,10 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/bootstrap/admin",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "bootstrap",
-                "admin"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bootstrap", "admin"]
             },
-            "description": "Auto-discovered from src/main/java/com/wayden/messenger/identity/api/AdminResource.java.",
+            "description": "Create the initial administrator account. Requires username and password. Auto-discovered from src/main/java/com/wayden/messenger/identity/api/AdminResource.java.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"Admin Root\",\n  \"password\": \"AdminPassw0rd!\"\n}",
@@ -637,15 +568,8 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/bootstrap/admin",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "bootstrap",
-                    "admin"
-                  ]
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "bootstrap", "admin"]
                 }
               },
               "status": "OK",
@@ -684,15 +608,8 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/bootstrap/admin",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "bootstrap",
-                    "admin"
-                  ]
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "bootstrap", "admin"]
                 }
               },
               "status": "Conflict",
@@ -752,16 +669,10 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/invitations",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "invitations"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "invitations"]
             },
-            "description": "Auto-discovered from src/main/java/com/wayden/messenger/identity/api/InvitationResource.java.",
+            "description": "Create an invitation. Requires actorUserId and expiresAt. Auto-discovered from src/main/java/com/wayden/messenger/identity/api/InvitationResource.java.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"actorUserId\": \"{{admin_user_id}}\",\n  \"expiresAt\": \"2030-01-01T00:00:00Z\"\n}",
@@ -798,14 +709,8 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/invitations",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "invitations"
-                  ]
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "invitations"]
                 }
               },
               "status": "OK",
@@ -844,14 +749,8 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/invitations",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "invitations"
-                  ]
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "invitations"]
                 }
               },
               "status": "Forbidden",
@@ -905,9 +804,7 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/invitations/{{invitation_id}}/revoke",
-              "host": [
-                "{{base_url}}"
-              ],
+              "host": ["{{base_url}}"],
               "path": [
                 "api",
                 "v1",
@@ -916,7 +813,7 @@
                 "revoke"
               ]
             },
-            "description": "Auto-discovered from src/main/java/com/wayden/messenger/identity/api/InvitationResource.java.",
+            "description": "Revoke an invitation. Requires actorUserId. Auto-discovered from src/main/java/com/wayden/messenger/identity/api/InvitationResource.java.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"actorUserId\": \"{{admin_user_id}}\"\n}",
@@ -953,9 +850,7 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/invitations/{{invitation_id}}/revoke",
-                  "host": [
-                    "{{base_url}}"
-                  ],
+                  "host": ["{{base_url}}"],
                   "path": [
                     "api",
                     "v1",
@@ -995,9 +890,7 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/invitations/{{invitation_id}}/revoke",
-                  "host": [
-                    "{{base_url}}"
-                  ],
+                  "host": ["{{base_url}}"],
                   "path": [
                     "api",
                     "v1",
@@ -1058,17 +951,10 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/invitations/redeem",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "invitations",
-                "redeem"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "invitations", "redeem"]
             },
-            "description": "Auto-discovered from src/main/java/com/wayden/messenger/identity/api/InvitationResource.java.",
+            "description": "Redeem an invitation. Requires invitationToken, username, and password. Auto-discovered from src/main/java/com/wayden/messenger/identity/api/InvitationResource.java.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"invitationToken\": \"{{invitation_token}}\",\n  \"username\": \"member-user\",\n  \"password\": \"MemberPassw0rd!\"\n}",
@@ -1105,15 +991,8 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/invitations/redeem",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "invitations",
-                    "redeem"
-                  ]
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "invitations", "redeem"]
                 }
               },
               "status": "OK",
@@ -1152,15 +1031,8 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/invitations/redeem",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "invitations",
-                    "redeem"
-                  ]
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "invitations", "redeem"]
                 }
               },
               "status": "Unprocessable Entity",

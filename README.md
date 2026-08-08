@@ -39,7 +39,7 @@ This repository currently standardizes three environments:
 
 ## Shared Remote Queue Server (Docker, Optional Audit Transport)
 
-This repository now includes a Dockerized RabbitMQ service that can act as a shared remote queue endpoint for one or more app instances. The queue is optional infrastructure for the app's audit transport and is not required for the core identity flows to work.
+This repository now includes a Dockerized RabbitMQ service that can act as a shared remote queue endpoint for one or more app instances. The queue is optional infrastructure for the app's audit transport and is not required for the core identity flows to work. The application now includes an optional RabbitMQ-backed audit transport with local async persistence fallback, so the service can keep running when the queue is unavailable or disabled.
 
 - Compose service name: `queue-dev`
 - Standalone compose file: `compose.queue.yaml`

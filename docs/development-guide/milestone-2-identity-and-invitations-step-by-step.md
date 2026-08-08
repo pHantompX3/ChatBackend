@@ -32,6 +32,13 @@ Current implementation status:
 - Quarkus now starts successfully even when the RabbitMQ-backed audit transport is not configured with a password; the dispatcher falls back to local async persistence instead of aborting startup.
 - The GitHub Actions workflow validates startup, Flyway migration, and health/integration test behavior end to end.
 
+Additional milestone 2 implementation notes:
+
+- Invitation creation and redemption now validate request payloads explicitly and return consistent problem+json responses for bad input and domain rule violations.
+- Identity validation failures are mapped to user-facing 400-style responses instead of falling through to generic server errors.
+- The HTTP audit pipeline now supports a resilient dual path: events are persisted locally in async mode and can also be forwarded to RabbitMQ when the broker is available, with background retry behavior that does not block startup.
+- Local development configuration now enables the RabbitMQ-backed audit path by default in devdocker while preserving fail-open behavior if the queue is unavailable.
+
 Milestone 3 handoff note:
 
 - When session/token authentication is introduced, actor identity for audit events must move out of service-layer request payload handling and into the authentication filter chain.

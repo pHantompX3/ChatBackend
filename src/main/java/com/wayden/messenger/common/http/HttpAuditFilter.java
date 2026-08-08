@@ -273,13 +273,17 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
       if (methodPath != null && !methodPath.value().isBlank()) {
         String normalized = normalizePathTemplate(methodPath.value());
         if (!normalized.isBlank()) {
+          if (templateBuilder.length() > 0 && !normalized.startsWith("/")) {
+            templateBuilder.append('/');
+          }
           templateBuilder.append(normalized);
         }
       }
     }
 
-    String routeTemplate = templateBuilder.toString();
-    return routeTemplate.isBlank() ? safe(requestAuditContext.getPath()) : routeTemplate;
+    return templateBuilder.length() > 0
+        ? templateBuilder.toString()
+        : safe(requestAuditContext.getPath());
   }
 
   private String normalizePathTemplate(String value) {

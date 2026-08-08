@@ -45,10 +45,6 @@ public class AdminServiceImpl implements AdminService {
   @Override
   public BootstrapAdminResult bootstrapFirstAdmin(BootstrapAdminCommand command) {
     final NormalizedUsername normalizedUsername = NormalizedUsername.fromRaw(command.username());
-    if (userRepository.findByNormalizedUsername(normalizedUsername).isPresent()) {
-      throw new IdentityExceptions.DuplicateUsernameException(
-          "Username is already in use: " + normalizedUsername.value());
-    }
 
     final var now = clock.instant();
     final User user =
