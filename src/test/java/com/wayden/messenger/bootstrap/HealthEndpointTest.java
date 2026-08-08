@@ -13,4 +13,9 @@ final class HealthEndpointTest {
   void livenessShouldReportUp() {
     given().when().get("/q/health/live").then().statusCode(200).body("status", equalTo("UP"));
   }
+
+  @Test
+  void readinessShouldReportUp() {
+    given().when().get("/q/health/ready").then().statusCode(200).body("status", equalTo("UP"));
+  }
 }
