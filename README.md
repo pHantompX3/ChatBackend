@@ -73,9 +73,10 @@ The repository uses a two-phase SQL setup model:
 
 - Bootstrap location (master DB): `scripts/database/flyway/master`
 - Application schema location (wl_chat DB): `scripts/database/flyway/wl_chat`
-- `V1__create_wl_chat_database.sql` (master)
-- `V1__create_app_login_and_user.sql` (wl_chat)
-- `V2__grant_app_permissions.sql` (wl_chat)
+- `V20260808110000__create_wl_chat_database.sql` (master)
+- `V20260808110500__create_app_login_and_user.sql` (wl_chat)
+- `V20260808111000__grant_app_permissions.sql` (wl_chat)
+- New migrations use `VYYYYMMDDHHMMSS__description_in_snake_case.sql`.
 
 ## Setup Scripts: Use Cases and Required Order
 
