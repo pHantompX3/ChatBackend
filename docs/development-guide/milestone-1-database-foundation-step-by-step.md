@@ -6,7 +6,7 @@
 **Milestone:** 1 - Database foundation  
 **Database:** Microsoft SQL Server 2022  
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven  
-**Status:** Sign-off ready  
+**Status:** Completed (merged)  
 **Last reviewed:** 2026-08-08
 
 ---
@@ -375,7 +375,7 @@ curl -s http://localhost:8080/q/health/ready
 ### Sign-off note
 
 - Milestone 1 functional exit criteria are satisfied and repository policy/documentation are aligned as of 2026-08-08.
-- The Flyway naming-policy enforcement was added after the historical `DB Local Bootstrap And Migrate` run referenced above; the next run of that workflow will provide refreshed CI evidence for the naming gate itself.
+- Milestone 1 completion changes were merged to `main`, including timestamped Flyway baseline conventions, naming validation enforcement, migration/schema verification in CI, and runtime-principal DDL denial checks.
 
 ---
 

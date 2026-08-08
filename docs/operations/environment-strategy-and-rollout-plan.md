@@ -28,14 +28,15 @@ This document formalizes the environment model and rollout sequence for ChatBack
 Two-phase model:
 
 1. Bootstrap (admin, one-time per environment)
-   - Script: `scripts/database/flyway/master/V1__create_wl_chat_database.sql`
+   - Script: `scripts/database/flyway/master/V20260808110000__create_wl_chat_database.sql`
    - Creates database `wl_chat` if missing
 
 2. Flyway migrations (versioned, immutable)
    - Location: `scripts/database/flyway/wl_chat`
    - Current scripts:
-     - `V1__create_app_login_and_user.sql`
-     - `V2__grant_app_permissions.sql`
+     - `V20260808110500__create_app_login_and_user.sql`
+     - `V20260808111000__grant_app_permissions.sql`
+     - `V20260808111500__create_logical_schemas.sql`
 
 ## CI Posture (Current)
 
@@ -64,7 +65,7 @@ Two-phase model:
 
 ## Implementation Phases
 
-### Phase A - Current Baseline Stabilization (in progress)
+### Phase A - Current Baseline Stabilization (completed)
 
 1. Keep Local environment reliable.
 2. Keep Flyway scripts authoritative for DB evolution.
@@ -75,6 +76,7 @@ Exit criteria:
 - `./mvnw -DskipTests compile` succeeds on Java 25.
 - `/q/health/live` responds when app is running.
 - Local DB initialization path is documented and reproducible.
+- Milestone 1 database-foundation exit criteria are completed and documented in `docs/development-guide/milestone-1-database-foundation-step-by-step.md`.
 
 ### Phase B - DevDocker Environment
 
