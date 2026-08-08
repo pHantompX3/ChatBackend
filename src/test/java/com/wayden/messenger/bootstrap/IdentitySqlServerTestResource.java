@@ -2,6 +2,7 @@ package com.wayden.messenger.bootstrap;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Map;
 import org.flywaydb.core.Flyway;
 import org.testcontainers.containers.MSSQLServerContainer;
@@ -22,8 +23,9 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
               .acceptLicense()
               .withPassword(DB_PASSWORD);
       sqlServer.start();
-      migrateMaster();
-      migrateApplicationSchemas();
+      retry("migrate master bootstrap", this::migrateMaster, 5, Duration.ofSeconds(2));
+      retry(
+          "migrate application schemas", this::migrateApplicationSchemas, 5, Duration.ofSeconds(2));
     }
 
     return Map.of(
@@ -57,7 +59,47 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
     return DB_PASSWORD;
   }
 
-  private static void migrateMaster() {
+  static void retry(String operation, ThrowingRunnable action, int attempts, Duration delay) {
+    retry(
+        operation,
+        () -> {
+          action.run();
+          return null;
+        },
+        attempts,
+        delay);
+  }
+
+  static <T> T retry(String operation, ThrowingSupplier<T> action, int attempts, Duration delay) {
+    Exception lastFailure = null;
+    for (int attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        return action.get();
+      } catch (Exception exception) {
+        lastFailure = exception;
+        if (attempt == attempts) {
+          break;
+        }
+        if (!delay.isZero() && !delay.isNegative()) {
+          try {
+            Thread.sleep(delay.toMillis());
+          } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                "Interrupted while retrying " + operation, interruptedException);
+          }
+        }
+      }
+    }
+
+    if (lastFailure instanceof RuntimeException runtimeException) {
+      throw runtimeException;
+    }
+    throw new IllegalStateException(
+        "Failed to " + operation + " after " + attempts + " attempts", lastFailure);
+  }
+
+  private void migrateMaster() {
     String location =
         Path.of("scripts", "database", "flyway", "master").toAbsolutePath().toString();
     Flyway.configure()
@@ -67,7 +109,7 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
         .migrate();
   }
 
-  private static void migrateApplicationSchemas() {
+  private void migrateApplicationSchemas() {
     String location =
         Path.of("scripts", "database", "flyway", "wl_chat").toAbsolutePath().toString();
     Flyway.configure()
@@ -79,5 +121,15 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
         .placeholders(TestSqlSupport.placeholders(APP_LOGIN, APP_PASSWORD))
         .load()
         .migrate();
+  }
+
+  @FunctionalInterface
+  interface ThrowingRunnable {
+    void run() throws Exception;
+  }
+
+  @FunctionalInterface
+  interface ThrowingSupplier<T> {
+    T get() throws Exception;
   }
 }
