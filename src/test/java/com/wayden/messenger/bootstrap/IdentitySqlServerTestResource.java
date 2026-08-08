@@ -30,7 +30,10 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
         sqlServer.start();
         retry("migrate master bootstrap", this::migrateMaster, 5, Duration.ofSeconds(2));
         retry(
-            "migrate application schemas", this::migrateApplicationSchemas, 5, Duration.ofSeconds(2));
+            "migrate application schemas",
+            this::migrateApplicationSchemas,
+            5,
+            Duration.ofSeconds(2));
       } else {
         ownsContainer = false;
       }
