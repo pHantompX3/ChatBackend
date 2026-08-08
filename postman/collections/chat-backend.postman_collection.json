@@ -1,0 +1,571 @@
+{
+  "info": {
+    "_postman_id": "9a5e91fc-0b4c-4f34-bfbf-2bc2b6b29e5f",
+    "name": "WL-Chat",
+    "description": "Authoritative Postman collection for ChatBackend HTTP APIs maintained from implemented routes.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "conversation_id",
+      "value": "conversation-123"
+    },
+    {
+      "key": "sender_user_id",
+      "value": "user-123"
+    },
+    {
+      "key": "message_content",
+      "value": "Hello from Postman"
+    },
+    {
+      "key": "message_limit",
+      "value": "50"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "description": "Application and platform health endpoints for reachability and readiness.",
+      "item": [
+        {
+          "name": "Ping",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ping",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ping"
+              ]
+            },
+            "description": "Returns service reachability status from PingResource."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/ping",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ping"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains status=ok', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData).to.have.property('status', 'ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Health Live",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/q/health/live",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "q",
+                "health",
+                "live"
+              ]
+            },
+            "description": "Quarkus liveness endpoint. Indicates process is alive."
+          },
+          "response": [
+            {
+              "name": "200 UP",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/q/health/live",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "q",
+                    "health",
+                    "live"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"UP\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Health live is UP', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData).to.have.property('status', 'UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Health Ready",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/q/health/ready",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "q",
+                "health",
+                "ready"
+              ]
+            },
+            "description": "Quarkus readiness endpoint. Includes DB connectivity readiness checks."
+          },
+          "response": [
+            {
+              "name": "200 UP",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/q/health/ready",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "q",
+                    "health",
+                    "ready"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"UP\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Health ready is UP (DB readiness)', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData).to.have.property('status', 'UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/q/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "q",
+                "health"
+              ]
+            },
+            "description": "Quarkus aggregate health endpoint (includes readiness/liveness summary)."
+          },
+          "response": [
+            {
+              "name": "200 UP",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/q/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "q",
+                    "health"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"UP\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Aggregate health is UP', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData).to.have.property('status', 'UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Messaging",
+      "description": "Endpoints in MessageResource for sending and listing conversation messages.",
+      "item": [
+        {
+          "name": "Send Message",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conversationId\": \"{{conversation_id}}\",\n  \"senderUserId\": \"{{sender_user_id}}\",\n  \"content\": \"{{message_content}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/messages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "messages"
+              ]
+            },
+            "description": "Creates a message in a conversation and returns the created message payload."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"conversationId\": \"conversation-123\",\n  \"senderUserId\": \"user-123\",\n  \"content\": \"Hello from Postman\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/messages",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "messages"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"messageId\": \"msg-123\",\n  \"conversationId\": \"conversation-123\",\n  \"senderUserId\": \"user-123\",\n  \"content\": \"Hello from Postman\",\n  \"createdAt\": \"2026-08-08T00:00:00Z\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has required message fields', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  ['messageId', 'conversationId', 'senderUserId', 'content', 'createdAt'].forEach(function (k) {",
+                  "    pm.expect(jsonData).to.have.property(k);",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Conversation Messages",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages?limit={{message_limit}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{conversation_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{message_limit}}",
+                  "description": "Optional limit; API constrains to range 1..200 and defaults to 50 when absent/invalid."
+                }
+              ],
+              "variable": [
+                {
+                  "key": "conversation_id",
+                  "value": "{{conversation_id}}"
+                }
+              ]
+            },
+            "description": "Lists messages for a conversation."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/conversation-123/messages?limit=50",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "conversation-123",
+                    "messages"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "50"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"messageId\": \"msg-123\",\n    \"conversationId\": \"conversation-123\",\n    \"senderUserId\": \"user-123\",\n    \"content\": \"Hello from Postman\",\n    \"createdAt\": \"2026-08-08T00:00:00Z\"\n  }\n]"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(Array.isArray(jsonData)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

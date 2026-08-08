@@ -30,3 +30,5 @@ scripts/config/local.secrets.env
 
 # Local credential rotation script (contains real passwords)
 scripts/database/rotate-sql-logins.sh
+
+postman/config.properties

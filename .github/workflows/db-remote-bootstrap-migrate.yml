@@ -27,6 +27,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Validate Flyway migration naming
+        shell: bash
+        run: ./scripts/database/validate-flyway-naming.sh
+
       - name: Set up Java 25
         uses: actions/setup-java@v5
         with:
@@ -68,6 +72,9 @@ jobs:
             -user="sa" \
             -password="${SA_PASSWORD}" \
             -locations="filesystem:/flyway/sql" \
+            -defaultSchema="platform" \
+            -schemas="platform,identity,messaging,audit" \
+            -table="flyway_schema_history" \
             -placeholders.app_login="${APP_LOGIN}" \
             -placeholders.app_password="${APP_PASSWORD}" \
             migrate

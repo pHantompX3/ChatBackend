@@ -1,0 +1,113 @@
+name: Postman Cloud Sync
+
+on:
+    workflow_dispatch:
+        inputs:
+            mode:
+                description: Run mode
+                required: true
+                default: dry-run
+                type: choice
+                options:
+                    - dry-run
+                    - sync
+                    - drift-check
+            sync_environment:
+                description: Include environment sync/check
+                required: true
+                default: true
+                type: boolean
+
+jobs:
+    postman-cloud-sync:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v5
+              with:
+                  node-version: "20"
+
+            - name: Discover API routes and preserve protected health checks
+              shell: bash
+              run: ./scripts/postman/discover-postman.sh
+
+            - name: Ensure discovered collection changes are committed
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  if ! git diff --quiet -- postman/collections/chat-backend.postman_collection.json; then
+                    echo "Postman collection is outdated after discovery. Run ./scripts/postman/discover-postman.sh and commit the result." >&2
+                    git --no-pager diff -- postman/collections/chat-backend.postman_collection.json
+                    exit 1
+                  fi
+
+            - name: Validate required secrets
+              env:
+                  POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+                  POSTMAN_WORKSPACE_ID: ${{ secrets.POSTMAN_WORKSPACE_ID }}
+                  POSTMAN_COLLECTION_ID: ${{ secrets.POSTMAN_COLLECTION_ID }}
+                  POSTMAN_ENVIRONMENT_ID: ${{ secrets.POSTMAN_ENVIRONMENT_ID }}
+                  SYNC_ENVIRONMENT: ${{ inputs.sync_environment }}
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  missing=0
+                  if [[ -z "${POSTMAN_API_KEY:-}" ]]; then
+                    echo "Missing required secret: POSTMAN_API_KEY" >&2
+                    missing=1
+                  fi
+                  if [[ -z "${POSTMAN_WORKSPACE_ID:-}" ]]; then
+                    echo "Missing required secret: POSTMAN_WORKSPACE_ID" >&2
+                    missing=1
+                  fi
+                  if [[ -z "${POSTMAN_COLLECTION_ID:-}" ]]; then
+                    echo "Missing required secret: POSTMAN_COLLECTION_ID" >&2
+                    missing=1
+                  fi
+                  if [[ "${SYNC_ENVIRONMENT}" == "true" ]] && [[ -z "${POSTMAN_ENVIRONMENT_ID:-}" ]]; then
+                    echo "Missing required secret: POSTMAN_ENVIRONMENT_ID (required when sync_environment=true)" >&2
+                    missing=1
+                  fi
+                  if [[ "$missing" -ne 0 ]]; then
+                    exit 1
+                  fi
+
+            - name: Validate Postman artifacts
+              shell: bash
+              run: ./scripts/postman/validate-postman.sh
+
+            - name: Execute Postman mode
+              env:
+                  POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+                  POSTMAN_WORKSPACE_ID: ${{ secrets.POSTMAN_WORKSPACE_ID }}
+                  POSTMAN_COLLECTION_ID: ${{ secrets.POSTMAN_COLLECTION_ID }}
+                  POSTMAN_ENVIRONMENT_ID: ${{ secrets.POSTMAN_ENVIRONMENT_ID }}
+                  MODE: ${{ inputs.mode }}
+                  SYNC_ENVIRONMENT: ${{ inputs.sync_environment }}
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  extra_args=()
+                  if [[ "${SYNC_ENVIRONMENT}" != "true" ]]; then
+                    extra_args+=(--skip-environment)
+                  fi
+
+                  case "${MODE}" in
+                    dry-run)
+                      ./scripts/postman/sync-postman.sh --dry-run "${extra_args[@]}"
+                      ;;
+                    sync)
+                      ./scripts/postman/sync-postman.sh "${extra_args[@]}"
+                      ;;
+                    drift-check)
+                      ./scripts/postman/sync-postman.sh --check-drift "${extra_args[@]}"
+                      ;;
+                    *)
+                      echo "Unsupported mode: ${MODE}" >&2
+                      exit 1
+                      ;;
+                  esac

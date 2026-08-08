@@ -1310,9 +1310,9 @@ No IDE settings, global Maven version, hand-created database, or uncommitted sou
 ### Git repository
 
 - [x] Repository initialized.
-- [ ] `main` branch exists.
-- [ ] Initial commit pushed.
-- [ ] `.gitignore`, `.gitattributes`, and `.editorconfig` are committed.
+- [x] `main` branch exists.
+- [x] Initial commit pushed.
+- [x] `.gitignore`, `.gitattributes`, and `.editorconfig` are committed.
 
 ### Maven Wrapper
 
@@ -1343,7 +1343,7 @@ No IDE settings, global Maven version, hand-created database, or uncommitted sou
 - [x] GitHub Actions starts SQL Server.
 - [x] CI bootstraps the database and applies Flyway migrations.
 - [x] CI runs `./mvnw clean verify`.
-- [ ] CI passes on `main` and pull requests.
+- [x] CI passes on `main` and pull requests.
 
 ### ADR
 
@@ -1375,11 +1375,11 @@ No IDE settings, global Maven version, hand-created database, or uncommitted sou
 
 ### Final exit criteria
 
-- [ ] Clean checkout builds.
+- [x] Clean checkout builds.
 - [x] Tests run.
 - [x] Application starts.
 - [x] Database is reachable.
-- [ ] CI passes.
+- [x] CI passes.
 
 ---
 

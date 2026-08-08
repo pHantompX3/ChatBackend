@@ -361,10 +361,58 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
+- Milestone 1 database foundation runbook:
+  - `docs/development-guide/milestone-1-database-foundation-step-by-step.md`
 - System specification and architecture baseline:
   - `docs/private-instant-messaging-platform-spec-v0.2-sql-server.md`
 - Environment lifecycle and rollout plan:
   - `docs/operations/environment-strategy-and-rollout-plan.md`
+- SQL Server principal and permission baseline:
+  - `docs/database/sql-server-principals-and-permissions.md`
+- Postman artifact workflow:
+  - `postman/README.md`
+
+## Postman Workflow
+
+Postman artifacts are version-controlled and should be updated whenever API contracts change.
+
+Authoritative source currently used for Postman maintenance:
+
+- implemented routes and DTOs under `src/main/java` (no repository OpenAPI file is currently present)
+
+Committed artifacts:
+
+- `postman/collections/chat-backend.postman_collection.json`
+- `postman/environments/local.example.postman_environment.json`
+
+Local-only Postman Cloud config:
+
+- copy `postman/config.properties.example` to `postman/config.properties`
+- keep `postman/config.properties` untracked/ignored
+
+Local validation (no cloud key required):
+
+```bash
+./scripts/postman/discover-postman.sh
+./scripts/postman/validate-postman.sh
+```
+
+Cloud synchronization:
+
+```bash
+./scripts/postman/inspect-postman.sh
+./scripts/postman/sync-postman.sh --dry-run
+./scripts/postman/sync-postman.sh
+./scripts/postman/sync-postman.sh --check-drift
+```
+
+CI and manual workflow behavior:
+
+- PR validation workflow runs local Postman artifact checks.
+- PR validation workflow runs strict cloud drift checks when POSTMAN\_\* secrets are configured in GitHub.
+- Manual Postman cloud workflow is guarded and runs only when explicitly dispatched.
+
+For full setup and Native Git/Desktop guidance, see `postman/README.md`.
 
 ## Quick Local Start
 

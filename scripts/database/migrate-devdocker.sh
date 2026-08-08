@@ -46,6 +46,9 @@ docker run --rm \
   -user="sa" \
   -password="${SA_PASSWORD}" \
   -locations="filesystem:/flyway/sql" \
+  -defaultSchema="platform" \
+  -schemas="platform,identity,messaging,audit" \
+  -table="flyway_schema_history" \
   -placeholders.app_login="${APP_LOGIN}" \
   -placeholders.app_password="${APP_PASSWORD}" \
   migrate
