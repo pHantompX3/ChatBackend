@@ -15,7 +15,8 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
 
   private static MSSQLServerContainer<?> sqlServer;
   private static final Object CONTAINER_LOCK = new Object();
-  private boolean ownsContainer;
+  private static int activeResourceCount;
+  private boolean started;
 
   @Override
   @SuppressWarnings("resource")
@@ -26,7 +27,6 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
             new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:2022-latest")
                 .acceptLicense()
                 .withPassword(DB_PASSWORD);
-        ownsContainer = true;
         sqlServer.start();
         retry("migrate master bootstrap", this::migrateMaster, 5, Duration.ofSeconds(2));
         retry(
@@ -34,9 +34,10 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
             this::migrateApplicationSchemas,
             5,
             Duration.ofSeconds(2));
-      } else {
-        ownsContainer = false;
       }
+
+      activeResourceCount++;
+      started = true;
     }
 
     return Map.of(
@@ -57,11 +58,17 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
   @Override
   public void stop() {
     synchronized (CONTAINER_LOCK) {
-      if (ownsContainer && sqlServer != null) {
+      if (!started) {
+        return;
+      }
+
+      started = false;
+      activeResourceCount = Math.max(0, activeResourceCount - 1);
+
+      if (activeResourceCount == 0 && sqlServer != null) {
         sqlServer.stop();
         sqlServer = null;
       }
-      ownsContainer = false;
     }
   }
 
