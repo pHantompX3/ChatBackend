@@ -1,78 +1,88 @@
 name: Postman Artifact Validation
 
 on:
-    pull_request:
-        branches: [main]
-    workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "postman/**"
+      - "scripts/postman/**"
+      - ".github/workflows/postman-validate.yml"
+  push:
+    branches: [main]
+    paths:
+      - "postman/**"
+      - "scripts/postman/**"
+      - ".github/workflows/postman-validate.yml"
+  workflow_dispatch:
 
 jobs:
-    validate-postman:
-        runs-on: ubuntu-latest
+  validate-postman:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
-            - name: Set up Node.js
-              uses: actions/setup-node@v5
-              with:
-                  node-version: "20"
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
 
-            - name: Discover API routes and preserve protected health checks
-              shell: bash
-              run: ./scripts/postman/discover-postman.sh
+      - name: Discover API routes and preserve protected health checks
+        shell: bash
+        run: ./scripts/postman/discover-postman.sh
 
-            - name: Ensure discovered collection changes are committed
-              shell: bash
-              run: |
-                  set -euo pipefail
-                  if ! git diff --quiet -- postman/collections/chat-backend.postman_collection.json; then
-                    echo "Postman collection is outdated after discovery. Run ./scripts/postman/discover-postman.sh and commit the result." >&2
-                    git --no-pager diff -- postman/collections/chat-backend.postman_collection.json
-                    exit 1
-                  fi
+      - name: Ensure discovered collection changes are committed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet -- postman/collections/chat-backend.postman_collection.json; then
+            echo "Postman collection is outdated after discovery. Run ./scripts/postman/discover-postman.sh and commit the result." >&2
+            git --no-pager diff -- postman/collections/chat-backend.postman_collection.json
+            exit 1
+          fi
 
-            - name: Validate Postman artifacts
-              shell: bash
-              run: ./scripts/postman/validate-postman.sh
+      - name: Validate Postman artifacts
+        shell: bash
+        run: ./scripts/postman/validate-postman.sh
 
-    drift-check-postman:
-        runs-on: ubuntu-latest
-        needs: validate-postman
+  drift-check-postman:
+    runs-on: ubuntu-latest
+    needs: validate-postman
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
-            - name: Detect Postman cloud secret availability
-              id: cloud-secrets
-              env:
-                  POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
-                  POSTMAN_WORKSPACE_ID: ${{ secrets.POSTMAN_WORKSPACE_ID }}
-                  POSTMAN_COLLECTION_ID: ${{ secrets.POSTMAN_COLLECTION_ID }}
-                  POSTMAN_ENVIRONMENT_ID: ${{ secrets.POSTMAN_ENVIRONMENT_ID }}
-              shell: bash
-              run: |
-                  set -euo pipefail
-                  if [[ -n "${POSTMAN_API_KEY:-}" && -n "${POSTMAN_WORKSPACE_ID:-}" && -n "${POSTMAN_COLLECTION_ID:-}" && -n "${POSTMAN_ENVIRONMENT_ID:-}" ]]; then
-                    echo "available=true" >> "$GITHUB_OUTPUT"
-                  else
-                    echo "available=false" >> "$GITHUB_OUTPUT"
-                    echo "Skipping drift-check-postman because one or more required POSTMAN_* secrets are missing."
-                  fi
+      - name: Detect Postman cloud secret availability
+        id: cloud-secrets
+        env:
+          POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+          POSTMAN_WORKSPACE_ID: ${{ secrets.POSTMAN_WORKSPACE_ID }}
+          POSTMAN_COLLECTION_ID: ${{ secrets.POSTMAN_COLLECTION_ID }}
+          POSTMAN_ENVIRONMENT_ID: ${{ secrets.POSTMAN_ENVIRONMENT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${POSTMAN_API_KEY:-}" && -n "${POSTMAN_WORKSPACE_ID:-}" && -n "${POSTMAN_COLLECTION_ID:-}" && -n "${POSTMAN_ENVIRONMENT_ID:-}" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping drift-check-postman because one or more required POSTMAN_* secrets are missing."
+          fi
 
-            - name: Set up Node.js
-              if: ${{ steps.cloud-secrets.outputs.available == 'true' }}
-              uses: actions/setup-node@v5
-              with:
-                  node-version: "20"
+      - name: Set up Node.js
+        if: ${{ steps.cloud-secrets.outputs.available == 'true' }}
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
 
-            - name: Strict drift check against Postman Cloud
-              if: ${{ steps.cloud-secrets.outputs.available == 'true' }}
-              env:
-                  POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
-                  POSTMAN_WORKSPACE_ID: ${{ secrets.POSTMAN_WORKSPACE_ID }}
-                  POSTMAN_COLLECTION_ID: ${{ secrets.POSTMAN_COLLECTION_ID }}
-                  POSTMAN_ENVIRONMENT_ID: ${{ secrets.POSTMAN_ENVIRONMENT_ID }}
-              shell: bash
-              run: ./scripts/postman/sync-postman.sh --check-drift
+      - name: Strict drift check against Postman Cloud
+        if: ${{ steps.cloud-secrets.outputs.available == 'true' }}
+        env:
+          POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+          POSTMAN_WORKSPACE_ID: ${{ secrets.POSTMAN_WORKSPACE_ID }}
+          POSTMAN_COLLECTION_ID: ${{ secrets.POSTMAN_COLLECTION_ID }}
+          POSTMAN_ENVIRONMENT_ID: ${{ secrets.POSTMAN_ENVIRONMENT_ID }}
+        shell: bash
+        run: ./scripts/postman/sync-postman.sh --check-drift
