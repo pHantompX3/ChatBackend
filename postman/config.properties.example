@@ -1,0 +1,12 @@
+# Copy this file to postman/config.properties and fill in real values.
+# The real postman/config.properties file must remain gitignored.
+
+# Required to call Postman API
+postman-api-key=<POSTMAN_API_KEY>
+
+# Required target workspace for synchronization
+postman-workspace-id=<POSTMAN_WORKSPACE_ID>
+
+# Optional existing cloud resources to update deterministically
+postman-collection-id=<POSTMAN_COLLECTION_ID_OR_UID>
+postman-environment-id=<POSTMAN_ENVIRONMENT_ID_OR_UID>

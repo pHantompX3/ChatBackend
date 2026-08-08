@@ -1,7 +1,7 @@
 # SQL Server Principals and Permissions Baseline
 
 **Scope:** Milestone 1 database foundation  
-**Last reviewed:** 2026-08-05
+**Last reviewed:** 2026-08-08
 
 ---
 

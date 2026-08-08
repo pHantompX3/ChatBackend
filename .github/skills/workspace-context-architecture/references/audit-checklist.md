@@ -11,10 +11,10 @@
 
 - AGENTS.md (root and nested)
 - .github/copilot-instructions.md
-- .github/instructions/**/*.instructions.md
-- .github/prompts/**/*.prompt.md
-- .github/agents/**/*.agent.md
-- .github/skills/**/SKILL.md
+- .github/instructions/\*_/_.instructions.md
+- .github/prompts/\*_/_.prompt.md
+- .github/agents/\*_/_.agent.md
+- .github/skills/\*\*/SKILL.md
 - other model-specific instruction files
 
 ## Phase 3: Routing and canonicality

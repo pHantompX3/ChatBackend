@@ -6,8 +6,8 @@
 **Milestone:** 1 - Database foundation  
 **Database:** Microsoft SQL Server 2022  
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven  
-**Status:** Implementation guide  
-**Last reviewed:** 2026-08-05
+**Status:** Sign-off ready  
+**Last reviewed:** 2026-08-08
 
 ---
 
@@ -207,9 +207,18 @@ VYYYYMMDDHHMMSS__description_in_snake_case.sql
 
 Existing `V1`, `V2` files remain valid historical baseline. Do not rename applied files.
 
-### 7.3 Optional policy enforcement
+### 7.3 Policy enforcement
 
-Add a lightweight CI check script that fails if new SQL files under `scripts/database/flyway/wl_chat` do not match the naming regex.
+The repository enforces this rule with:
+
+- `scripts/database/validate-flyway-naming.sh`
+- `.github/workflows/db-local-bootstrap-migrate.yml`
+
+Current enforcement behavior:
+
+- legacy baseline files `V1` through `V3` remain valid and grandfathered
+- all newer `wl_chat` migrations must match `VYYYYMMDDHHMMSS__description_in_snake_case.sql`
+- CI fails before migration execution when a non-conforming filename is present
 
 ---
 
@@ -328,16 +337,45 @@ curl -s http://localhost:8080/q/health/ready
 
 - [x] Empty SQL Server migrates to latest from `scripts/database/flyway/**`.
 - [x] App connects with runtime datasource after migration.
-- [ ] Migration + schema verification tests run in CI.
+- [x] Migration + schema verification tests run in CI.
 - [x] Flyway history is in `platform.flyway_schema_history`.
 - [x] Runtime principal cannot perform unauthorized DDL.
 
 ### Evidence capture checklist
 
-- [ ] Save command output for migration run from empty DB.
-- [ ] Save test output for migration harness and schema verification tests.
-- [ ] Save CI run URLs for passing migration workflow.
+- [x] Save command output for migration run from empty DB.
+- [x] Save test output for migration harness and schema verification tests.
+- [x] Save CI run URLs for passing migration workflow.
 - [x] Save SQL output proving history table schema and runtime DDL denial.
+
+### Captured CI and log evidence
+
+- Authoritative Milestone 1 verification workflow (migration + schema assertions + runtime DDL denial + `clean verify`):
+  - `DB Local Bootstrap And Migrate`
+  - Run URL: `https://github.com/pHantompX3/ChatBackend/actions/runs/28838214144`
+  - Status: `completed`, conclusion: `success`
+  - Event: `pull_request`
+  - Created: `2026-07-07T02:56:43Z`, Updated: `2026-07-07T02:57:34Z`
+- Remote bootstrap companion workflow observed later in repository history:
+  - `DB Remote Bootstrap And Migrate`
+  - Run URL: `https://github.com/pHantompX3/ChatBackend/actions/runs/31262146045`
+  - Status: `completed`, conclusion: `success`
+  - Created: `2026-08-08T14:31:11Z`, Updated: `2026-08-08T14:31:20Z`
+- Deployment-adjacent companion pipeline observed for the same 2026-08-08 commit:
+  - `Dev Self-Hosted Build Migrate Deploy`
+  - Run URL: `https://github.com/pHantompX3/ChatBackend/actions/runs/31262146028`
+  - Status at evidence capture time: `queued`
+
+### Captured local verification outputs
+
+- Migration from empty DB path was re-run and validated through `./scripts/database/init-local.sh` after clean reset.
+- Test and verification output captured from: `./mvnw --batch-mode --no-transfer-progress clean verify` (result: `BUILD SUCCESS`).
+- Flyway naming validation captured from: `./scripts/database/validate-flyway-naming.sh` (result: `Flyway migration naming validation passed.`).
+
+### Sign-off note
+
+- Milestone 1 functional exit criteria are satisfied and repository policy/documentation are aligned as of 2026-08-08.
+- The Flyway naming-policy enforcement was added after the historical `DB Local Bootstrap And Migrate` run referenced above; the next run of that workflow will provide refreshed CI evidence for the naming gate itself.
 
 ---
 

@@ -11,7 +11,22 @@ These are concise repository-wide rules. Keep them stable and avoid duplicating 
 - Use `./mvnw clean verify` as the default validation command for meaningful changes.
 - When changing behavior, verify corresponding tests in [src/test](../src/test).
 - For database evolution, add new Flyway versions under [scripts/database/flyway](../scripts/database/flyway); do not alter already-applied migration history.
+- New application migrations under [scripts/database/flyway/wl_chat](../scripts/database/flyway/wl_chat) must use `VYYYYMMDDHHMMSS__description_in_snake_case.sql`; existing `V1`-`V3` files are grandfathered history and must not be renamed.
 - Treat [README.md](../README.md) and [docs/development-guide](../docs/development-guide) as operational references and keep them aligned with evidence-based behavior.
+
+## Postman maintenance
+
+Whenever an API endpoint is added, removed, renamed, or materially changed:
+
+- Update the authoritative API contract source (currently implemented routes/DTOs under `src/main/java`).
+- Update [postman/collections/chat-backend.postman_collection.json](../postman/collections/chat-backend.postman_collection.json).
+- Update paths, methods, parameters, headers, auth configuration, request/response examples, and tests in the affected Postman requests.
+- Update [postman/environments/local.example.postman_environment.json](../postman/environments/local.example.postman_environment.json) when non-secret variables change.
+- Never commit credentials or tokens into Postman artifacts.
+- Run `./scripts/postman/validate-postman.sh` before concluding API-related changes.
+- State Postman artifact updates in the completion report.
+
+An API implementation change is incomplete when corresponding Postman artifacts are outdated.
 
 ## Canonical routing
 

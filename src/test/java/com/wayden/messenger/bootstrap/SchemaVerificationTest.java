@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MSSQLServerContainer;
@@ -17,6 +19,11 @@ final class SchemaVerificationTest {
   private static final String DB_PASSWORD = "StrongPassw0rd!";
   private static final String APP_LOGIN = "wl_chat_app";
   private static final String APP_PASSWORD = "AppPassw0rd!";
+
+  static {
+    Logger.getLogger("com.microsoft.sqlserver.jdbc.internals.SQLServerConnection")
+        .setLevel(Level.SEVERE);
+  }
 
   @Container
   static final MSSQLServerContainer<?> SQL_SERVER =
