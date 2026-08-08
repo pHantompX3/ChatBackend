@@ -318,7 +318,9 @@ const endpointExampleTemplates = new Map([
 function getEndpointTemplate(method, pathValue) {
   const methodUpper = String(method || "").toUpperCase();
   const normalizedPath = normalizePath(pathValue);
-  const direct = endpointExampleTemplates.get(`${methodUpper} ${normalizedPath}`);
+  const direct = endpointExampleTemplates.get(
+    `${methodUpper} ${normalizedPath}`,
+  );
   if (direct) {
     return direct;
   }
@@ -329,7 +331,10 @@ function getEndpointTemplate(method, pathValue) {
       .replace(/\{[^}]+\}/g, "{param}");
 
   const canonicalPath = canonicalizeTemplatePath(normalizedPath);
-  for (const [templateKey, templateValue] of endpointExampleTemplates.entries()) {
+  for (const [
+    templateKey,
+    templateValue,
+  ] of endpointExampleTemplates.entries()) {
     const [templateMethod, ...templatePathParts] = templateKey.split(" ");
     if (templateMethod !== methodUpper) {
       continue;
@@ -374,7 +379,9 @@ function buildResponseExamples(endpoint, request, template) {
     status: responseTemplate.status,
     code: responseTemplate.code,
     _postman_previewlanguage:
-      String(responseTemplate.body || "").trim().length > 0 ? "json" : undefined,
+      String(responseTemplate.body || "").trim().length > 0
+        ? "json"
+        : undefined,
     header:
       responseTemplate.contentType === null
         ? []
@@ -492,7 +499,9 @@ function extractSourceGroupFromRequest(entry) {
 }
 
 function buildDefaultEvent(method, expectedStatusCodes = [200, 201]) {
-  const sortedCodes = Array.from(new Set(expectedStatusCodes)).sort((a, b) => a - b);
+  const sortedCodes = Array.from(new Set(expectedStatusCodes)).sort(
+    (a, b) => a - b,
+  );
   const hasSingleCode = sortedCodes.length === 1;
   const expectationText = hasSingleCode
     ? `pm.response.to.have.status(${sortedCodes[0]});`
@@ -542,7 +551,9 @@ function buildDiscoveredRequest(endpoint) {
 
   const template = getEndpointTemplate(endpoint.method, endpoint.path);
   const templateStatusCodes = Array.isArray(template?.responses)
-    ? template.responses.map((response) => response.code).filter(Number.isInteger)
+    ? template.responses
+        .map((response) => response.code)
+        .filter(Number.isInteger)
     : [];
 
   if (isWrite) {
@@ -578,9 +589,9 @@ function applyEndpointTemplatesToExistingRequests(collection) {
     const requestPath = extractPathFromRawUrl(requestItem?.request?.url?.raw);
     const endpoint = { method: requestMethod, path: requestPath };
     const template = getEndpointTemplate(requestMethod, requestPath);
-    const isDiscovered = String(requestItem?.request?.description || "").includes(
-      "Auto-discovered from ",
-    );
+    const isDiscovered = String(
+      requestItem?.request?.description || "",
+    ).includes("Auto-discovered from ");
 
     if (!isDiscovered) {
       continue;
@@ -590,7 +601,8 @@ function applyEndpointTemplatesToExistingRequests(collection) {
 
     if (requestItem?.request?.body?.mode === "raw") {
       const currentBody = String(requestItem.request.body.raw || "");
-      const nextBody = template?.requestBody || buildFallbackRequestBody(endpoint);
+      const nextBody =
+        template?.requestBody || buildFallbackRequestBody(endpoint);
       if (isEmptyJsonObjectBody(currentBody) || template?.requestBody) {
         requestItem.request.body.raw = nextBody;
         changed = true;
@@ -601,20 +613,33 @@ function applyEndpointTemplatesToExistingRequests(collection) {
       }
     }
 
-    if (!Array.isArray(requestItem.response) || requestItem.response.length === 0) {
-      requestItem.response = buildFallbackResponseExamples(endpoint, requestItem.request);
+    if (
+      !Array.isArray(requestItem.response) ||
+      requestItem.response.length === 0
+    ) {
+      requestItem.response = buildFallbackResponseExamples(
+        endpoint,
+        requestItem.request,
+      );
       changed = true;
     }
 
     if (template?.responses?.length > 0) {
-      requestItem.response = buildResponseExamples(endpoint, requestItem.request, template);
+      requestItem.response = buildResponseExamples(
+        endpoint,
+        requestItem.request,
+        template,
+      );
       const templateStatusCodes = template.responses
         .map((response) => response.code)
         .filter(Number.isInteger);
       requestItem.event = buildDefaultEvent(requestMethod, templateStatusCodes);
       changed = true;
     } else if (!hasMeaningfulResponseBodies(requestItem.response)) {
-      requestItem.response = buildFallbackResponseExamples(endpoint, requestItem.request);
+      requestItem.response = buildFallbackResponseExamples(
+        endpoint,
+        requestItem.request,
+      );
       changed = true;
     }
 
