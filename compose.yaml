@@ -1,4 +1,3 @@
 # Root compose stub: the canonical development stack lives in compose.devdocker.yaml.
 # Use: docker compose -f compose.devdocker.yaml up -d
 services: {}
-
