@@ -234,12 +234,17 @@ Define infrastructure abstractions for:
 
 ### 6.3 Application use cases
 
-Implement services for:
+Use a practical two-service split for Milestone 2:
 
-1. `BootstrapAdminService`
-2. `CreateInvitationService`
-3. `RevokeInvitationService`
-4. `RedeemInvitationService`
+1. `AdminService`
+2. `InvitationService`
+
+Recommended ownership:
+
+- `AdminService`: bootstrap-first-admin flow and one-time guard.
+- `InvitationService`: create, revoke, and redeem invitation flows.
+
+Keep use-case boundaries explicit inside these services by modeling each action as a dedicated method or internal command handler. Split into additional top-level services later only if class size or complexity warrants it.
 
 All write use cases must execute in transactions.
 
@@ -268,6 +273,11 @@ Suggested conflict translations:
 ## 8. Step 4 - Implement API Endpoints and Error Mapping
 
 Add identity API resources under `identity/api`.
+
+Use resource grouping aligned to path/context:
+
+1. `AdminResource` for bootstrap endpoints.
+2. `InvitationResource` for invitation lifecycle endpoints.
 
 Recommended endpoints:
 
