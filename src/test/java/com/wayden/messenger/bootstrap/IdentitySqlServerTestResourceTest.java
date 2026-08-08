@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -82,5 +83,34 @@ class IdentitySqlServerTestResourceTest {
     }
 
     owner.stop();
+  }
+
+  @Test
+  void stopShouldWaitForOtherResourcesBeforeTearingDownContainer() throws Exception {
+    IdentitySqlServerTestResource owner = new IdentitySqlServerTestResource();
+    IdentitySqlServerTestResource follower = new IdentitySqlServerTestResource();
+
+    owner.start();
+    follower.start();
+
+    owner.stop();
+
+    try (var connection =
+        DriverManager.getConnection(
+            IdentitySqlServerTestResource.jdbcUrl("master"),
+            "sa",
+            IdentitySqlServerTestResource.saPassword())) {
+      assertTrue(connection.isValid(5));
+    }
+
+    follower.stop();
+
+    assertThrows(
+        SQLException.class,
+        () ->
+            DriverManager.getConnection(
+                IdentitySqlServerTestResource.jdbcUrl("master"),
+                "sa",
+                IdentitySqlServerTestResource.saPassword()));
   }
 }
