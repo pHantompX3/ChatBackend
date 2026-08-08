@@ -643,17 +643,37 @@ Delivery policy for Milestone 2:
 
 ### 9.5 Pre-implementation decision checklist
 
-Before writing queue integration code, mark these as decided:
+The following decisions are now locked for Milestone 2:
 
-- [ ] Final event schema version and required fields.
-- [ ] Sensitive-field redaction rules for `metadata`.
-- [ ] Sensitive-field redaction rules for headers, query parameters, and error messages.
-- [ ] Queue publish timeout and retry policy.
-- [ ] Consumer retry count and backoff strategy.
-- [ ] Dead-letter triage process (who inspects and how often).
-- [ ] Metric names and alert thresholds for publish and consumer failures.
-- [ ] Local and devdocker credential rotation process for queue users.
-- [ ] Audit retention, access-control, and tamper-evidence policy.
+- [x] Final event schema version and required fields.
+      Decision: `schemaVersion=1.0` with required fields from section 9.4.
+- [x] Sensitive-field redaction rules for `metadata`.
+      Decision: `metadata` is allowlist-first. Allowed keys must be explicitly declared per event type. Any key matching case-insensitive patterns `password|passphrase|secret|token|authorization|cookie|session|key|credential|ssn|dob|email|phone|address` is redacted.
+- [x] Sensitive-field redaction rules for headers, query parameters, and error messages.
+      Decision: request/response header capture uses an allowlist only: `x-request-id`, `x-correlation-id`, `content-type`, `content-length`, `accept`, `user-agent`, `x-forwarded-for`, `x-real-ip`, `forwarded`. Never persist `authorization`, `cookie`, `set-cookie`, or custom auth headers. Query parameter values are redacted when parameter names match the sensitive pattern list above. Error messages are sanitized to remove stack traces, SQL statements, and secrets, and truncated to 256 chars.
+- [x] Queue publish timeout and retry policy.
+      Decision: publish timeout `200ms`, one retry with jittered backoff `50-100ms`, then fail-open (do not fail API request).
+- [x] Consumer retry count and backoff strategy.
+      Decision: max 5 retries with exponential backoff `1s, 2s, 4s, 8s, 16s`; then route to `audit.events.dlq`.
+- [x] Dead-letter triage process (who inspects and how often).
+      Decision: primary owner is backend maintainer. Inspect DLQ at least daily on working days and immediately when alert triggers. Triage records include root cause, replay decision, and fix ticket reference.
+- [x] Metric names and alert thresholds for publish and consumer failures.
+      Decision metrics:
+  - `audit_publish_attempt_total`
+  - `audit_publish_failure_total`
+  - `audit_publish_latency_ms`
+  - `audit_consumer_processed_total`
+  - `audit_consumer_failure_total`
+  - `audit_dlq_depth`
+    Decision thresholds:
+  - warning: publish failure rate >1% over 5 minutes
+  - critical: publish failure rate >5% over 5 minutes
+  - warning: DLQ depth >0 for 10 minutes
+  - critical: DLQ depth >50 at any time
+- [x] Local and devdocker credential rotation process for queue users.
+      Decision: rotate `audit_local`, `audit_devdocker`, and `admin` credentials every 90 days and immediately after suspected exposure. Rotation steps: update secrets, update broker definitions or user passwords, restart/reload broker config, then run startup checks in section 9.3.
+- [x] Audit retention, access-control, and tamper-evidence policy.
+      Decision: retain audit records for 365 days in non-production environments unless storage pressure requires archival. Write access is restricted to the audit consumer service account. Read access is restricted to backend maintainers and approved compliance/security reviewers. Audit table is append-only for application roles (no update/delete grants). Each record stores a deterministic `record_hash` (SHA-256 over canonical event payload) for tamper detection.
 
 ---
 
