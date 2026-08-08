@@ -246,6 +246,14 @@ Recommended ownership:
 
 Keep use-case boundaries explicit inside these services by modeling each action as a dedicated method or internal command handler. Split into additional top-level services later only if class size or complexity warrants it.
 
+Implementation style rule for Milestone 2:
+
+- Each action should have its own function.
+- That function should either:
+  - implement the full logic for that action, or
+  - compose reusable helper methods plus action-specific logic.
+- Avoid monolithic methods that mix multiple unrelated actions.
+
 All write use cases must execute in transactions.
 
 ---
