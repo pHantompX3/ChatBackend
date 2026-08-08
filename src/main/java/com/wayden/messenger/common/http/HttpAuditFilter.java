@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.http.HttpServerRequest;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -24,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jboss.logging.Logger;
@@ -35,6 +37,25 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
 
   private static final Logger LOG = Logger.getLogger(HttpAuditFilter.class);
   private static final String AUDIT_SCHEMA_VERSION = "1.0";
+  private static final Set<String> REQUEST_HEADER_ALLOWLIST =
+      Set.of(
+          "accept",
+          "accept-encoding",
+          "accept-language",
+          "cache-control",
+          "content-length",
+          "content-type",
+          "forwarded",
+          "sec-ch-ua-mobile",
+          "sec-ch-ua-model",
+          "sec-ch-ua-platform",
+          "traceparent",
+          "user-agent",
+          "x-forwarded-for",
+          "x-real-ip",
+          "x-request-id");
+  private static final Set<String> RESPONSE_HEADER_ALLOWLIST =
+      Set.of("content-length", "content-type", "location", "retry-after", "www-authenticate");
 
   private final RequestAuditContext requestAuditContext;
   private final ObjectMapper objectMapper;
@@ -182,7 +203,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
         requestAuditContext.getTraceId(),
         safe(requestAuditContext.getOperation()),
         safe(requestAuditContext.getMethod()),
-        requestAuditContext.getOperation(),
+        resolveRouteTemplate(),
         safe(requestAuditContext.getPath()),
         requestAuditContext.getQuery(),
         status,
@@ -229,6 +250,44 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     }
 
     return method.getName();
+  }
+
+  private String resolveRouteTemplate() {
+    if (resourceInfo == null) {
+      return safe(requestAuditContext.getPath());
+    }
+
+    StringBuilder templateBuilder = new StringBuilder();
+    Class<?> resourceClass = resourceInfo.getResourceClass();
+    Method resourceMethod = resourceInfo.getResourceMethod();
+
+    if (resourceClass != null) {
+      Path classPath = resourceClass.getAnnotation(Path.class);
+      if (classPath != null && !classPath.value().isBlank()) {
+        templateBuilder.append(normalizePathTemplate(classPath.value()));
+      }
+    }
+
+    if (resourceMethod != null) {
+      Path methodPath = resourceMethod.getAnnotation(Path.class);
+      if (methodPath != null && !methodPath.value().isBlank()) {
+        String normalized = normalizePathTemplate(methodPath.value());
+        if (!normalized.isBlank()) {
+          templateBuilder.append(normalized);
+        }
+      }
+    }
+
+    String routeTemplate = templateBuilder.toString();
+    return routeTemplate.isBlank() ? safe(requestAuditContext.getPath()) : routeTemplate;
+  }
+
+  private String normalizePathTemplate(String value) {
+    if (value == null || value.isBlank()) {
+      return "";
+    }
+    String trimmed = value.trim();
+    return trimmed.startsWith("/") ? trimmed : "/" + trimmed;
   }
 
   private ClientIpResolution resolveClientIp(
@@ -374,13 +433,25 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
 
   private Map<String, Object> toRequestHeadersSnapshot(MultivaluedMap<String, String> headers) {
     Map<String, Object> snapshot = new LinkedHashMap<>();
-    headers.forEach((key, value) -> snapshot.put(key, String.join(",", value)));
+    headers.forEach(
+        (key, value) -> {
+          String normalizedKey = key == null ? "" : key.toLowerCase(Locale.ROOT);
+          if (REQUEST_HEADER_ALLOWLIST.contains(normalizedKey)) {
+            snapshot.put(normalizedKey, String.join(",", value));
+          }
+        });
     return snapshot;
   }
 
   private Map<String, Object> toResponseHeadersSnapshot(MultivaluedMap<String, Object> headers) {
     Map<String, Object> snapshot = new LinkedHashMap<>();
-    headers.forEach((key, value) -> snapshot.put(key, value == null ? "" : value.toString()));
+    headers.forEach(
+        (key, value) -> {
+          String normalizedKey = key == null ? "" : key.toLowerCase(Locale.ROOT);
+          if (RESPONSE_HEADER_ALLOWLIST.contains(normalizedKey)) {
+            snapshot.put(normalizedKey, value == null ? "" : value.toString());
+          }
+        });
     return snapshot;
   }
 

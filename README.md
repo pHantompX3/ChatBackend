@@ -36,9 +36,9 @@ This repository currently standardizes three environments:
 - Future remote machine fronted by an API gateway/load balancer, with Apache APISIX as the preferred edge layer
 - Deployment automation is intentionally deferred until a persistent remote environment exists
 
-## Shared Remote Queue Server (Docker, No App Code Changes)
+## Shared Remote Queue Server (Docker, Optional Audit Transport)
 
-This repository now includes a Dockerized RabbitMQ service that can act as a shared remote queue endpoint for one or more app instances.
+This repository now includes a Dockerized RabbitMQ service that can act as a shared remote queue endpoint for one or more app instances. The queue is optional infrastructure for the app's audit transport and is not required for the core identity flows to work.
 
 - Compose service name: `queue-dev`
 - Standalone compose file: `compose.queue.yaml`
@@ -46,7 +46,7 @@ This repository now includes a Dockerized RabbitMQ service that can act as a sha
 - Management UI port: `15672` (configurable)
 - Persistent queue data volume: `wl-chat-devdocker-rabbitmq-data`
 
-This is infrastructure-only setup. It does not introduce queue producer/consumer logic in application code.
+This is infrastructure-only setup for the optional RabbitMQ-backed audit transport. The application can still run in local mode when the queue is unavailable or disabled.
 
 Queue topology is provisioned at broker startup from repository-managed definitions under `config/rabbitmq/`:
 

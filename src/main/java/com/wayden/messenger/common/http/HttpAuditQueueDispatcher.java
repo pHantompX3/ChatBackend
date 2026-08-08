@@ -219,7 +219,8 @@ public class HttpAuditQueueDispatcher {
       rabbitConsumeChannel = rabbitConnection.createChannel();
 
       rabbitPublishChannel.exchangeDeclare(rabbitExchange, "topic", true);
-      rabbitPublishChannel.queueDeclarePassive(rabbitQueue);
+      rabbitPublishChannel.queueDeclare(rabbitQueue, true, false, false, null);
+      rabbitPublishChannel.queueBind(rabbitQueue, rabbitExchange, rabbitRoutingKey);
       rabbitConsumeChannel.basicQos(Math.max(1, rabbitPrefetch));
       return true;
     } catch (Exception exception) {

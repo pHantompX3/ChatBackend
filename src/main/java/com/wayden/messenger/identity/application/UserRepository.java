@@ -13,4 +13,6 @@ public interface UserRepository {
   Optional<User> findByNormalizedUsername(NormalizedUsername normalizedUsername);
 
   User save(User user);
+
+  User saveFirstAdminIfAbsent(User user);
 }

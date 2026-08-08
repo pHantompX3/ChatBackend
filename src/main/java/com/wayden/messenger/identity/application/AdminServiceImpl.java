@@ -44,10 +44,6 @@ public class AdminServiceImpl implements AdminService {
 
   @Override
   public BootstrapAdminResult bootstrapFirstAdmin(BootstrapAdminCommand command) {
-    if (userRepository.existsAnyUser()) {
-      throw new IdentityExceptions.BootstrapAlreadyCompletedException();
-    }
-
     final NormalizedUsername normalizedUsername = NormalizedUsername.fromRaw(command.username());
     if (userRepository.findByNormalizedUsername(normalizedUsername).isPresent()) {
       throw new IdentityExceptions.DuplicateUsernameException(
@@ -66,7 +62,7 @@ public class AdminServiceImpl implements AdminService {
             now,
             now);
 
-    final User saved = userRepository.save(user);
+    final User saved = userRepository.saveFirstAdminIfAbsent(user);
     requestAuditContext.putCustomAttribute("identityEvent", "admin.bootstrap.created");
     requestAuditContext.putCustomAttribute("actorUserId", saved.id().value().toString());
     requestAuditContext.putCustomAttribute("actorUsername", saved.username());

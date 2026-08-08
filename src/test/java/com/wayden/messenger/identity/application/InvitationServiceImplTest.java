@@ -335,6 +335,11 @@ final class InvitationServiceImplTest {
     public User save(User user) {
       return user;
     }
+
+    @Override
+    public User saveFirstAdminIfAbsent(User user) {
+      return user;
+    }
   }
 
   private static final class StubPasswordHasher implements PasswordHasher {

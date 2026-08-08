@@ -8,6 +8,8 @@ services:
       RABBITMQ_DEFAULT_USER: ${WL_CHAT_QUEUE_USERNAME:-wl_chat_queue}
       RABBITMQ_DEFAULT_PASS: ${WL_CHAT_QUEUE_PASSWORD:?WL_CHAT_QUEUE_PASSWORD is required}
       RABBITMQ_DEFAULT_VHOST: ${WL_CHAT_QUEUE_VHOST:-/}
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: >-
+        -rabbitmq_management load_definitions "/etc/rabbitmq/definitions.json"
     ports:
       - target: 5672
         published: ${WL_CHAT_QUEUE_PORT:-5672}
@@ -20,6 +22,7 @@ services:
     volumes:
       - wl-chat-queue-rabbitmq-data:/var/lib/rabbitmq
       - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./config/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s

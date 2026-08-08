@@ -34,6 +34,11 @@ public class JdbcUserRepository implements UserRepository {
       "INSERT INTO [identity].[user_account] "
           + "(id, username, normalized_username, password_hash, system_role, status, created_at, updated_at) "
           + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+  private static final String INSERT_FIRST_ADMIN_SQL =
+      "INSERT INTO [identity].[user_account] "
+          + "(id, username, normalized_username, password_hash, system_role, status, created_at, updated_at) "
+          + "SELECT ?, ?, ?, ?, ?, ?, ?, ? "
+          + "WHERE NOT EXISTS (SELECT 1 FROM [identity].[user_account] WITH (UPDLOCK, HOLDLOCK))";
 
   private final DataSource dataSource;
 
@@ -110,6 +115,33 @@ public class JdbcUserRepository implements UserRepository {
             "Username is already in use: " + user.normalizedUsername().value());
       }
       throw new IllegalStateException("Failed to save user", e);
+    }
+  }
+
+  @Override
+  public User saveFirstAdminIfAbsent(User user) {
+    try (var connection = dataSource.getConnection();
+        var statement = connection.prepareStatement(INSERT_FIRST_ADMIN_SQL)) {
+      statement.setObject(1, user.id().value());
+      statement.setString(2, user.username());
+      statement.setString(3, user.normalizedUsername().value());
+      statement.setString(4, user.passwordHash().value());
+      statement.setString(5, user.systemRole().name());
+      statement.setString(6, user.status().name());
+      statement.setObject(7, toUtcLocalDateTime(user.createdAt()));
+      statement.setObject(8, toUtcLocalDateTime(user.updatedAt()));
+      int insertedRowCount = statement.executeUpdate();
+      if (insertedRowCount == 0) {
+        throw new IdentityExceptions.BootstrapAlreadyCompletedException();
+      }
+      return user;
+    } catch (SQLException e) {
+      if (e.getErrorCode() == SqlServerErrorCodes.UNIQUE_INDEX
+          || e.getErrorCode() == SqlServerErrorCodes.UNIQUE_CONSTRAINT) {
+        throw new IdentityExceptions.DuplicateUsernameException(
+            "Username is already in use: " + user.normalizedUsername().value());
+      }
+      throw new IllegalStateException("Failed to bootstrap first admin", e);
     }
   }
 
