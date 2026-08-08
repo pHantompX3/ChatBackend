@@ -76,6 +76,7 @@ The repository uses a two-phase SQL setup model:
 - `V20260808110000__create_wl_chat_database.sql` (master)
 - `V20260808110500__create_app_login_and_user.sql` (wl_chat)
 - `V20260808111000__grant_app_permissions.sql` (wl_chat)
+- `V20260808111500__create_logical_schemas.sql` (wl_chat)
 - New migrations use `VYYYYMMDDHHMMSS__description_in_snake_case.sql`.
 
 ## Setup Scripts: Use Cases and Required Order
@@ -141,6 +142,7 @@ Use these scripts instead of remembering the full bootstrap and migration sequen
   - Applies schema migrations to the local `wl_chat` database.
 - `./scripts/database/init-local.sh`
   - Convenience wrapper for local bootstrap + migrate.
+  - Set `WL_CHAT_RESET_DB=true` to reset `wl_chat` and bootstrap Flyway history before reapplying migrations (destructive).
 - `./scripts/cicd/run-quarkus-dev.sh`
   - Starts Quarkus dev mode, loads local secrets, and writes logs under `logs/chat_backend`.
 - `./scripts/database/bootstrap-devdocker.sh`
@@ -149,6 +151,7 @@ Use these scripts instead of remembering the full bootstrap and migration sequen
   - Applies schema migrations to the DevDocker database.
 - `./scripts/database/init-devdocker.sh`
   - Convenience wrapper for DevDocker bootstrap + migrate.
+  - Set `WL_CHAT_RESET_DB=true` to reset `wl_chat` and bootstrap Flyway history before reapplying migrations (destructive).
 - `./scripts/cicd/devdocker-up.sh`
   - Starts the DevDocker stack and initializes the database.
 - `./scripts/cicd/devdocker-down.sh`
