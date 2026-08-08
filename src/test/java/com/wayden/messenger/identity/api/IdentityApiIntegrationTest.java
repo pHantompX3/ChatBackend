@@ -4,6 +4,8 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.wayden.messenger.bootstrap.IdentitySqlServerTestResource;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -21,6 +23,10 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 @QuarkusTestResource(IdentitySqlServerTestResource.class)
 final class IdentityApiIntegrationTest {
+
+  private static final String AUDIT_ROW_SQL =
+      "SELECT TOP (1) event_type, actor_user_id, actor_username, actor_auth_type, target_type, target_id "
+          + "FROM [audit].[http_audit_event] WHERE request_id = ? ORDER BY created_at DESC";
 
   @BeforeEach
   void resetIdentityTables() throws Exception {
@@ -57,6 +63,67 @@ final class IdentityApiIntegrationTest {
         .statusCode(409)
         .contentType(startsWith("application/problem+json"))
         .body("code", equalTo("BOOTSTRAP_ALREADY_COMPLETED"));
+  }
+
+  @Test
+  void publicRegistrationPathShouldNotExist() {
+    given()
+        .contentType(ContentType.JSON)
+        .body(Map.of("username", "public-user", "password", "PublicPassw0rd!"))
+        .when()
+        .post("/api/v1/register")
+        .then()
+        .statusCode(404);
+  }
+
+  @Test
+  void bootstrapAdminShouldPersistActorAuditFields() {
+    String requestId =
+        given()
+            .contentType(ContentType.JSON)
+            .body(Map.of("username", "Bootstrap Audit Admin", "password", "AdminPassw0rd!"))
+            .when()
+            .post("/api/v1/bootstrap/admin")
+            .then()
+            .statusCode(200)
+            .extract()
+            .header("X-Request-Id");
+
+    AuditRow auditRow = loadAuditRow(requestId);
+    assertEquals("admin.bootstrap.created", auditRow.eventType());
+    assertEquals("bootstrap", auditRow.actorAuthType());
+    assertEquals("user", auditRow.targetType());
+    assertEquals(auditRow.actorUserId().toLowerCase(), auditRow.targetId().toLowerCase());
+    assertEquals("Bootstrap Audit Admin", auditRow.actorUsername());
+  }
+
+  @Test
+  void createInvitationShouldPersistActorAuditFields() {
+    String adminUserId = bootstrapAdmin("Actor Audit Admin");
+
+    String requestId =
+        given()
+            .contentType(ContentType.JSON)
+            .body(
+                Map.of(
+                    "actorUserId",
+                    adminUserId,
+                    "expiresAt",
+                    Instant.now().plus(1, ChronoUnit.DAYS).toString()))
+            .when()
+            .post("/api/v1/invitations")
+            .then()
+            .statusCode(200)
+            .extract()
+            .header("X-Request-Id");
+
+    AuditRow auditRow = loadAuditRow(requestId);
+    assertEquals("invitation.created", auditRow.eventType());
+    assertEquals(adminUserId.toLowerCase(), auditRow.actorUserId().toLowerCase());
+    assertEquals("Actor Audit Admin", auditRow.actorUsername());
+    assertEquals("admin-session", auditRow.actorAuthType());
+    assertEquals("invitation", auditRow.targetType());
+    assertTrue(auditRow.targetId() != null && !auditRow.targetId().isBlank());
   }
 
   @Test
@@ -295,4 +362,37 @@ final class IdentityApiIntegrationTest {
       throw new IllegalStateException("Failed to force invitation expiry in test setup", exception);
     }
   }
+
+  private static AuditRow loadAuditRow(String requestId) {
+    try (var connection =
+            DriverManager.getConnection(
+                IdentitySqlServerTestResource.jdbcUrl("wl_chat"),
+                "sa",
+                IdentitySqlServerTestResource.saPassword());
+        var statement = connection.prepareStatement(AUDIT_ROW_SQL)) {
+      statement.setString(1, requestId);
+      try (var resultSet = statement.executeQuery()) {
+        if (!resultSet.next()) {
+          throw new IllegalStateException("Expected audit row for requestId=" + requestId);
+        }
+        return new AuditRow(
+            resultSet.getString("event_type"),
+            resultSet.getString("actor_user_id"),
+            resultSet.getString("actor_username"),
+            resultSet.getString("actor_auth_type"),
+            resultSet.getString("target_type"),
+            resultSet.getString("target_id"));
+      }
+    } catch (Exception exception) {
+      throw new IllegalStateException("Failed to load audit row", exception);
+    }
+  }
+
+  private record AuditRow(
+      String eventType,
+      String actorUserId,
+      String actorUsername,
+      String actorAuthType,
+      String targetType,
+      String targetId) {}
 }

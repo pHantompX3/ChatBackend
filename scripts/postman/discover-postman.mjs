@@ -445,15 +445,11 @@ function ensureProtectedHealthRequests(collection) {
 }
 
 function mergeDiscoveredEndpoints(collection, endpoints) {
-  const folder = ensureFolder(
-    collection,
-    "Discovered APIs",
-    "Auto-discovered endpoints grouped by Java source file.",
-  );
+  const legacyFolder = findFolder(collection, "Discovered APIs");
 
   const nonDiscoveredRequests = [];
   for (const topLevelItem of collection.item ?? []) {
-    if (topLevelItem === folder) {
+    if (topLevelItem === legacyFolder) {
       continue;
     }
     collectRequests(topLevelItem, nonDiscoveredRequests);
@@ -465,7 +461,9 @@ function mergeDiscoveredEndpoints(collection, endpoints) {
     ),
   );
 
-  const existingDiscoveredRequests = collectRequests(folder);
+  const existingDiscoveredRequests = legacyFolder
+    ? collectRequests(legacyFolder)
+    : [];
   const reusableRequests = existingDiscoveredRequests.filter((entry) => {
     if (!entry?.request?.method || !entry?.request?.url?.raw) {
       return false;
@@ -538,23 +536,22 @@ function mergeDiscoveredEndpoints(collection, endpoints) {
     addedCount += 1;
   }
 
-  folder.item = [];
   for (const groupName of Array.from(grouped.keys()).sort((a, b) =>
     a.localeCompare(b),
   )) {
-    const groupFolder = ensureChildFolder(
-      folder,
+    const groupFolder = ensureFolder(
+      collection,
       groupName,
       `Auto-discovered endpoints from ${groupName}.java.`,
     );
     groupFolder.item = grouped.get(groupName);
   }
 
-  if ((folder.item ?? []).length === 0) {
-    if ((collection.item ?? []).includes(folder)) {
-      cleanedCount += 1;
-    }
-    collection.item = (collection.item ?? []).filter((item) => item !== folder);
+  if (legacyFolder && (collection.item ?? []).includes(legacyFolder)) {
+    cleanedCount += 1;
+    collection.item = (collection.item ?? []).filter(
+      (item) => item !== legacyFolder,
+    );
   }
 
   return { addedCount, movedCount, cleanedCount };

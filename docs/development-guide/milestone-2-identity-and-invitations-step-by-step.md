@@ -26,6 +26,13 @@ This milestone is complete only when the project can:
 
 Milestone 2 does not include session token lifecycle (Milestone 3), conversations (Milestone 4), or messaging behavior (Milestone 5).
 
+Milestone 3 handoff note:
+
+- When session/token authentication is introduced, actor identity for audit events must move out of service-layer request payload handling and into the authentication filter chain.
+- The auth filter that resolves the authenticated token/session to a user must populate authoritative actor audit context fields (`actorUserId`, `actorUsername`, `actorAuthType`) for downstream audit emission.
+- Service-layer manual actor audit writes added in Milestone 2 are transitional and should be reduced or removed in Milestone 3 once authenticated actor identity is available from the request/auth context.
+- Failure classification that can be derived from operation + HTTP status + mapped problem code should remain centralized in HTTP/filter-layer audit assembly rather than repeated across services.
+
 ---
 
 ## 1. Deliverables and Exit Criteria
@@ -936,27 +943,34 @@ curl -s http://localhost:8080/q/health/ready
 
 Mark complete only when all checks are true:
 
-- [ ] Public registration path does not exist.
-- [ ] Invitation create/revoke/redeem endpoints and services are implemented.
-- [ ] Invitation token raw value is never persisted.
-- [ ] Invitation token hash is unique and race-safe.
-- [ ] Username normalization uniqueness is race-safe.
-- [ ] Argon2id hash and verify paths are covered by tests.
-- [ ] Concurrency tests prove single success for redemption and duplicate username races.
-- [ ] Security audit events are persisted/emitted with safe metadata.
-- [ ] Asynchronous audit queue is configured with environment isolation and dead-letter handling.
-- [ ] Audit message schema version is documented and validated in tests.
-- [ ] Fail-open request behavior and dead-letter flow are covered by tests.
-- [ ] HTTP request/response, error, actor, network, and device audit fields are captured and validated.
-- [ ] Postman artifacts are updated and validated.
-- [ ] `./mvnw clean verify` passes on Milestone 2 branch.
+- [x] Public registration path does not exist.
+- [x] Invitation create/revoke/redeem endpoints and services are implemented.
+- [x] Invitation token raw value is never persisted.
+- [x] Invitation token hash is unique and race-safe.
+- [x] Username normalization uniqueness is race-safe.
+- [x] Argon2id hash and verify paths are covered by tests.
+- [x] Concurrency tests prove single success for redemption and duplicate username races.
+- [x] Security audit events are persisted/emitted with safe metadata.
+- [x] Asynchronous audit queue is configured with environment isolation and dead-letter handling.
+- [x] Audit message schema version is documented and validated in tests.
+- [x] Fail-open request behavior and dead-letter flow are covered by tests.
+- [x] HTTP request/response, error, actor, network, and device audit fields are captured and validated.
+- [x] Postman artifacts are updated and validated.
+- [x] `./mvnw clean verify` passes on Milestone 2 branch.
 
 Evidence capture checklist:
 
-- [ ] Save verification command output.
-- [ ] Save test output for concurrency cases.
-- [ ] Save SQL proof that invitation token hashes, not raw tokens, are stored.
+- [x] Save verification command output.
+- [x] Save test output for concurrency cases.
+- [x] Save SQL proof that invitation token hashes, not raw tokens, are stored.
 - [ ] Save CI run URL(s) for passing Milestone 2 PR checks.
+
+Evidence captured locally:
+
+- `./mvnw clean verify` completed with `Tests run: 40, Failures: 0, Errors: 0`, `BugInstance size is 0`, and `BUILD SUCCESS`.
+- `./mvnw -Dtest=IdentityApiConcurrencyIntegrationTest test` completed with `Tests run: 3, Failures: 0, Errors: 0`, and `BUILD SUCCESS`.
+- SQL schema proof for `identity.invitation` confirms only hashed token storage is present: columns are `id`, `token_hash`, `created_by`, `expires_at`, `redeemed_at`, `redeemed_by`, `revoked_at`, `created_at`.
+- CI run URL capture remains manual/pipeline-side and was not available from the local workspace session.
 
 ---
 

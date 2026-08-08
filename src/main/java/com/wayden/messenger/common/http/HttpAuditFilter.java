@@ -120,13 +120,13 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     payload.put("query", requestAuditContext.getQuery());
     payload.put(
         "network",
-        Map.of(
+        snapshotMap(
             "clientIp", requestAuditContext.getClientIp(),
             "forwardedFor", requestAuditContext.getForwardedFor(),
             "xRealIp", requestAuditContext.getXRealIp()));
     payload.put(
         "device",
-        Map.of(
+        snapshotMap(
             "userAgent", requestAuditContext.getUserAgent(),
             "deviceType", requestAuditContext.getDeviceType(),
             "deviceModel", requestAuditContext.getDeviceModel(),
@@ -136,7 +136,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
             "browser", requestAuditContext.getBrowserFamily()));
     payload.put(
         "response",
-        Map.of(
+        snapshotMap(
             "status", requestAuditContext.getResponseStatus(),
             "durationMs", requestAuditContext.getDurationMs(),
             "responseLength", requestAuditContext.getResponseLength()));
@@ -381,6 +381,14 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
   private Map<String, Object> toResponseHeadersSnapshot(MultivaluedMap<String, Object> headers) {
     Map<String, Object> snapshot = new LinkedHashMap<>();
     headers.forEach((key, value) -> snapshot.put(key, value == null ? "" : value.toString()));
+    return snapshot;
+  }
+
+  private Map<String, Object> snapshotMap(Object... keyValues) {
+    Map<String, Object> snapshot = new LinkedHashMap<>();
+    for (int index = 0; index < keyValues.length; index += 2) {
+      snapshot.put(String.valueOf(keyValues[index]), keyValues[index + 1]);
+    }
     return snapshot;
   }
 

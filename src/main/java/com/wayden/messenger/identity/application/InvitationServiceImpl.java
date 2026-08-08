@@ -75,6 +75,8 @@ public class InvitationServiceImpl implements InvitationService {
 
     final Invitation saved = invitationRepository.save(invitation);
     requestAuditContext.putCustomAttribute("identityEvent", "invitation.created");
+    requestAuditContext.putCustomAttribute("actorUserId", command.actorUserId().value().toString());
+    requestAuditContext.putCustomAttribute("actorAuthType", "admin-session");
     requestAuditContext.putCustomAttribute("targetInvitationId", saved.id().value().toString());
     LOG.infof("invitation created requestId=%s", requestAuditContext.getRequestId());
 
@@ -93,6 +95,8 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     requestAuditContext.putCustomAttribute("identityEvent", "invitation.revoked");
+    requestAuditContext.putCustomAttribute("actorUserId", command.actorUserId().value().toString());
+    requestAuditContext.putCustomAttribute("actorAuthType", "admin-session");
     requestAuditContext.putCustomAttribute(
         "targetInvitationId", command.invitationId().value().toString());
   }
@@ -151,6 +155,9 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     requestAuditContext.putCustomAttribute("identityEvent", "invitation.redeemed");
+    requestAuditContext.putCustomAttribute("actorUserId", savedUser.id().value().toString());
+    requestAuditContext.putCustomAttribute("actorUsername", savedUser.username());
+    requestAuditContext.putCustomAttribute("actorAuthType", "invitation");
     requestAuditContext.putCustomAttribute("targetUserId", savedUser.id().value().toString());
     requestAuditContext.putCustomAttribute(
         "targetInvitationId", invitation.id().value().toString());
@@ -179,6 +186,9 @@ public class InvitationServiceImpl implements InvitationService {
                   requestAuditContext.putCustomAttribute(
                       "failureCode", "INVITATION_ACTOR_FORBIDDEN");
                   requestAuditContext.putCustomAttribute(
+                      "actorUserId", actorUserId.value().toString());
+                  requestAuditContext.putCustomAttribute("actorAuthType", "admin-session");
+                  requestAuditContext.putCustomAttribute(
                       "targetUserId", actorUserId.value().toString());
                   return new IdentityExceptions.ActorNotAuthorizedException();
                 });
@@ -186,8 +196,15 @@ public class InvitationServiceImpl implements InvitationService {
     if (actor.systemRole() != SystemRole.ADMIN || actor.status() != UserStatus.ACTIVE) {
       requestAuditContext.putCustomAttribute("identityEvent", "invitation.actor.denied");
       requestAuditContext.putCustomAttribute("failureCode", "INVITATION_ACTOR_FORBIDDEN");
+      requestAuditContext.putCustomAttribute("actorUserId", actor.id().value().toString());
+      requestAuditContext.putCustomAttribute("actorUsername", actor.username());
+      requestAuditContext.putCustomAttribute("actorAuthType", "admin-session");
       requestAuditContext.putCustomAttribute("targetUserId", actor.id().value().toString());
       throw new IdentityExceptions.ActorNotAuthorizedException();
     }
+
+    requestAuditContext.putCustomAttribute("actorUserId", actor.id().value().toString());
+    requestAuditContext.putCustomAttribute("actorUsername", actor.username());
+    requestAuditContext.putCustomAttribute("actorAuthType", "admin-session");
   }
 }

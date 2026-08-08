@@ -38,6 +38,7 @@ final class IdentityApiConcurrencyIntegrationTest {
                 "sa",
                 IdentitySqlServerTestResource.saPassword());
         var statement = connection.createStatement()) {
+      statement.executeUpdate("DELETE FROM [audit].[http_audit_event]");
       statement.executeUpdate("DELETE FROM [identity].[invitation]");
       statement.executeUpdate("DELETE FROM [identity].[user_account]");
     }

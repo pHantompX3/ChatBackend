@@ -68,6 +68,9 @@ public class AdminServiceImpl implements AdminService {
 
     final User saved = userRepository.save(user);
     requestAuditContext.putCustomAttribute("identityEvent", "admin.bootstrap.created");
+    requestAuditContext.putCustomAttribute("actorUserId", saved.id().value().toString());
+    requestAuditContext.putCustomAttribute("actorUsername", saved.username());
+    requestAuditContext.putCustomAttribute("actorAuthType", "bootstrap");
     requestAuditContext.putCustomAttribute("targetUserId", saved.id().value().toString());
     LOG.infof("bootstrap admin created requestId=%s", requestAuditContext.getRequestId());
 

@@ -1,6 +1,7 @@
 package com.wayden.messenger.identity.api;
 
 import com.wayden.messenger.identity.application.IdentityExceptions;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -11,6 +12,9 @@ public class IdentityExceptionMapper implements ExceptionMapper<RuntimeException
 
   @Override
   public Response toResponse(RuntimeException exception) {
+    if (exception instanceof WebApplicationException webApplicationException) {
+      return webApplicationException.getResponse();
+    }
     if (exception instanceof IdentityExceptions.BootstrapAlreadyCompletedException) {
       return problem(
           409,
