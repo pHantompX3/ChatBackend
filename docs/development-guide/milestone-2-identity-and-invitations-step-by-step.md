@@ -589,12 +589,51 @@ Required message fields:
 - `operation`
 - `method`
 - `path`
+- `query`
 - `responseStatus`
+- `responseCode` (application-level code when available)
 - `durationMs`
+- `requestTimestamp`
+- `responseTimestamp`
 - `actorUserId` (nullable)
+- `actorUsername` (nullable)
+- `actorAuthType` (nullable, for example `session`, `api-key`, `anonymous`)
 - `targetType` (nullable)
 - `targetId` (nullable)
+- `sourceIp` (derived from trusted forwarding headers)
+- `remoteIp` (socket/transport endpoint)
+- `ipResolutionSource` (for example `x-forwarded-for`, `x-real-ip`, `forwarded`, `remote-address`)
+- `userAgent`
+- `deviceType`
+- `devicePlatform`
+- `deviceModel`
+- `osFamily`
+- `browserFamily`
+- `requestHeaders` (sanitized subset only)
+- `responseHeaders` (sanitized subset only)
+- `errorCode` (nullable)
+- `errorMessage` (nullable, sanitized)
 - `metadata` (sanitized key-value map)
+
+HTTP request and response capture requirements:
+
+- Capture full request context (method, route/path template, path, query, selected headers, timing, actor, source/remote IP, and device fingerprint hints).
+- Capture full response context (status, application code, selected headers, timing, error code/message when applicable).
+- Capture both successful and failed requests, including mapped problem responses.
+- Preserve correlation identifiers (`requestId`, `traceId`) for cross-system investigation.
+
+Error capture requirements:
+
+- Store stable application error code for handled failures.
+- Store sanitized error message suitable for compliance/audit review.
+- Do not store stack traces or internal SQL/driver exception payloads in audit records.
+
+Sensitive data and compliance controls:
+
+- Never persist secrets, tokens, passwords, raw authorization headers, cookies, or sensitive PII in audit records.
+- Redact or hash sensitive query parameters and sensitive header values.
+- For request/response bodies, default to storing metadata only (content type, size, optional body hash), not raw payload.
+- Record retention window, access controls, and tamper-evidence requirements must be defined before production rollout.
 
 Delivery policy for Milestone 2:
 
@@ -608,11 +647,13 @@ Before writing queue integration code, mark these as decided:
 
 - [ ] Final event schema version and required fields.
 - [ ] Sensitive-field redaction rules for `metadata`.
+- [ ] Sensitive-field redaction rules for headers, query parameters, and error messages.
 - [ ] Queue publish timeout and retry policy.
 - [ ] Consumer retry count and backoff strategy.
 - [ ] Dead-letter triage process (who inspects and how often).
 - [ ] Metric names and alert thresholds for publish and consumer failures.
 - [ ] Local and devdocker credential rotation process for queue users.
+- [ ] Audit retention, access-control, and tamper-evidence policy.
 
 ---
 
@@ -712,6 +753,7 @@ Mark complete only when all checks are true:
 - [ ] Asynchronous audit queue is configured with environment isolation and dead-letter handling.
 - [ ] Audit message schema version is documented and validated in tests.
 - [ ] Fail-open request behavior and dead-letter flow are covered by tests.
+- [ ] HTTP request/response, error, actor, network, and device audit fields are captured and validated.
 - [ ] Postman artifacts are updated and validated.
 - [ ] `./mvnw clean verify` passes on Milestone 2 branch.
 
