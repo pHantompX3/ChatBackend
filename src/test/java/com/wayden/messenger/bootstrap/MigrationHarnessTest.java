@@ -12,6 +12,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
+@SuppressWarnings("resource")
 final class MigrationHarnessTest {
 
   private static final String DB_PASSWORD = "StrongPassw0rd!";
@@ -42,6 +43,12 @@ final class MigrationHarnessTest {
                 "sa",
                 DB_PASSWORD);
         var schemaStatement = connection.prepareStatement(TestSqlSupport.SCHEMA_COUNT_SQL);
+        var tableStatement =
+            connection.prepareStatement(
+                "SELECT COUNT(*) FROM sys.tables t "
+                    + "JOIN sys.schemas s ON s.schema_id = t.schema_id "
+                    + "WHERE s.name IN ('identity', 'audit') "
+                    + "AND t.name IN ('user_account', 'invitation', 'http_audit_event')");
         var historyStatement =
             connection.prepareStatement(TestSqlSupport.FLYWAY_HISTORY_SCHEMA_SQL)) {
 
@@ -53,6 +60,11 @@ final class MigrationHarnessTest {
       try (var historyResult = historyStatement.executeQuery()) {
         historyResult.next();
         assertEquals("platform", historyResult.getString(1));
+      }
+
+      try (var tableResult = tableStatement.executeQuery()) {
+        tableResult.next();
+        assertEquals(3, tableResult.getInt(1));
       }
     } catch (Exception exception) {
       throw new IllegalStateException("Failed to validate migrated schema state", exception);

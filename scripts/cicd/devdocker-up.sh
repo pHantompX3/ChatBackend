@@ -17,10 +17,17 @@ fi
 APP_PORT="${WL_CHAT_APP_PORT:-8081}"
 APP_IMAGE="${WL_CHAT_APP_IMAGE:-wl-chat-app-dev:latest}"
 RESET_DB="${WL_CHAT_RESET_DB:-false}"
+ENABLE_QUEUE="${WL_CHAT_ENABLE_QUEUE:-true}"
 
 if [[ -z "${MSSQL_SA_PASSWORD:-}" ]]; then
   echo "MSSQL_SA_PASSWORD is required."
   echo "Example: export MSSQL_SA_PASSWORD='your_sa_password'"
+  exit 1
+fi
+
+if [[ "${ENABLE_QUEUE}" == "true" && -z "${WL_CHAT_QUEUE_PASSWORD:-}" ]]; then
+  echo "WL_CHAT_QUEUE_PASSWORD is required when WL_CHAT_ENABLE_QUEUE=true."
+  echo "Set it in scripts/config/local.secrets.env or export it in your shell."
   exit 1
 fi
 
@@ -36,6 +43,37 @@ export WL_CHAT_APP_IMAGE="${APP_IMAGE}"
 if [[ "${RESET_DB}" == "true" ]]; then
   echo "WL_CHAT_RESET_DB=true: resetting DevDocker stack and SQL volume (destructive)."
   docker compose -f "${COMPOSE_FILE}" down -v --remove-orphans
+fi
+
+if [[ "${ENABLE_QUEUE}" == "true" ]]; then
+  if ! docker compose -f "${COMPOSE_FILE}" up -d --wait queue-dev >/tmp/wl_chat_queue_up.log 2>&1; then
+    if grep -qiE 'unknown flag: --wait|unknown option: --wait|no such option: --wait' /tmp/wl_chat_queue_up.log; then
+      echo "docker compose '--wait' not supported, using manual queue health wait..."
+      docker compose -f "${COMPOSE_FILE}" up -d queue-dev
+
+      queue_cid="$(docker compose -f "${COMPOSE_FILE}" ps -q queue-dev)"
+      if [[ -z "${queue_cid}" ]]; then
+        echo "Could not determine queue container ID."
+        exit 1
+      fi
+
+      for i in {1..45}; do
+        health_status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}nohealth{{end}}' "${queue_cid}" 2>/dev/null || true)"
+        if [[ "${health_status}" == "healthy" ]]; then
+          break
+        fi
+        if [[ $i -eq 45 ]]; then
+          echo "Queue did not become healthy in time (status: ${health_status})."
+          docker compose -f "${COMPOSE_FILE}" logs --no-color --tail=120 queue-dev || true
+          exit 1
+        fi
+        sleep 2
+      done
+    else
+      cat /tmp/wl_chat_queue_up.log
+      exit 1
+    fi
+  fi
 fi
 
 if ! docker compose -f "${COMPOSE_FILE}" up -d --wait sqlserver-dev >/tmp/wl_chat_sql_up.log 2>&1; then
@@ -83,3 +121,6 @@ done
 
 echo "DevDocker stack is up."
 echo "App URL: http://localhost:${APP_PORT}"
+if [[ "${ENABLE_QUEUE}" == "true" ]]; then
+  echo "Queue URL: amqp://${WL_CHAT_QUEUE_USERNAME:-wl_chat_queue}:***@<queue-host>:${WL_CHAT_QUEUE_PORT:-5672}${WL_CHAT_QUEUE_VHOST:-/}"
+fi

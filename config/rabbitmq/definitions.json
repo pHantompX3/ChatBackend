@@ -1,0 +1,74 @@
+{
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "policies": [
+    {
+      "vhost": "/",
+      "name": "audit-events-dlq-policy",
+      "pattern": "^audit\\.events$",
+      "apply-to": "queues",
+      "definition": {
+        "dead-letter-exchange": "audit.events.dlx",
+        "dead-letter-routing-key": "audit.dead"
+      },
+      "priority": 0
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "audit.events",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "audit.events.dlx",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "audit.events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "audit.events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "audit.events",
+      "vhost": "/",
+      "destination": "audit.events",
+      "destination_type": "queue",
+      "routing_key": "audit.#",
+      "arguments": {}
+    },
+    {
+      "source": "audit.events.dlx",
+      "vhost": "/",
+      "destination": "audit.events.dlq",
+      "destination_type": "queue",
+      "routing_key": "audit.dead",
+      "arguments": {}
+    }
+  ]
+}

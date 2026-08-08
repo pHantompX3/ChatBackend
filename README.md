@@ -36,6 +36,66 @@ This repository currently standardizes three environments:
 - Future remote machine fronted by an API gateway/load balancer, with Apache APISIX as the preferred edge layer
 - Deployment automation is intentionally deferred until a persistent remote environment exists
 
+## Shared Remote Queue Server (Docker, No App Code Changes)
+
+This repository now includes a Dockerized RabbitMQ service that can act as a shared remote queue endpoint for one or more app instances.
+
+- Compose service name: `queue-dev`
+- Standalone compose file: `compose.queue.yaml`
+- AMQP port: `5672` (configurable)
+- Management UI port: `15672` (configurable)
+- Persistent queue data volume: `wl-chat-devdocker-rabbitmq-data`
+
+This is infrastructure-only setup. It does not introduce queue producer/consumer logic in application code.
+
+Queue topology is provisioned at broker startup from repository-managed definitions under `config/rabbitmq/`:
+
+- Exchange: `audit.events`
+- Dead-letter exchange: `audit.events.dlx`
+- Queue: `audit.events`
+- Dead-letter queue: `audit.events.dlq`
+
+### Queue secrets and network settings
+
+Set these in `scripts/config/local.secrets.env` (or via `WL_CHAT_SECRETS_FILE`):
+
+```bash
+WL_CHAT_QUEUE_USERNAME=wl_chat_queue
+WL_CHAT_QUEUE_PASSWORD=replace_with_queue_password
+WL_CHAT_QUEUE_VHOST=/
+WL_CHAT_QUEUE_PORT=5672
+WL_CHAT_QUEUE_MGMT_PORT=15672
+WL_CHAT_QUEUE_HOST_IP=0.0.0.0
+WL_CHAT_QUEUE_MGMT_HOST_IP=127.0.0.1
+```
+
+Notes:
+
+- `WL_CHAT_QUEUE_HOST_IP=0.0.0.0` exposes AMQP to other hosts that can reach this machine.
+- Keep `WL_CHAT_QUEUE_MGMT_HOST_IP=127.0.0.1` unless remote UI access is explicitly required.
+
+### Start/stop queue server only
+
+```bash
+./scripts/cicd/queue-up.sh
+./scripts/cicd/queue-down.sh
+```
+
+By default these scripts use `compose.queue.yaml` so you can run queue infrastructure independent of app and DB.
+
+Optional override:
+
+```bash
+export WL_CHAT_QUEUE_COMPOSE_FILE=/absolute/path/to/compose.queue.yaml
+```
+
+### Start full DevDocker stack (app + DB + shared queue)
+
+```bash
+./scripts/cicd/devdocker-up.sh
+./scripts/cicd/devdocker-down.sh
+```
+
 ## Current Runtime Configuration
 
 Primary runtime defaults are defined in `src/main/resources/application.properties`:

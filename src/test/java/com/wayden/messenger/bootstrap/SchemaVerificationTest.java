@@ -14,6 +14,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
+@SuppressWarnings("resource")
 final class SchemaVerificationTest {
 
   private static final String DB_PASSWORD = "StrongPassw0rd!";
@@ -61,6 +62,18 @@ final class SchemaVerificationTest {
               });
 
       assertTrue(sqlException.getMessage().toLowerCase().contains("permission"));
+
+      final SQLException updateDenied =
+          org.junit.jupiter.api.Assertions.assertThrows(
+              SQLException.class,
+              () -> {
+                try (var updateStatement = connection.createStatement()) {
+                  updateStatement.executeUpdate(
+                      "UPDATE audit.http_audit_event SET event_type = 'forbidden' WHERE 1 = 0");
+                }
+              });
+
+      assertTrue(updateDenied.getMessage().toLowerCase().contains("permission"));
     } catch (SQLException exception) {
       throw new IllegalStateException("Failed runtime principal verification", exception);
     }
