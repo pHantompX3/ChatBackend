@@ -4,10 +4,21 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
+import io.quarkus.test.junit.TestProfile;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
+@TestProfile(HealthEndpointTest.HealthEndpointProfile.class)
 final class HealthEndpointTest {
+
+  public static final class HealthEndpointProfile implements QuarkusTestProfile {
+    @Override
+    public Map<String, String> getConfigOverrides() {
+      return Map.of("quarkus.datasource.health.enabled", "false");
+    }
+  }
 
   @Test
   void livenessShouldReportUp() {
