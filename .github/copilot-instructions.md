@@ -26,6 +26,11 @@ Whenever an API endpoint is added, removed, renamed, or materially changed:
 - Run `./scripts/postman/validate-postman.sh` before concluding API-related changes.
 - State Postman artifact updates in the completion report.
 
+When a milestone introduces a new user-facing capability or a new combination of APIs that forms a user journey, also review or extend [postman/collections/chat-backend-user-flows.postman_collection.json](../postman/collections/chat-backend-user-flows.postman_collection.json) so the flow-oriented collection reflects the new experience.
+
+- Capture the flow as a named scenario with ordered requests and the variables needed to pass state between steps.
+- Prefer adding the flow during milestone wrap-up rather than treating it as a separate cleanup task later.
+
 An API implementation change is incomplete when corresponding Postman artifacts are outdated.
 
 ## Canonical routing
