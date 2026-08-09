@@ -7,14 +7,23 @@ const repoRoot = path.resolve(
   "..",
   "..",
 );
-const collectionPath = process.argv[2]
-  ? path.resolve(process.argv[2])
-  : path.join(
-      repoRoot,
-      "postman",
-      "collections",
-      "chat-backend.postman_collection.json",
-    );
+const defaultCollections = [
+  path.join(
+    repoRoot,
+    "postman",
+    "collections",
+    "chat-backend.postman_collection.json",
+  ),
+  path.join(
+    repoRoot,
+    "postman",
+    "collections",
+    "chat-backend-user-flows.postman_collection.json",
+  ),
+];
+const collectionPaths = process.argv[2]
+  ? [path.resolve(process.argv[2])]
+  : defaultCollections;
 const environmentPath = process.argv[3]
   ? path.resolve(process.argv[3])
   : path.join(
@@ -101,23 +110,68 @@ function isPlaceholder(value) {
 }
 
 try {
-  const collection = readJson(collectionPath);
   const environment = readJson(environmentPath);
 
-  if (!collection.info?.name) {
-    fail(`Collection info.name is required in ${collectionPath}`);
-  }
-  if (!Array.isArray(collection.item) || collection.item.length === 0) {
-    fail(
-      `Collection must contain at least one request item in ${collectionPath}`,
-    );
-  }
+  for (const collectionPath of collectionPaths) {
+    const collection = readJson(collectionPath);
 
-  const duplicateNames = collectRequestNames(collection.item);
-  if (duplicateNames.size > 0) {
-    fail(
-      `Duplicate or invalid request names found: ${Array.from(duplicateNames).join(", ")}`,
+    if (!collection.info?.name) {
+      fail(`Collection info.name is required in ${collectionPath}`);
+    }
+    if (!Array.isArray(collection.item) || collection.item.length === 0) {
+      fail(
+        `Collection must contain at least one request item in ${collectionPath}`,
+      );
+    }
+
+    const duplicateNames = collectRequestNames(collection.item);
+    if (duplicateNames.size > 0) {
+      fail(
+        `Duplicate or invalid request names found in ${path.relative(repoRoot, collectionPath)}: ${Array.from(duplicateNames).join(", ")}`,
+      );
+    }
+
+    const collectionVars = new Set(
+      (collection.variable ?? []).map((v) => v.key),
     );
+    const environmentVars = new Set(
+      (environment.values ?? []).map((v) => v.key),
+    );
+    const knownVars = new Set([...collectionVars, ...environmentVars]);
+
+    const allStrings = collectStrings(collection);
+    const usedVars = extractVariables(allStrings);
+    const unresolved = Array.from(usedVars).filter(
+      (v) => !knownVars.has(v) && !v.startsWith("$"),
+    );
+    if (unresolved.length > 0) {
+      fail(
+        `Unresolved collection variables in ${path.relative(repoRoot, collectionPath)}: ${unresolved.join(", ")}`,
+      );
+    }
+
+    const requestUrls = collectRequestUrlRaw(collection.item);
+    const hardcodedHttp = requestUrls.filter(
+      (s) => /https?:\/\//i.test(s) && !s.includes("{{base_url}}"),
+    );
+    if (hardcodedHttp.length > 0) {
+      fail(
+        `Hardcoded absolute URLs detected in ${path.relative(repoRoot, collectionPath)}. Use {{base_url}}.`,
+      );
+    }
+
+    const serializedArtifacts = `${JSON.stringify(collection)}\n${JSON.stringify(environment)}`;
+    const secretMarkers = [
+      /PMAK-[A-Za-z0-9-]+/i,
+      /AIza[0-9A-Za-z\-_]{10,}/,
+      /xox[baprs]-[0-9A-Za-z-]{10,}/,
+      /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/,
+    ];
+    if (secretMarkers.some((r) => r.test(serializedArtifacts))) {
+      fail(
+        `Secret-like tokens detected in ${path.relative(repoRoot, collectionPath)}.`,
+      );
+    }
   }
 
   if (!environment.name) {
@@ -127,49 +181,19 @@ try {
     fail(`Environment values array is required in ${environmentPath}`);
   }
 
-  const collectionVars = new Set((collection.variable ?? []).map((v) => v.key));
-  const environmentVars = new Set((environment.values ?? []).map((v) => v.key));
-  const knownVars = new Set([...collectionVars, ...environmentVars]);
-
-  const allStrings = collectStrings(collection);
-  const usedVars = extractVariables(allStrings);
-  const unresolved = Array.from(usedVars).filter(
-    (v) => !knownVars.has(v) && !v.startsWith("$"),
-  );
-  if (unresolved.length > 0) {
-    fail(`Unresolved collection variables: ${unresolved.join(", ")}`);
-  }
-
-  const requestUrls = collectRequestUrlRaw(collection.item);
-  const hardcodedHttp = requestUrls.filter(
-    (s) => /https?:\/\//i.test(s) && !s.includes("{{base_url}}"),
-  );
-  if (hardcodedHttp.length > 0) {
-    fail("Hardcoded absolute URLs detected in collection. Use {{base_url}}.");
-  }
-
   const requiredHealthUrls = [
     "{{base_url}}/q/health/live",
     "{{base_url}}/q/health/ready",
   ];
-  const missingHealthUrls = requiredHealthUrls.filter(
-    (url) => !requestUrls.includes(url),
-  );
-  if (missingHealthUrls.length > 0) {
+  const hasHealthUrls = collectionPaths.some((collectionPath) => {
+    const collection = readJson(collectionPath);
+    const requestUrls = collectRequestUrlRaw(collection.item);
+    return requiredHealthUrls.every((url) => requestUrls.includes(url));
+  });
+  if (!hasHealthUrls) {
     fail(
-      `Missing required Quarkus health request URLs: ${missingHealthUrls.join(", ")}. Run ./scripts/postman/discover-postman.sh to restore protected health checks.`,
+      `Missing required Quarkus health request URLs: ${requiredHealthUrls.join(", ")}. Run ./scripts/postman/discover-postman.sh to restore protected health checks.`,
     );
-  }
-
-  const serializedArtifacts = `${JSON.stringify(collection)}\n${JSON.stringify(environment)}`;
-  const secretMarkers = [
-    /PMAK-[A-Za-z0-9-]+/i,
-    /AIza[0-9A-Za-z\-_]{10,}/,
-    /xox[baprs]-[0-9A-Za-z-]{10,}/,
-    /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/,
-  ];
-  if (secretMarkers.some((r) => r.test(serializedArtifacts))) {
-    fail("Secret-like tokens detected in Postman artifacts.");
   }
 
   for (const entry of environment.values) {
@@ -187,8 +211,11 @@ try {
   }
 
   if (!process.exitCode) {
+    const collectionNames = collectionPaths
+      .map((collectionPath) => path.relative(repoRoot, collectionPath))
+      .join(", ");
     console.log(
-      `Postman validation passed for ${path.relative(repoRoot, collectionPath)} and ${path.relative(repoRoot, environmentPath)}`,
+      `Postman validation passed for ${collectionNames} and ${path.relative(repoRoot, environmentPath)}`,
     );
   }
 } catch (error) {

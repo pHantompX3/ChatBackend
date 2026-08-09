@@ -6,12 +6,20 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const repoRoot = path.resolve(__dirname, "..", "..");
 
 const defaultConfigPath = path.join(repoRoot, "postman", "config.properties");
-const defaultCollectionPath = path.join(
-  repoRoot,
-  "postman",
-  "collections",
-  "chat-backend.postman_collection.json",
-);
+const defaultCollectionPaths = [
+  path.join(
+    repoRoot,
+    "postman",
+    "collections",
+    "chat-backend.postman_collection.json",
+  ),
+  path.join(
+    repoRoot,
+    "postman",
+    "collections",
+    "chat-backend-user-flows.postman_collection.json",
+  ),
+];
 const defaultEnvironmentPath = path.join(
   repoRoot,
   "postman",
@@ -79,6 +87,10 @@ function loadConfig(configPath) {
     collectionId: get("POSTMAN_COLLECTION_ID", [
       "postman-collection-id",
       "POSTMAN_COLLECTION_ID",
+    ]),
+    flowCollectionId: get("POSTMAN_FLOW_COLLECTION_ID", [
+      "postman-flow-collection-id",
+      "POSTMAN_FLOW_COLLECTION_ID",
     ]),
     environmentId: get("POSTMAN_ENVIRONMENT_ID", [
       "postman-environment-id",
@@ -542,7 +554,10 @@ async function run() {
 
   ensureRequired(config);
 
-  const collection = readJson(defaultCollectionPath);
+  const collections = defaultCollectionPaths.map((collectionPath) => ({
+    path: collectionPath,
+    content: readJson(collectionPath),
+  }));
   const environment = readJson(defaultEnvironmentPath);
 
   const workspaceEnvelope = await postmanRequest(
@@ -588,16 +603,34 @@ async function run() {
   }
 
   if (checkDrift) {
-    await runDriftCheck(config, collection, environment);
+    for (const { path: collectionPath, content: collection } of collections) {
+      await runDriftCheck(config, collection, environment);
+      log(
+        `Drift check completed for ${path.relative(repoRoot, collectionPath)}.`,
+      );
+    }
     return;
   }
 
-  const syncedCollectionId = await syncCollection(
-    config,
-    config.workspaceId,
-    collection,
-    config.collectionId,
-  );
+  for (const { path: collectionPath, content: collection } of collections) {
+    const collectionName = path.basename(collectionPath);
+    const targetCollectionId =
+      collectionName === "chat-backend-user-flows.postman_collection.json"
+        ? config.flowCollectionId || config.collectionId
+        : config.collectionId;
+
+    const syncedCollectionId = await syncCollection(
+      config,
+      config.workspaceId,
+      collection,
+      targetCollectionId,
+    );
+    if (syncedCollectionId) {
+      log(
+        `Collection target confirmed for ${path.relative(repoRoot, collectionPath)}.`,
+      );
+    }
+  }
 
   const syncedEnvironmentId = await syncEnvironment(
     config,
@@ -607,9 +640,6 @@ async function run() {
   );
 
   log(`Sync complete for workspace ${config.workspaceId}.`);
-  if (syncedCollectionId) {
-    log("Collection target confirmed.");
-  }
   if (syncedEnvironmentId) {
     log("Environment target confirmed.");
   }
