@@ -435,6 +435,10 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
 - Milestone 1 database foundation runbook:
   - `docs/development-guide/milestone-1-database-foundation-step-by-step.md`
+- Milestone 2 identity and invitations runbook:
+  - `docs/development-guide/milestone-2-identity-and-invitations-step-by-step.md`
+- Milestone 3 sessions and authentication runbook:
+  - `docs/development-guide/milestone-3-sessions-step-by-step.md`
 - System specification and architecture baseline:
   - `docs/private-instant-messaging-platform-spec-v0.2-sql-server.md`
 - Environment lifecycle and rollout plan:
