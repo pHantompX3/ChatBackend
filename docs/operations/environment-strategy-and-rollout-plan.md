@@ -44,6 +44,7 @@ Two-phase model:
    - File: `.github/workflows/db-local-bootstrap-migrate.yml`
    - Uses ephemeral SQL Server in GitHub runner
    - Validates bootstrap + migration execution path
+   - Verifies Quarkus startup, health endpoints, and integration behavior in CI
    - Not a deployment workflow
 
 2. Remote workflow scaffold

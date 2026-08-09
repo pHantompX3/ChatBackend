@@ -1,0 +1,35 @@
+name: wl-chat-queue
+
+services:
+  queue-dev:
+    image: rabbitmq:3.13-management
+    container_name: wl-chat-queue-dev
+    environment:
+      RABBITMQ_DEFAULT_USER: ${WL_CHAT_QUEUE_USERNAME:-wl_chat_queue}
+      RABBITMQ_DEFAULT_PASS: ${WL_CHAT_QUEUE_PASSWORD:?WL_CHAT_QUEUE_PASSWORD is required}
+      RABBITMQ_DEFAULT_VHOST: ${WL_CHAT_QUEUE_VHOST:-/}
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: >-
+        -rabbitmq_management load_definitions "/etc/rabbitmq/definitions.json"
+    ports:
+      - target: 5672
+        published: ${WL_CHAT_QUEUE_PORT:-5672}
+        protocol: tcp
+        host_ip: ${WL_CHAT_QUEUE_HOST_IP:-0.0.0.0}
+      - target: 15672
+        published: ${WL_CHAT_QUEUE_MGMT_PORT:-15672}
+        protocol: tcp
+        host_ip: ${WL_CHAT_QUEUE_MGMT_HOST_IP:-127.0.0.1}
+    volumes:
+      - wl-chat-queue-rabbitmq-data:/var/lib/rabbitmq
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./config/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  wl-chat-queue-rabbitmq-data:

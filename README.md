@@ -15,6 +15,7 @@
 - Database: Microsoft SQL Server 2022
 - Active local database name: `wl_chat`
 - Active app login: `wl_chat_app`
+- Audit transport: RabbitMQ-backed delivery is optional; if the audit transport is not configured, the app falls back to local async persistence and still boots cleanly
 
 ## Environment Model
 
@@ -35,6 +36,73 @@ This repository currently standardizes three environments:
 
 - Future remote machine fronted by an API gateway/load balancer, with Apache APISIX as the preferred edge layer
 - Deployment automation is intentionally deferred until a persistent remote environment exists
+
+## Shared Remote Queue Server (Docker, Optional Audit Transport)
+
+This repository now includes a Dockerized RabbitMQ service that can act as a shared remote queue endpoint for one or more app instances. The queue is optional infrastructure for the app's audit transport and is not required for the core identity flows to work. The application now includes an optional RabbitMQ-backed audit transport with local async persistence fallback, so the service can keep running when the queue is unavailable or disabled.
+
+- Compose service name: `queue-dev`
+- Standalone compose file: `compose.queue.yaml`
+- AMQP port: `5672` (configurable)
+- Management UI port: `15672` (configurable)
+- Persistent queue data volume: `wl-chat-devdocker-rabbitmq-data`
+
+This is infrastructure-only setup for the optional RabbitMQ-backed audit transport. The application can still run in local mode when the queue is unavailable or disabled.
+
+Queue topology is provisioned at broker startup from repository-managed definitions under `config/rabbitmq/`:
+
+- Exchange: `audit.events`
+- Dead-letter exchange: `audit.events.dlx`
+- Queue: `audit.events`
+- Dead-letter queue: `audit.events.dlq`
+
+### Queue secrets and network settings
+
+Set these in `scripts/config/local.secrets.env` (or via `WL_CHAT_SECRETS_FILE`):
+
+```bash
+WL_CHAT_QUEUE_USERNAME=wl_chat_queue
+WL_CHAT_QUEUE_PASSWORD=replace_with_queue_password
+WL_CHAT_QUEUE_VHOST=/
+WL_CHAT_QUEUE_PORT=5672
+WL_CHAT_QUEUE_MGMT_PORT=15672
+WL_CHAT_QUEUE_HOST_IP=0.0.0.0
+WL_CHAT_QUEUE_MGMT_HOST_IP=127.0.0.1
+
+# Optional RabbitMQ-backed audit transport
+WL_CHAT_AUDIT_RABBITMQ_ENABLED=true
+WL_CHAT_AUDIT_RABBITMQ_HOST=queue-dev
+WL_CHAT_AUDIT_RABBITMQ_PORT=5672
+WL_CHAT_AUDIT_RABBITMQ_USERNAME=wl_chat_queue
+WL_CHAT_AUDIT_RABBITMQ_PASSWORD=replace_with_audit_password
+```
+
+Notes:
+
+- `WL_CHAT_QUEUE_HOST_IP=0.0.0.0` exposes AMQP to other hosts that can reach this machine.
+- Keep `WL_CHAT_QUEUE_MGMT_HOST_IP=127.0.0.1` unless remote UI access is explicitly required.
+
+### Start/stop queue server only
+
+```bash
+./scripts/cicd/queue-up.sh
+./scripts/cicd/queue-down.sh
+```
+
+By default these scripts use `compose.queue.yaml` so you can run queue infrastructure independent of app and DB.
+
+Optional override:
+
+```bash
+export WL_CHAT_QUEUE_COMPOSE_FILE=/absolute/path/to/compose.queue.yaml
+```
+
+### Start full DevDocker stack (app + DB + shared queue)
+
+```bash
+./scripts/cicd/devdocker-up.sh
+./scripts/cicd/devdocker-down.sh
+```
 
 ## Current Runtime Configuration
 

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.http.HttpServerRequest;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -12,13 +13,20 @@ import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jboss.logging.Logger;
 
@@ -28,9 +36,30 @@ import org.jboss.logging.Logger;
 public class HttpAuditFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
   private static final Logger LOG = Logger.getLogger(HttpAuditFilter.class);
+  private static final String AUDIT_SCHEMA_VERSION = "1.0";
+  private static final Set<String> REQUEST_HEADER_ALLOWLIST =
+      Set.of(
+          "accept",
+          "accept-encoding",
+          "accept-language",
+          "cache-control",
+          "content-length",
+          "content-type",
+          "forwarded",
+          "sec-ch-ua-mobile",
+          "sec-ch-ua-model",
+          "sec-ch-ua-platform",
+          "traceparent",
+          "user-agent",
+          "x-forwarded-for",
+          "x-real-ip",
+          "x-request-id");
+  private static final Set<String> RESPONSE_HEADER_ALLOWLIST =
+      Set.of("content-length", "content-type", "location", "retry-after", "www-authenticate");
 
   private final RequestAuditContext requestAuditContext;
   private final ObjectMapper objectMapper;
+  private final HttpAuditQueueDispatcher auditQueueDispatcher;
 
   @Context ResourceInfo resourceInfo;
 
@@ -112,13 +141,13 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     payload.put("query", requestAuditContext.getQuery());
     payload.put(
         "network",
-        Map.of(
+        snapshotMap(
             "clientIp", requestAuditContext.getClientIp(),
             "forwardedFor", requestAuditContext.getForwardedFor(),
             "xRealIp", requestAuditContext.getXRealIp()));
     payload.put(
         "device",
-        Map.of(
+        snapshotMap(
             "userAgent", requestAuditContext.getUserAgent(),
             "deviceType", requestAuditContext.getDeviceType(),
             "deviceModel", requestAuditContext.getDeviceModel(),
@@ -128,13 +157,80 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
             "browser", requestAuditContext.getBrowserFamily()));
     payload.put(
         "response",
-        Map.of(
+        snapshotMap(
             "status", requestAuditContext.getResponseStatus(),
             "durationMs", requestAuditContext.getDurationMs(),
             "responseLength", requestAuditContext.getResponseLength()));
     payload.put("metadata", requestAuditContext.getCustomAttributes());
 
     LOG.debugf("=== AUDIT FILTER: Request Audit Snapshot ===%n%s", toPrettyJson(payload));
+
+    try {
+      auditQueueDispatcher.submit(toAuditEvent(requestContext, responseContext, payload));
+    } catch (RuntimeException exception) {
+      // Fail-open behavior for request serving even if audit pipeline encounters runtime issues.
+      LOG.warn("HTTP audit submission failed; request flow remains open", exception);
+    }
+  }
+
+  private HttpAuditEvent toAuditEvent(
+      ContainerRequestContext requestContext,
+      ContainerResponseContext responseContext,
+      Map<String, Object> payload) {
+    Map<String, String> metadata = new LinkedHashMap<>(requestAuditContext.getCustomAttributes());
+    String targetInvitationId = metadata.get("targetInvitationId");
+    String targetUserId = metadata.get("targetUserId");
+
+    String targetType =
+        targetInvitationId != null ? "invitation" : targetUserId != null ? "user" : null;
+    String targetId = targetInvitationId != null ? targetInvitationId : targetUserId;
+
+    long safeDurationMs =
+        Math.max(0L, Optional.ofNullable(requestAuditContext.getDurationMs()).orElse(0L));
+    Instant responseTimestamp = Instant.now();
+    Instant requestTimestamp = responseTimestamp.minusMillis(safeDurationMs);
+    String responseCode = metadata.get("failureCode");
+    int status = Optional.ofNullable(requestAuditContext.getResponseStatus()).orElse(500);
+    String eventType =
+        Optional.ofNullable(metadata.get("identityEvent")).orElse("http.request.completed");
+
+    return new HttpAuditEvent(
+        UUID.randomUUID(),
+        AUDIT_SCHEMA_VERSION,
+        eventType,
+        responseTimestamp,
+        safe(requestAuditContext.getRequestId()),
+        requestAuditContext.getTraceId(),
+        safe(requestAuditContext.getOperation()),
+        safe(requestAuditContext.getMethod()),
+        resolveRouteTemplate(),
+        safe(requestAuditContext.getPath()),
+        requestAuditContext.getQuery(),
+        status,
+        responseCode,
+        safeDurationMs,
+        requestTimestamp,
+        responseTimestamp,
+        parseUuid(metadata.get("actorUserId")),
+        metadata.get("actorUsername"),
+        metadata.get("actorAuthType"),
+        targetType,
+        targetId,
+        requestAuditContext.getClientIp(),
+        requestAuditContext.getXRealIp(),
+        metadata.get("metadata.clientIpSource"),
+        requestAuditContext.getUserAgent(),
+        requestAuditContext.getDeviceType(),
+        requestAuditContext.getDevicePlatform(),
+        requestAuditContext.getDeviceModel(),
+        requestAuditContext.getOsFamily(),
+        requestAuditContext.getBrowserFamily(),
+        toRequestHeadersSnapshot(requestContext.getHeaders()),
+        toResponseHeadersSnapshot(responseContext.getHeaders()),
+        status >= 400 ? responseCode : null,
+        status >= 400 ? "HTTP " + status : null,
+        metadata,
+        computeRecordHash(payload));
   }
 
   private String getRequestId(ContainerRequestContext requestContext) {
@@ -154,6 +250,48 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     }
 
     return method.getName();
+  }
+
+  private String resolveRouteTemplate() {
+    if (resourceInfo == null) {
+      return safe(requestAuditContext.getPath());
+    }
+
+    StringBuilder templateBuilder = new StringBuilder();
+    Class<?> resourceClass = resourceInfo.getResourceClass();
+    Method resourceMethod = resourceInfo.getResourceMethod();
+
+    if (resourceClass != null) {
+      Path classPath = resourceClass.getAnnotation(Path.class);
+      if (classPath != null && !classPath.value().isBlank()) {
+        templateBuilder.append(normalizePathTemplate(classPath.value()));
+      }
+    }
+
+    if (resourceMethod != null) {
+      Path methodPath = resourceMethod.getAnnotation(Path.class);
+      if (methodPath != null && !methodPath.value().isBlank()) {
+        String normalized = normalizePathTemplate(methodPath.value());
+        if (!normalized.isBlank()) {
+          if (templateBuilder.length() > 0 && !normalized.startsWith("/")) {
+            templateBuilder.append('/');
+          }
+          templateBuilder.append(normalized);
+        }
+      }
+    }
+
+    return templateBuilder.length() > 0
+        ? templateBuilder.toString()
+        : safe(requestAuditContext.getPath());
+  }
+
+  private String normalizePathTemplate(String value) {
+    if (value == null || value.isBlank()) {
+      return "";
+    }
+    String trimmed = value.trim();
+    return trimmed.startsWith("/") ? trimmed : "/" + trimmed;
   }
 
   private ClientIpResolution resolveClientIp(
@@ -277,6 +415,76 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
       return "curl";
     }
     return "unknown";
+  }
+
+  private UUID parseUuid(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    try {
+      return UUID.fromString(value);
+    } catch (IllegalArgumentException ignored) {
+      return null;
+    }
+  }
+
+  private String safe(String value) {
+    if (value == null || value.isBlank()) {
+      return "-";
+    }
+    return value;
+  }
+
+  private Map<String, Object> toRequestHeadersSnapshot(MultivaluedMap<String, String> headers) {
+    Map<String, Object> snapshot = new LinkedHashMap<>();
+    headers.forEach(
+        (key, value) -> {
+          String normalizedKey = key == null ? "" : key.toLowerCase(Locale.ROOT);
+          if (REQUEST_HEADER_ALLOWLIST.contains(normalizedKey)) {
+            snapshot.put(normalizedKey, String.join(",", value));
+          }
+        });
+    return snapshot;
+  }
+
+  private Map<String, Object> toResponseHeadersSnapshot(MultivaluedMap<String, Object> headers) {
+    Map<String, Object> snapshot = new LinkedHashMap<>();
+    headers.forEach(
+        (key, value) -> {
+          String normalizedKey = key == null ? "" : key.toLowerCase(Locale.ROOT);
+          if (RESPONSE_HEADER_ALLOWLIST.contains(normalizedKey)) {
+            snapshot.put(normalizedKey, value == null ? "" : value.toString());
+          }
+        });
+    return snapshot;
+  }
+
+  private Map<String, Object> snapshotMap(Object... keyValues) {
+    Map<String, Object> snapshot = new LinkedHashMap<>();
+    for (int index = 0; index < keyValues.length; index += 2) {
+      snapshot.put(String.valueOf(keyValues[index]), keyValues[index + 1]);
+    }
+    return snapshot;
+  }
+
+  private byte[] computeRecordHash(Map<String, Object> payload) {
+    try {
+      byte[] serialized = objectMapper.writeValueAsBytes(payload);
+      MessageDigest digest = sha256();
+      return digest.digest(serialized);
+    } catch (JsonProcessingException jsonProcessingException) {
+      MessageDigest digest = sha256();
+      return digest.digest(payload.toString().getBytes(StandardCharsets.UTF_8));
+    }
+  }
+
+  private MessageDigest sha256() {
+    try {
+      return MessageDigest.getInstance("SHA-256");
+    } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+      throw new IllegalStateException(
+          "SHA-256 is required for audit record hashing", noSuchAlgorithmException);
+    }
   }
 
   private String toPrettyJson(Map<String, Object> payload) {
