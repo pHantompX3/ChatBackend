@@ -8,6 +8,7 @@ import com.wayden.messenger.identity.application.RedeemInvitationCommand;
 import com.wayden.messenger.identity.application.RevokeInvitationCommand;
 import com.wayden.messenger.identity.domain.InvitationId;
 import com.wayden.messenger.identity.domain.UserId;
+import com.wayden.messenger.session.api.PublicEndpoint;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BadRequestException;
@@ -16,6 +17,8 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import java.time.Instant;
 import java.util.UUID;
@@ -28,40 +31,63 @@ import lombok.RequiredArgsConstructor;
 public class InvitationResource {
 
   private final InvitationService invitationService;
+  private final IdentityExceptionMapper identityExceptionMapper;
 
   @POST
   @AuditOperation("identity.invitation.create")
-  public CreateInvitationResponse createInvitation(@Valid CreateInvitationRequest request) {
-    validateCreateInvitationRequest(request);
-    var result =
-        invitationService.createInvitation(
-            new CreateInvitationCommand(parseUserId(request.actorUserId()), request.expiresAt()));
+  public jakarta.ws.rs.core.Response createInvitation(
+      @Valid CreateInvitationRequest request, @Context ContainerRequestContext requestContext) {
+    try {
+      validateCreateInvitationRequest(request);
+      var result =
+          invitationService.createInvitation(
+              new CreateInvitationCommand(
+                  resolveActorUserId(request, requestContext), request.expiresAt()));
 
-    return new CreateInvitationResponse(result.invitationId().value(), result.rawToken());
+      return jakarta.ws.rs.core.Response.ok(
+              new CreateInvitationResponse(result.invitationId().value(), result.rawToken()))
+          .build();
+    } catch (RuntimeException exception) {
+      return identityExceptionMapper.toResponse(exception);
+    }
   }
 
   @POST
   @Path("/{invitationId}/revoke")
   @AuditOperation("identity.invitation.revoke")
-  public void revokeInvitation(
-      @PathParam("invitationId") String invitationId, @Valid RevokeInvitationRequest request) {
-    validateRevokeInvitationRequest(request);
-    invitationService.revokeInvitation(
-        new RevokeInvitationCommand(
-            parseInvitationId(invitationId), parseUserId(request.actorUserId())));
+  public jakarta.ws.rs.core.Response revokeInvitation(
+      @PathParam("invitationId") String invitationId,
+      @Valid RevokeInvitationRequest request,
+      @Context ContainerRequestContext requestContext) {
+    try {
+      validateRevokeInvitationRequest(request);
+      invitationService.revokeInvitation(
+          new RevokeInvitationCommand(
+              parseInvitationId(invitationId), resolveActorUserId(request, requestContext)));
+      return jakarta.ws.rs.core.Response.noContent().build();
+    } catch (RuntimeException exception) {
+      return identityExceptionMapper.toResponse(exception);
+    }
   }
 
   @POST
   @Path("/redeem")
+  @PublicEndpoint
   @AuditOperation("identity.invitation.redeem")
-  public RedeemInvitationResponse redeemInvitation(@Valid RedeemInvitationRequest request) {
-    validateRedeemInvitationRequest(request);
-    var result =
-        invitationService.redeemInvitation(
-            new RedeemInvitationCommand(
-                request.invitationToken(), request.username(), request.password()));
+  public jakarta.ws.rs.core.Response redeemInvitation(@Valid RedeemInvitationRequest request) {
+    try {
+      validateRedeemInvitationRequest(request);
+      var result =
+          invitationService.redeemInvitation(
+              new RedeemInvitationCommand(
+                  request.invitationToken(), request.username(), request.password()));
 
-    return new RedeemInvitationResponse(result.userId().value(), result.username());
+      return jakarta.ws.rs.core.Response.ok(
+              new RedeemInvitationResponse(result.userId().value(), result.username()))
+          .build();
+    } catch (RuntimeException exception) {
+      return identityExceptionMapper.toResponse(exception);
+    }
   }
 
   private static void validateCreateInvitationRequest(CreateInvitationRequest request) {
@@ -105,6 +131,26 @@ public class InvitationResource {
 
   private static UserId parseUserId(String raw) {
     return new UserId(parseUuid(raw, "actorUserId"));
+  }
+
+  private static UserId resolveActorUserId(
+      CreateInvitationRequest request, ContainerRequestContext requestContext) {
+    String authenticatedUserId =
+        requestContext == null ? null : (String) requestContext.getProperty("authenticatedUserId");
+    if (authenticatedUserId != null && !authenticatedUserId.isBlank()) {
+      return new UserId(parseUuid(authenticatedUserId, "authenticatedUserId"));
+    }
+    return parseUserId(request.actorUserId());
+  }
+
+  private static UserId resolveActorUserId(
+      RevokeInvitationRequest request, ContainerRequestContext requestContext) {
+    String authenticatedUserId =
+        requestContext == null ? null : (String) requestContext.getProperty("authenticatedUserId");
+    if (authenticatedUserId != null && !authenticatedUserId.isBlank()) {
+      return new UserId(parseUuid(authenticatedUserId, "authenticatedUserId"));
+    }
+    return parseUserId(request.actorUserId());
   }
 
   private static InvitationId parseInvitationId(String raw) {

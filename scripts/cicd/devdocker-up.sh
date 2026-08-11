@@ -74,6 +74,21 @@ if [[ "${ENABLE_QUEUE}" == "true" ]]; then
       exit 1
     fi
   fi
+
+  # Definitions import seeds topology but does not create users in this workspace.
+  # Ensure the configured queue user exists and has expected privileges.
+  if docker compose -f "${COMPOSE_FILE}" exec -T queue-dev rabbitmqctl list_users | awk 'NR>1{print $1}' | grep -Fxq "${WL_CHAT_QUEUE_USERNAME}"; then
+    docker compose -f "${COMPOSE_FILE}" exec -T queue-dev \
+      rabbitmqctl change_password "${WL_CHAT_QUEUE_USERNAME}" "${WL_CHAT_QUEUE_PASSWORD}"
+  else
+    docker compose -f "${COMPOSE_FILE}" exec -T queue-dev \
+      rabbitmqctl add_user "${WL_CHAT_QUEUE_USERNAME}" "${WL_CHAT_QUEUE_PASSWORD}"
+  fi
+
+  docker compose -f "${COMPOSE_FILE}" exec -T queue-dev \
+    rabbitmqctl set_user_tags "${WL_CHAT_QUEUE_USERNAME}" administrator
+  docker compose -f "${COMPOSE_FILE}" exec -T queue-dev \
+    rabbitmqctl set_permissions -p "${WL_CHAT_QUEUE_VHOST:-/}" "${WL_CHAT_QUEUE_USERNAME}" ".*" ".*" ".*"
 fi
 
 if ! docker compose -f "${COMPOSE_FILE}" up -d --wait sqlserver-dev >/tmp/wl_chat_sql_up.log 2>&1; then

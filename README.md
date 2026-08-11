@@ -71,7 +71,8 @@ WL_CHAT_QUEUE_MGMT_HOST_IP=127.0.0.1
 
 # Optional RabbitMQ-backed audit transport
 WL_CHAT_AUDIT_RABBITMQ_ENABLED=true
-WL_CHAT_AUDIT_RABBITMQ_HOST=queue-dev
+WL_CHAT_AUDIT_RABBITMQ_HOST=127.0.0.1
+WL_CHAT_AUDIT_RABBITMQ_HOST_CANDIDATES=queue-dev,127.0.0.1,host.docker.internal
 WL_CHAT_AUDIT_RABBITMQ_PORT=5672
 WL_CHAT_AUDIT_RABBITMQ_USERNAME=wl_chat_queue
 WL_CHAT_AUDIT_RABBITMQ_PASSWORD=replace_with_audit_password
@@ -81,6 +82,9 @@ Notes:
 
 - `WL_CHAT_QUEUE_HOST_IP=0.0.0.0` exposes AMQP to other hosts that can reach this machine.
 - Keep `WL_CHAT_QUEUE_MGMT_HOST_IP=127.0.0.1` unless remote UI access is explicitly required.
+- `WL_CHAT_AUDIT_RABBITMQ_HOST_CANDIDATES` is an optional ordered fallback list.
+- With `queue-dev,127.0.0.1,host.docker.internal`, the same config works for both host-local and DevDocker runs.
+- For a fully remote broker, set `WL_CHAT_AUDIT_RABBITMQ_HOST` and optionally `WL_CHAT_AUDIT_RABBITMQ_HOST_CANDIDATES` to remote-only values.
 
 ### Start/stop queue server only
 
@@ -287,8 +291,11 @@ Script order:
 5. `./scripts/cicd/run-quarkus-dev.sh`
 
 - This startup script sets `WL_CHAT_LOG_DIR` to `logs` before launching Quarkus.
-- Active file: `logs/chat_backend/chatback.log`
-- Rolled files: `logs/chat_backend/<year>/<month>/chatback.log.<yyyyMMdd>.gz`
+- This startup script sets `WL_CHAT_LOG_DIR` to `logs/<yyyy>/<MM>` before launching Quarkus.
+- Active app log: `logs/<yyyy>/<MM>/chat_backend/chatback.log`
+- Active HTTP/audit transport log: `logs/<yyyy>/<MM>/chat_backend/http-audit.log`
+- Rolled app logs: `logs/<yyyy>/<MM>/chat_backend/chatback.log.<yyyy-MM-dd>.gz` (intraday size rollover appends backup index)
+- Rolled HTTP/audit logs: `logs/<yyyy>/<MM>/chat_backend/http-audit.log.<yyyy-MM-dd>.gz` (intraday size rollover appends backup index)
 
 Direct startup is also supported:
 
@@ -371,6 +378,13 @@ Workflows in `.github/workflows` currently include both DB validation and a self
   - Manual workflow scaffold for remote SQL bootstrap/migration
   - Kept as deferred guidance until a persistent hosted environment is available
 
+- `flow-smoke-gate.yml`
+  - Trigger: pull requests and pushes to `main` for backend/database/postman flow changes
+  - Runner: `ubuntu-latest`
+  - Execution order: start DevDocker stack -> validate Postman artifacts -> run Newman `Run-all API smoke journey` -> upload Newman artifacts -> stop stack
+  - Queue transport is disabled for this gate (`WL_CHAT_ENABLE_QUEUE=false`, `WL_CHAT_AUDIT_RABBITMQ_ENABLED=false`), but compose interpolation still requires `WL_CHAT_QUEUE_PASSWORD`, so the workflow sets a non-secret dummy value
+  - CI Flyway bootstrap/migrate scripts use CI-safe defaults (`sqlserver-dev:1433` on `wl-chat-devdocker_default`) instead of relying on `host.docker.internal:1434`
+
 - `dev-self-hosted-build-migrate-deploy.yml`
   - Trigger: push to `main` or manual dispatch
   - Runner: `self-hosted` (must run on this Dev machine)
@@ -431,10 +445,16 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 ## Authoritative Documentation
 
+Milestone 3 status snapshot (2026-08-11): session schema plus login/logout/filter baseline is implemented and validated; dedicated administrative revoke-all-sessions API remains follow-on hardening work.
+
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
 - Milestone 1 database foundation runbook:
   - `docs/development-guide/milestone-1-database-foundation-step-by-step.md`
+- Milestone 2 identity and invitations runbook:
+  - `docs/development-guide/milestone-2-identity-and-invitations-step-by-step.md`
+- Milestone 3 sessions and authentication runbook:
+  - `docs/development-guide/milestone-3-sessions-step-by-step.md`
 - System specification and architecture baseline:
   - `docs/private-instant-messaging-platform-spec-v0.2-sql-server.md`
 - Environment lifecycle and rollout plan:
@@ -455,7 +475,10 @@ Authoritative source currently used for Postman maintenance:
 Committed artifacts:
 
 - `postman/collections/chat-backend.postman_collection.json`
+- `postman/collections/chat-backend-user-flows.postman_collection.json`
 - `postman/environments/local.example.postman_environment.json`
+- `postman/environments/devdocker.example.postman_environment.json`
+- `postman/environments/production.example.postman_environment.json`
 
 Local-only Postman Cloud config:
 

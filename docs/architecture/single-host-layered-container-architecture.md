@@ -4,7 +4,7 @@
 
 **Document version:** 1.0  
 **Status:** Proposed target architecture  
-**Last reviewed:** 2026-07-05  
+**Last reviewed:** 2026-08-09
 **Repository:** `pHantompX3/ChatBackend`  
 **Current branch baseline:** `init`  
 **Primary deployment model:** One remotely accessible x86-64 Linux host running Docker Compose  
@@ -928,6 +928,17 @@ A future cross-instance event mechanism may therefore be needed, such as:
 
 The durable database remains the source of truth. A real-time event is a delivery signal, not the only persisted copy of a message.
 
+Delivery state is authoritative only when durably acknowledged. Successfully publishing a
+message-created event to a broker or writing it to a WebSocket does not prove that a recipient client
+received or processed it. Recipient clients shall explicitly acknowledge the highest contiguous
+conversation sequence they accepted, and the backend shall persist a monotonic delivery cursor before
+reporting delivery status to the sender.
+
+The initial model uses a per-user cursor on conversation membership. Any authenticated client session
+for that user may advance it. If the product later requires per-device or all-device delivery semantics,
+device identity and per-device cursors shall be introduced through an ADR rather than inferred from
+WebSocket connections.
+
 ## 14.4 Reconnection behavior
 
 Clients must tolerate:
@@ -939,6 +950,11 @@ Clients must tolerate:
 - lost transient delivery signals.
 
 On reconnect, the client shall reconcile from durable message history using a cursor, sequence, or last-seen identifier rather than assuming every live event was received.
+
+Clients with locally pending outbound messages shall retry them using the same durable client-generated
+message identifier. After recovering inbound history, clients shall acknowledge only the highest
+contiguous sequence accepted locally. Delivery and read status must therefore remain recoverable from
+SQL Server even when all real-time delivery signals were lost.
 
 ---
 
@@ -2242,6 +2258,8 @@ Scope:
 - both NGINX layers proxy upgrades;
 - reconnect and reconciliation behavior;
 - cross-backend event distribution;
+- explicit recipient delivery acknowledgements;
+- durable monotonic delivery and read cursors;
 - online-presence semantics.
 
 Exit criteria:
@@ -2249,6 +2267,9 @@ Exit criteria:
 - clients connected to different backends receive durable message notifications;
 - disconnects do not lose durable messages;
 - reconnect reconciles from SQL Server;
+- WebSocket or broker publication alone does not mark a message delivered;
+- recipient acknowledgement durably advances delivery state;
+- sender delivery indicators can be reconstructed after reconnect;
 - proxy and backend replacement behavior is documented.
 
 ## Phase 7 — Operational maturity

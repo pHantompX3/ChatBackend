@@ -11,7 +11,10 @@ import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +34,7 @@ public class HttpAuditQueueDispatcher {
   private final int queueCapacity;
   private final boolean rabbitEnabled;
   private final String rabbitHost;
+  private final Optional<String> rabbitHostCandidatesConfig;
   private final int rabbitPort;
   private final String rabbitUsername;
   private final Optional<String> rabbitPassword;
@@ -52,6 +56,7 @@ public class HttpAuditQueueDispatcher {
   private Connection rabbitConnection;
   private Channel rabbitPublishChannel;
   private Channel rabbitConsumeChannel;
+  private String activeRabbitHost;
 
   @Inject
   public HttpAuditQueueDispatcher(
@@ -66,6 +71,8 @@ public class HttpAuditQueueDispatcher {
           boolean rabbitEnabled,
       @ConfigProperty(name = "chat.audit.rabbitmq.host", defaultValue = "localhost")
           String rabbitHost,
+      @ConfigProperty(name = "chat.audit.rabbitmq.host-candidates")
+          Optional<String> rabbitHostCandidatesConfig,
       @ConfigProperty(name = "chat.audit.rabbitmq.port", defaultValue = "5672") int rabbitPort,
       @ConfigProperty(name = "chat.audit.rabbitmq.username", defaultValue = "wl_chat_queue")
           String rabbitUsername,
@@ -89,6 +96,7 @@ public class HttpAuditQueueDispatcher {
         queueCapacity,
         rabbitEnabled,
         rabbitHost,
+        rabbitHostCandidatesConfig,
         rabbitPort,
         rabbitUsername,
         rabbitPassword,
@@ -109,6 +117,7 @@ public class HttpAuditQueueDispatcher {
       int queueCapacity,
       boolean rabbitEnabled,
       String rabbitHost,
+      Optional<String> rabbitHostCandidatesConfig,
       int rabbitPort,
       String rabbitUsername,
       Optional<String> rabbitPassword,
@@ -126,6 +135,7 @@ public class HttpAuditQueueDispatcher {
     this.queueCapacity = queueCapacity;
     this.rabbitEnabled = rabbitEnabled;
     this.rabbitHost = rabbitHost;
+    this.rabbitHostCandidatesConfig = rabbitHostCandidatesConfig;
     this.rabbitPort = rabbitPort;
     this.rabbitUsername = rabbitUsername;
     this.rabbitPassword = rabbitPassword;
@@ -151,6 +161,7 @@ public class HttpAuditQueueDispatcher {
         queueCapacity,
         false,
         "localhost",
+        Optional.empty(),
         5672,
         "wl_chat_queue",
         Optional.empty(),
@@ -177,6 +188,7 @@ public class HttpAuditQueueDispatcher {
         queueCapacity,
         true,
         "localhost",
+        Optional.empty(),
         5672,
         "wl_chat_queue",
         Optional.empty(),
@@ -194,13 +206,7 @@ public class HttpAuditQueueDispatcher {
     running = true;
     if (rabbitEnabled) {
       if (rabbitInitializer.getAsBoolean()) {
-        rabbitActive = true;
-        if (rabbitConsumerEnabled) {
-          startRabbitConsumer();
-        }
-        LOG.infof(
-            "HTTP audit RabbitMQ transport enabled host=%s port=%d exchange=%s queue=%s",
-            rabbitHost, rabbitPort, rabbitExchange, rabbitQueue);
+        activateRabbitTransport();
       } else {
         startRabbitRetryLoop();
       }
@@ -209,6 +215,17 @@ public class HttpAuditQueueDispatcher {
     if (asyncEnabled) {
       startLocalWorker();
     }
+  }
+
+  private void activateRabbitTransport() {
+    rabbitActive = true;
+    if (rabbitConsumerEnabled
+        && (rabbitConsumerThread == null || !rabbitConsumerThread.isAlive())) {
+      startRabbitConsumer();
+    }
+    LOG.infof(
+        "HTTP audit RabbitMQ transport enabled host=%s port=%d exchange=%s queue=%s",
+        activeRabbitHost, rabbitPort, rabbitExchange, rabbitQueue);
   }
 
   public void submit(HttpAuditEvent event) {
@@ -293,14 +310,7 @@ public class HttpAuditQueueDispatcher {
     while (running && rabbitEnabled && !rabbitActive) {
       try {
         if (rabbitInitializer.getAsBoolean()) {
-          rabbitActive = true;
-          if (rabbitConsumerEnabled
-              && (rabbitConsumerThread == null || !rabbitConsumerThread.isAlive())) {
-            startRabbitConsumer();
-          }
-          LOG.infof(
-              "HTTP audit RabbitMQ transport enabled host=%s port=%d exchange=%s queue=%s",
-              rabbitHost, rabbitPort, rabbitExchange, rabbitQueue);
+          activateRabbitTransport();
           return;
         }
         TimeUnit.SECONDS.sleep(2L);
@@ -327,28 +337,71 @@ public class HttpAuditQueueDispatcher {
       return false;
     }
 
-    try {
-      ConnectionFactory factory = new ConnectionFactory();
-      factory.setHost(rabbitHost);
-      factory.setPort(rabbitPort);
-      factory.setUsername(rabbitUsername);
-      factory.setPassword(password);
-      factory.setVirtualHost(rabbitVhost);
-      rabbitConnection = factory.newConnection("chat-backend-audit");
-      rabbitPublishChannel = rabbitConnection.createChannel();
-      rabbitConsumeChannel = rabbitConnection.createChannel();
+    List<String> hostCandidates = rabbitHostCandidates();
+    Exception lastFailure = null;
 
-      rabbitPublishChannel.exchangeDeclare(rabbitExchange, "topic", true);
-      rabbitPublishChannel.queueDeclare(rabbitQueue, true, false, false, null);
-      rabbitPublishChannel.queueBind(rabbitQueue, rabbitExchange, rabbitRoutingKey);
-      rabbitConsumeChannel.basicQos(Math.max(1, rabbitPrefetch));
-      return true;
-    } catch (Exception exception) {
-      LOG.warn(
-          "Failed to initialize RabbitMQ audit transport; falling back to local mode", exception);
-      closeRabbitResources();
-      return false;
+    for (String candidateHost : hostCandidates) {
+      try {
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost(candidateHost);
+        factory.setPort(rabbitPort);
+        factory.setUsername(rabbitUsername);
+        factory.setPassword(password);
+        factory.setVirtualHost(rabbitVhost);
+        rabbitConnection = factory.newConnection("chat-backend-audit");
+        rabbitPublishChannel = rabbitConnection.createChannel();
+        rabbitConsumeChannel = rabbitConnection.createChannel();
+
+        rabbitPublishChannel.exchangeDeclare(rabbitExchange, "topic", true);
+        rabbitPublishChannel.queueDeclare(rabbitQueue, true, false, false, null);
+        rabbitPublishChannel.queueBind(rabbitQueue, rabbitExchange, rabbitRoutingKey);
+        rabbitConsumeChannel.basicQos(Math.max(1, rabbitPrefetch));
+        activeRabbitHost = candidateHost;
+
+        if (!candidateHost.equals(rabbitHost)) {
+          LOG.infof(
+              "RabbitMQ host fallback succeeded configuredHost=%s activeHost=%s",
+              rabbitHost, candidateHost);
+        }
+        return true;
+      } catch (Exception exception) {
+        lastFailure = exception;
+        closeRabbitResources();
+      }
     }
+
+    LOG.warnf(
+        lastFailure,
+        "Failed to initialize RabbitMQ audit transport; configuredHost=%s attemptedHosts=%s; falling back to local mode",
+        rabbitHost,
+        hostCandidates);
+    return false;
+  }
+
+  private List<String> rabbitHostCandidates() {
+    Set<String> hosts = new LinkedHashSet<>();
+
+    rabbitHostCandidatesConfig
+        .map(String::trim)
+        .filter(value -> !value.isBlank())
+        .ifPresent(
+            value -> {
+              for (String token : value.split(",")) {
+                String host = token.trim();
+                if (!host.isBlank()) {
+                  hosts.add(host);
+                }
+              }
+            });
+
+    if (hosts.isEmpty()) {
+      String configuredHost = rabbitHost == null ? "" : rabbitHost.trim();
+      if (!configuredHost.isBlank()) {
+        hosts.add(configuredHost);
+      }
+    }
+
+    return List.copyOf(hosts);
   }
 
   private void startRabbitConsumer() {
@@ -432,6 +485,7 @@ public class HttpAuditQueueDispatcher {
 
   private void closeRabbitResources() {
     rabbitActive = false;
+    activeRabbitHost = null;
     closeQuietly(rabbitConsumeChannel);
     rabbitConsumeChannel = null;
     closeQuietly(rabbitPublishChannel);

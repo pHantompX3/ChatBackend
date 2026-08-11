@@ -37,6 +37,7 @@ final class IdentityApiIntegrationTest {
                 IdentitySqlServerTestResource.saPassword());
         var statement = connection.createStatement()) {
       statement.executeUpdate("DELETE FROM [audit].[http_audit_event]");
+      statement.executeUpdate("DELETE FROM [identity].[session]");
       statement.executeUpdate("DELETE FROM [identity].[invitation]");
       statement.executeUpdate("DELETE FROM [identity].[user_account]");
     }
@@ -99,11 +100,14 @@ final class IdentityApiIntegrationTest {
 
   @Test
   void createInvitationShouldPersistActorAuditFields() {
-    String adminUserId = bootstrapAdmin("Actor Audit Admin");
+    String adminUsername = "Actor Audit Admin";
+    String adminUserId = bootstrapAdmin(adminUsername);
+    String adminToken = loginSessionToken(adminUsername, "AdminPassw0rd!");
 
     String requestId =
         given()
             .contentType(ContentType.JSON)
+            .header("Authorization", "Bearer " + adminToken)
             .body(
                 Map.of(
                     "actorUserId",
@@ -128,8 +132,11 @@ final class IdentityApiIntegrationTest {
 
   @Test
   void redeemInvitationShouldReturnAlreadyRedeemedOnSecondRedeem() {
-    String adminUserId = bootstrapAdmin("Admin Owner");
-    String invitationToken = createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS));
+    String adminUsername = "Admin Owner";
+    String adminUserId = bootstrapAdmin(adminUsername);
+    String adminToken = loginSessionToken(adminUsername, "AdminPassw0rd!");
+    String invitationToken =
+        createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS), adminToken);
 
     given()
         .contentType(ContentType.JSON)
@@ -162,10 +169,13 @@ final class IdentityApiIntegrationTest {
 
   @Test
   void revokedInvitationShouldNotBeRedeemable() {
-    String adminUserId = bootstrapAdmin("Admin Owner Two");
+    String adminUsername = "Admin Owner Two";
+    String adminUserId = bootstrapAdmin(adminUsername);
+    String adminToken = loginSessionToken(adminUsername, "AdminPassw0rd!");
     JsonPath createdInvitation =
         given()
             .contentType(ContentType.JSON)
+            .header("Authorization", "Bearer " + adminToken)
             .body(
                 Map.of(
                     "actorUserId",
@@ -184,6 +194,7 @@ final class IdentityApiIntegrationTest {
 
     given()
         .contentType(ContentType.JSON)
+        .header("Authorization", "Bearer " + adminToken)
         .body(Map.of("actorUserId", adminUserId))
         .when()
         .post("/api/v1/invitations/" + invitationId + "/revoke")
@@ -207,10 +218,13 @@ final class IdentityApiIntegrationTest {
 
   @Test
   void revokeUnknownInvitationShouldReturnNotFound() {
-    String adminUserId = bootstrapAdmin("Admin Owner Three");
+    String adminUsername = "Admin Owner Three";
+    String adminUserId = bootstrapAdmin(adminUsername);
+    String adminToken = loginSessionToken(adminUsername, "AdminPassw0rd!");
 
     given()
         .contentType(ContentType.JSON)
+        .header("Authorization", "Bearer " + adminToken)
         .body(Map.of("actorUserId", adminUserId))
         .when()
         .post("/api/v1/invitations/" + UUID.randomUUID() + "/revoke")
@@ -222,10 +236,13 @@ final class IdentityApiIntegrationTest {
 
   @Test
   void createInvitationWithPastExpiryShouldBeRejected() {
-    String adminUserId = bootstrapAdmin("Admin Owner Past");
+    String adminUsername = "Admin Owner Past";
+    String adminUserId = bootstrapAdmin(adminUsername);
+    String adminToken = loginSessionToken(adminUsername, "AdminPassw0rd!");
 
     given()
         .contentType(ContentType.JSON)
+        .header("Authorization", "Bearer " + adminToken)
         .body(
             Map.of(
                 "actorUserId",
@@ -241,11 +258,33 @@ final class IdentityApiIntegrationTest {
   }
 
   @Test
-  void createInvitationWithUnknownActorShouldReturnForbidden() {
-    bootstrapAdmin("Admin Owner Six");
+  void createInvitationWithNonAdminSessionShouldReturnForbidden() {
+    String adminUsername = "Admin Owner Six";
+    String adminUserId = bootstrapAdmin(adminUsername);
+    String adminToken = loginSessionToken(adminUsername, "AdminPassw0rd!");
+
+    String invitationToken =
+        createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS), adminToken);
+
+    String memberUsername = "member-non-admin";
+    String memberPassword = "MemberPassw0rd!";
+    given()
+        .contentType(ContentType.JSON)
+        .body(
+            Map.of(
+                "invitationToken", invitationToken,
+                "username", memberUsername,
+                "password", memberPassword))
+        .when()
+        .post("/api/v1/invitations/redeem")
+        .then()
+        .statusCode(200);
+
+    String memberToken = loginSessionToken(memberUsername, memberPassword);
 
     given()
         .contentType(ContentType.JSON)
+        .header("Authorization", "Bearer " + memberToken)
         .body(
             Map.of(
                 "actorUserId", UUID.randomUUID().toString(),
@@ -259,14 +298,35 @@ final class IdentityApiIntegrationTest {
   }
 
   @Test
-  void revokeInvitationWithUnknownActorShouldReturnForbidden() {
-    String adminUserId = bootstrapAdmin("Admin Owner Seven");
+  void revokeInvitationWithNonAdminSessionShouldReturnForbidden() {
+    String adminUsername = "Admin Owner Seven";
+    String adminUserId = bootstrapAdmin(adminUsername);
+    String adminToken = loginSessionToken(adminUsername, "AdminPassw0rd!");
     JsonPath createdInvitation =
-        createInvitationResponse(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS));
+        createInvitationResponse(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS), adminToken);
     String invitationId = createdInvitation.getString("invitationId");
+
+    String invitationToken = createdInvitation.getString("invitationToken");
+    String memberUsername = "member-revoke-non-admin";
+    String memberPassword = "MemberPassw0rd!";
 
     given()
         .contentType(ContentType.JSON)
+        .body(
+            Map.of(
+                "invitationToken", invitationToken,
+                "username", memberUsername,
+                "password", memberPassword))
+        .when()
+        .post("/api/v1/invitations/redeem")
+        .then()
+        .statusCode(200);
+
+    String memberToken = loginSessionToken(memberUsername, memberPassword);
+
+    given()
+        .contentType(ContentType.JSON)
+        .header("Authorization", "Bearer " + memberToken)
         .body(Map.of("actorUserId", UUID.randomUUID().toString()))
         .when()
         .post("/api/v1/invitations/" + invitationId + "/revoke")
@@ -278,9 +338,11 @@ final class IdentityApiIntegrationTest {
 
   @Test
   void expiredInvitationShouldReturnGone() {
-    String adminUserId = bootstrapAdmin("Admin Owner Four");
+    String adminUsername = "Admin Owner Four";
+    String adminUserId = bootstrapAdmin(adminUsername);
+    String adminToken = loginSessionToken(adminUsername, "AdminPassw0rd!");
     JsonPath createdInvitation =
-        createInvitationResponse(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS));
+        createInvitationResponse(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS), adminToken);
     String invitationId = createdInvitation.getString("invitationId");
     String invitationToken = createdInvitation.getString("invitationToken");
     forceInvitationExpired(invitationId);
@@ -302,9 +364,13 @@ final class IdentityApiIntegrationTest {
 
   @Test
   void redeemWithExistingUsernameShouldReturnConflict() {
-    String adminUserId = bootstrapAdmin("Admin Owner Five");
-    String firstToken = createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS));
-    String secondToken = createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS));
+    String adminUsername = "Admin Owner Five";
+    String adminUserId = bootstrapAdmin(adminUsername);
+    String adminToken = loginSessionToken(adminUsername, "AdminPassw0rd!");
+    String firstToken =
+        createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS), adminToken);
+    String secondToken =
+        createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS), adminToken);
 
     given()
         .contentType(ContentType.JSON)
@@ -345,13 +411,29 @@ final class IdentityApiIntegrationTest {
         .path("userId");
   }
 
-  private static String createInvitation(String actorUserId, Instant expiresAt) {
-    return createInvitationResponse(actorUserId, expiresAt).getString("invitationToken");
-  }
-
-  private static JsonPath createInvitationResponse(String actorUserId, Instant expiresAt) {
+  private static String loginSessionToken(String username, String password) {
     return given()
         .contentType(ContentType.JSON)
+        .body(Map.of("username", username, "password", password))
+        .when()
+        .post("/api/v1/sessions")
+        .then()
+        .statusCode(200)
+        .extract()
+        .path("token");
+  }
+
+  private static String createInvitation(
+      String actorUserId, Instant expiresAt, String sessionToken) {
+    return createInvitationResponse(actorUserId, expiresAt, sessionToken)
+        .getString("invitationToken");
+  }
+
+  private static JsonPath createInvitationResponse(
+      String actorUserId, Instant expiresAt, String sessionToken) {
+    return given()
+        .contentType(ContentType.JSON)
+        .header("Authorization", "Bearer " + sessionToken)
         .body(Map.of("actorUserId", actorUserId, "expiresAt", expiresAt.toString()))
         .when()
         .post("/api/v1/invitations")

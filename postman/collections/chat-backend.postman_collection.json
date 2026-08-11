@@ -415,7 +415,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"conversationId\": \"conversation-123\",\n  \"senderUserId\": \"user-123\",\n  \"content\": \"Hello from Postman\"\n}"
+                  "raw": "{\n  \"conversationId\": \"{{conversation_id}}\",\n  \"senderUserId\": \"{{sender_user_id}}\",\n  \"content\": \"{{message_content}}\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/messages",
@@ -438,7 +438,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"messageId\": \"msg-123\",\n  \"conversationId\": \"conversation-123\",\n  \"senderUserId\": \"user-123\",\n  \"content\": \"Hello from Postman\",\n  \"createdAt\": \"2026-08-08T00:00:00Z\"\n}"
+              "body": "{\n  \"messageId\": \"msg-123\",\n  \"conversationId\": \"{{conversation_id}}\",\n  \"senderUserId\": \"{{sender_user_id}}\",\n  \"content\": \"{{message_content}}\",\n  \"createdAt\": \"2026-08-08T00:00:00Z\"\n}"
             }
           ],
           "event": [
@@ -515,7 +515,7 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{base_url}}/api/v1/conversations/conversation-123/messages?limit=50",
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages?limit={{message_limit}}",
                   "host": [
                     "{{base_url}}"
                   ],
@@ -543,7 +543,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"messageId\": \"msg-123\",\n    \"conversationId\": \"conversation-123\",\n    \"senderUserId\": \"user-123\",\n    \"content\": \"Hello from Postman\",\n    \"createdAt\": \"2026-08-08T00:00:00Z\"\n  }\n]"
+              "body": "[\n  {\n    \"messageId\": \"msg-123\",\n    \"conversationId\": \"{{conversation_id}}\",\n    \"senderUserId\": \"{{sender_user_id}}\",\n    \"content\": \"{{message_content}}\",\n    \"createdAt\": \"2026-08-08T00:00:00Z\"\n  }\n]"
             }
           ],
           "event": [
@@ -1196,6 +1196,338 @@
           ]
         }
       ]
+    },
+    {
+      "name": "SessionResource",
+      "description": "Auto-discovered endpoints from SessionResource.java.",
+      "item": [
+        {
+          "name": "POST /api/v1/sessions",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
+            },
+            "description": "Auto-discovered from src/main/java/com/wayden/messenger/session/api/SessionResource.java.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"Admin Root\",\n  \"password\": \"AdminPassw0rd!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"Admin Root\",\n  \"password\": \"AdminPassw0rd!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/sessions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sessions"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"sessionId\": \"00000000-0000-0000-0000-000000000002\",\n  \"token\": \"session-token-abc123\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"Admin Root\",\n  \"password\": \"AdminPassw0rd!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/sessions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sessions"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Invalid username or password\",\n  \"code\": \"INVALID_CREDENTIALS\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is one of 200, 401', function () {",
+                  "  pm.expect([200, 401]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "pm.test('Response is JSON when body is present', function () {",
+                  "  if (pm.response.text().trim().length > 0) {",
+                  "    pm.response.to.be.json;",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/sessions/logout",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{session_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{session_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions",
+                "logout"
+              ]
+            },
+            "description": "Auto-discovered from src/main/java/com/wayden/messenger/session/api/SessionResource.java."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/sessions/logout",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sessions",
+                    "logout"
+                  ]
+                }
+              },
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "body": ""
+            },
+            {
+              "name": "401 Unauthorized",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/sessions/logout",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sessions",
+                    "logout"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Session is invalid\",\n  \"code\": \"INVALID_SESSION\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is one of 204, 401', function () {",
+                  "  pm.expect([204, 401]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "pm.test('Response is JSON when body is present', function () {",
+                  "  if (pm.response.text().trim().length > 0) {",
+                  "    pm.response.to.be.json;",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "function hasUsableEnvValue(key) {",
+          "  var raw = pm.environment.get(key);",
+          "  if (raw === undefined || raw === null) return false;",
+          "  var s = String(raw).trim();",
+          "  if (!s) return false;",
+          "  if (s.startsWith('{{') && s.endsWith('}}')) return false;",
+          "  var resolved = pm.variables.replaceIn(s).trim();",
+          "  return !!resolved && !(resolved.startsWith('{{') && resolved.endsWith('}}'));",
+          "}",
+          "",
+          "var mappings = [",
+          "  { env: 'bootstrap_admin_username', globals: ['WLAdminUser_Local', 'WLAdminUser_Dev', 'WLAdminUser_Prod', 'WLAdminUser'] },",
+          "  { env: 'bootstrap_admin_password', globals: ['WLAdminPass_Local', 'WLAdminPass_Dev', 'WLAdminPass_Prod', 'WLAdminPass'] },",
+          "  { env: 'member_username', globals: ['WLMemberUser_Local', 'WLMemberUser_Dev', 'WLMemberUser_Prod', 'WLMemberUser'] },",
+          "  { env: 'member_password', globals: ['WLMemberPass_Local', 'WLMemberPass_Dev', 'WLMemberPass_Prod', 'WLMemberPass'] },",
+          "  { env: 'auth_username', globals: ['WLAuthUser_Local', 'WLAuthUser_Dev', 'WLAuthUser_Prod'] },",
+          "  { env: 'auth_password', globals: ['WLAuthPass_Local', 'WLAuthPass_Dev', 'WLAuthPass_Prod'] },",
+          "  { env: 'admin_user_id', globals: ['WLActorUserId_Local', 'WLActorUserId_Dev', 'WLActorUserId_Prod', 'WLActorUserId'] },",
+          "  { env: 'conversation_id', globals: ['WLConversationId_Local', 'WLConversationId_Dev', 'WLConversationId_Prod', 'WLConversationIdDefault'] },",
+          "  { env: 'sender_user_id', globals: ['WLSenderUserId_Local', 'WLSenderUserId_Dev', 'WLSenderUserId_Prod', 'WLSenderUserIdDefault'] },",
+          "  { env: 'message_limit', globals: ['WLMessageLimit_Local', 'WLMessageLimit_Dev', 'WLMessageLimit_Prod', 'WLMessageLimitDefault'] }",
+          "];",
+          "",
+          "mappings.forEach(function (entry) {",
+          "  if (hasUsableEnvValue(entry.env)) return;",
+          "  for (var i = 0; i < entry.globals.length; i += 1) {",
+          "    var g = pm.globals.get(entry.globals[i]);",
+          "    if (g !== undefined && g !== null && String(g).trim() !== '') {",
+          "      pm.environment.set(entry.env, g);",
+          "      return;",
+          "    }",
+          "  }",
+          "});"
+        ]
+      }
     }
   ]
 }

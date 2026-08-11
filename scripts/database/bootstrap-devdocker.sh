@@ -15,6 +15,18 @@ if [[ -f "${SECRETS_FILE}" ]]; then
 fi
 
 SA_PASSWORD="${MSSQL_SA_PASSWORD:-}"
+DB_HOST="${WL_CHAT_DB_HOST:-}"
+DB_PORT="${WL_CHAT_DB_PORT:-}"
+FLYWAY_NETWORK="${WL_CHAT_FLYWAY_DOCKER_NETWORK:-}"
+
+if [[ -n "${CI:-}" ]]; then
+  DB_HOST="${DB_HOST:-sqlserver-dev}"
+  DB_PORT="${DB_PORT:-1433}"
+  FLYWAY_NETWORK="${FLYWAY_NETWORK:-wl-chat-devdocker_default}"
+fi
+
+DB_HOST="${DB_HOST:-host.docker.internal}"
+DB_PORT="${DB_PORT:-1434}"
 
 if [[ -z "${SA_PASSWORD}" ]]; then
   echo "MSSQL_SA_PASSWORD is required."
@@ -29,12 +41,23 @@ fi
 
 cd "${REPO_ROOT}"
 
-echo "Bootstrapping wl_chat on DevDocker SQL Server (localhost:1434) using Flyway..."
-docker run --rm \
-  --add-host=host.docker.internal:host-gateway \
-  -v "${BOOTSTRAP_DIR}:/flyway/sql" \
+echo "Bootstrapping wl_chat on DevDocker SQL Server (${DB_HOST}:${DB_PORT}) using Flyway..."
+docker_run_args=(
+  --rm
+  -v "${BOOTSTRAP_DIR}:/flyway/sql"
+)
+
+if [[ "${DB_HOST}" == "host.docker.internal" ]]; then
+  docker_run_args+=(--add-host=host.docker.internal:host-gateway)
+fi
+
+if [[ -n "${FLYWAY_NETWORK}" ]]; then
+  docker_run_args+=(--network "${FLYWAY_NETWORK}")
+fi
+
+docker run "${docker_run_args[@]}" \
   flyway/flyway:10.17.3 \
-  -url="jdbc:sqlserver://host.docker.internal:1434;databaseName=master;encrypt=true;trustServerCertificate=true" \
+  -url="jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=master;encrypt=true;trustServerCertificate=true" \
   -user="sa" \
   -password="${SA_PASSWORD}" \
   -locations="filesystem:/flyway/sql" \

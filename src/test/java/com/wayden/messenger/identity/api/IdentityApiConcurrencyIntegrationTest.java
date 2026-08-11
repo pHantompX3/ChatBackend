@@ -39,6 +39,7 @@ final class IdentityApiConcurrencyIntegrationTest {
                 IdentitySqlServerTestResource.saPassword());
         var statement = connection.createStatement()) {
       statement.executeUpdate("DELETE FROM [audit].[http_audit_event]");
+      statement.executeUpdate("DELETE FROM [identity].[session]");
       statement.executeUpdate("DELETE FROM [identity].[invitation]");
       statement.executeUpdate("DELETE FROM [identity].[user_account]");
     }
@@ -46,8 +47,11 @@ final class IdentityApiConcurrencyIntegrationTest {
 
   @Test
   void concurrentRedeemWithSameTokenShouldSucceedOnce() throws Exception {
-    String adminUserId = bootstrapAdmin("Race Admin A");
-    String invitationToken = createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS));
+    String adminUsername = "Race Admin A";
+    String adminUserId = bootstrapAdmin(adminUsername);
+    String adminToken = loginSessionToken(adminUsername, "AdminPassw0rd!");
+    String invitationToken =
+        createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS), adminToken);
 
     List<AttemptResult> results =
         runConcurrently(
@@ -66,9 +70,13 @@ final class IdentityApiConcurrencyIntegrationTest {
 
   @Test
   void concurrentRedeemWithSameUsernameShouldSucceedOnce() throws Exception {
-    String adminUserId = bootstrapAdmin("Race Admin B");
-    String firstToken = createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS));
-    String secondToken = createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS));
+    String adminUsername = "Race Admin B";
+    String adminUserId = bootstrapAdmin(adminUsername);
+    String adminToken = loginSessionToken(adminUsername, "AdminPassw0rd!");
+    String firstToken =
+        createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS), adminToken);
+    String secondToken =
+        createInvitation(adminUserId, Instant.now().plus(1, ChronoUnit.DAYS), adminToken);
 
     List<AttemptResult> results =
         runConcurrently(
@@ -137,9 +145,23 @@ final class IdentityApiConcurrencyIntegrationTest {
     return toAttemptResult(response);
   }
 
-  private static String createInvitation(String actorUserId, Instant expiresAt) {
+  private static String loginSessionToken(String username, String password) {
     return given()
         .contentType(ContentType.JSON)
+        .body(Map.of("username", username, "password", password))
+        .when()
+        .post("/api/v1/sessions")
+        .then()
+        .statusCode(200)
+        .extract()
+        .path("token");
+  }
+
+  private static String createInvitation(
+      String actorUserId, Instant expiresAt, String sessionToken) {
+    return given()
+        .contentType(ContentType.JSON)
+        .header("Authorization", "Bearer " + sessionToken)
         .body(Map.of("actorUserId", actorUserId, "expiresAt", expiresAt.toString()))
         .when()
         .post("/api/v1/invitations")

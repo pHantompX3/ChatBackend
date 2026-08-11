@@ -21,17 +21,33 @@ const defaultCollections = [
     "chat-backend-user-flows.postman_collection.json",
   ),
 ];
+const defaultEnvironmentPaths = [
+  path.join(
+    repoRoot,
+    "postman",
+    "environments",
+    "local.example.postman_environment.json",
+  ),
+  path.join(
+    repoRoot,
+    "postman",
+    "environments",
+    "devdocker.example.postman_environment.json",
+  ),
+  path.join(
+    repoRoot,
+    "postman",
+    "environments",
+    "production.example.postman_environment.json",
+  ),
+];
 const collectionPaths = process.argv[2]
   ? [path.resolve(process.argv[2])]
   : defaultCollections;
-const environmentPath = process.argv[3]
-  ? path.resolve(process.argv[3])
-  : path.join(
-      repoRoot,
-      "postman",
-      "environments",
-      "local.example.postman_environment.json",
-    );
+const environmentPaths =
+  process.argv.length > 3
+    ? process.argv.slice(3).map((arg) => path.resolve(arg))
+    : defaultEnvironmentPaths;
 
 function fail(msg) {
   console.error(`ERROR: ${msg}`);
@@ -93,6 +109,74 @@ function collectRequestUrlRaw(items, out = []) {
   return out;
 }
 
+function collectRunAllSmokeViolations(
+  items,
+  folderTrail = [],
+  violations = [],
+) {
+  for (const item of items ?? []) {
+    if (item.item) {
+      collectRunAllSmokeViolations(
+        item.item,
+        [...folderTrail, String(item.name || "")],
+        violations,
+      );
+      continue;
+    }
+
+    if (!folderTrail.includes("Run-all API smoke journey")) {
+      continue;
+    }
+
+    const requestName = String(item.name || "<unnamed-request>");
+    const testEvent = (item.event ?? []).find(
+      (event) =>
+        event?.listen === "test" &&
+        Array.isArray(event?.script?.exec) &&
+        event.script.exec.length > 0,
+    );
+
+    if (!testEvent) {
+      violations.push(
+        `${requestName}: missing test event script in Run-all API smoke journey`,
+      );
+      continue;
+    }
+
+    const scriptLines = testEvent.script.exec.map((line) => String(line));
+    const pmTestCalls = scriptLines.filter((line) => line.includes("pm.test("));
+    if (pmTestCalls.length === 0) {
+      violations.push(
+        `${requestName}: missing pm.test assertion in Run-all API smoke journey`,
+      );
+    }
+
+    const hasExpectedNaming = pmTestCalls.some((line) =>
+      /pm\.test\((['"])Expected:/.test(line),
+    );
+    if (!hasExpectedNaming) {
+      violations.push(
+        `${requestName}: test name must start with 'Expected:' in Run-all API smoke journey`,
+      );
+    }
+
+    const hasStatusAssertion = scriptLines.some(
+      (line) =>
+        /pm\.response\.to\.have\.status\(/.test(line) ||
+        /pm\.expect\(\[[^\]]+\]\)\.to\.include\(pm\.response\.code\)/.test(
+          line,
+        ),
+    );
+    if (!hasStatusAssertion) {
+      violations.push(
+        `${requestName}: missing explicit HTTP status assertion in Run-all API smoke journey`,
+      );
+    }
+  }
+
+  return violations;
+}
+
 function extractVariables(strings) {
   const vars = new Set();
   const regex = /{{\s*([a-zA-Z0-9_.\-$]+)\s*}}/g;
@@ -110,7 +194,33 @@ function isPlaceholder(value) {
 }
 
 try {
-  const environment = readJson(environmentPath);
+  const environments = environmentPaths.map((environmentPath) => ({
+    path: environmentPath,
+    content: readJson(environmentPath),
+  }));
+
+  for (const { path: environmentPath, content: environment } of environments) {
+    if (!environment.name) {
+      fail(`Environment name is required in ${environmentPath}`);
+    }
+    if (!Array.isArray(environment.values)) {
+      fail(`Environment values array is required in ${environmentPath}`);
+    }
+
+    for (const entry of environment.values) {
+      const key = String(entry.key || "");
+      const value = String(entry.value || "");
+      if (
+        /secret|token|password|api[_-]?key/i.test(key) &&
+        value &&
+        !isPlaceholder(value)
+      ) {
+        fail(
+          `Sensitive-looking environment key '${key}' must use placeholder value.`,
+        );
+      }
+    }
+  }
 
   for (const collectionPath of collectionPaths) {
     const collection = readJson(collectionPath);
@@ -134,20 +244,38 @@ try {
     const collectionVars = new Set(
       (collection.variable ?? []).map((v) => v.key),
     );
-    const environmentVars = new Set(
-      (environment.values ?? []).map((v) => v.key),
-    );
-    const knownVars = new Set([...collectionVars, ...environmentVars]);
-
     const allStrings = collectStrings(collection);
     const usedVars = extractVariables(allStrings);
-    const unresolved = Array.from(usedVars).filter(
-      (v) => !knownVars.has(v) && !v.startsWith("$"),
-    );
-    if (unresolved.length > 0) {
-      fail(
-        `Unresolved collection variables in ${path.relative(repoRoot, collectionPath)}: ${unresolved.join(", ")}`,
+
+    for (const {
+      path: environmentPath,
+      content: environment,
+    } of environments) {
+      const environmentVars = new Set(
+        (environment.values ?? []).map((v) => v.key),
       );
+      const knownVars = new Set([...collectionVars, ...environmentVars]);
+      const unresolved = Array.from(usedVars).filter(
+        (v) => !knownVars.has(v) && !v.startsWith("$"),
+      );
+      if (unresolved.length > 0) {
+        fail(
+          `Unresolved collection variables in ${path.relative(repoRoot, collectionPath)} against ${path.relative(repoRoot, environmentPath)}: ${unresolved.join(", ")}`,
+        );
+      }
+
+      const serializedArtifacts = `${JSON.stringify(collection)}\n${JSON.stringify(environment)}`;
+      const secretMarkers = [
+        /PMAK-[A-Za-z0-9-]+/i,
+        /AIza[0-9A-Za-z\-_]{10,}/,
+        /xox[baprs]-[0-9A-Za-z-]{10,}/,
+        /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/,
+      ];
+      if (secretMarkers.some((r) => r.test(serializedArtifacts))) {
+        fail(
+          `Secret-like tokens detected in ${path.relative(repoRoot, collectionPath)} when paired with ${path.relative(repoRoot, environmentPath)}.`,
+        );
+      }
     }
 
     const requestUrls = collectRequestUrlRaw(collection.item);
@@ -160,25 +288,16 @@ try {
       );
     }
 
-    const serializedArtifacts = `${JSON.stringify(collection)}\n${JSON.stringify(environment)}`;
-    const secretMarkers = [
-      /PMAK-[A-Za-z0-9-]+/i,
-      /AIza[0-9A-Za-z\-_]{10,}/,
-      /xox[baprs]-[0-9A-Za-z-]{10,}/,
-      /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/,
-    ];
-    if (secretMarkers.some((r) => r.test(serializedArtifacts))) {
-      fail(
-        `Secret-like tokens detected in ${path.relative(repoRoot, collectionPath)}.`,
-      );
+    if (
+      collectionPath.endsWith("chat-backend-user-flows.postman_collection.json")
+    ) {
+      const runAllViolations = collectRunAllSmokeViolations(collection.item);
+      if (runAllViolations.length > 0) {
+        fail(
+          `Run-all smoke validation failed in ${path.relative(repoRoot, collectionPath)}: ${runAllViolations.join("; ")}`,
+        );
+      }
     }
-  }
-
-  if (!environment.name) {
-    fail(`Environment name is required in ${environmentPath}`);
-  }
-  if (!Array.isArray(environment.values)) {
-    fail(`Environment values array is required in ${environmentPath}`);
   }
 
   const requiredHealthUrls = [
@@ -196,26 +315,15 @@ try {
     );
   }
 
-  for (const entry of environment.values) {
-    const key = String(entry.key || "");
-    const value = String(entry.value || "");
-    if (
-      /secret|token|password|api[_-]?key/i.test(key) &&
-      value &&
-      !isPlaceholder(value)
-    ) {
-      fail(
-        `Sensitive-looking environment key '${key}' must use placeholder value.`,
-      );
-    }
-  }
-
   if (!process.exitCode) {
     const collectionNames = collectionPaths
       .map((collectionPath) => path.relative(repoRoot, collectionPath))
       .join(", ");
+    const environmentNames = environmentPaths
+      .map((environmentPath) => path.relative(repoRoot, environmentPath))
+      .join(", ");
     console.log(
-      `Postman validation passed for ${collectionNames} and ${path.relative(repoRoot, environmentPath)}`,
+      `Postman validation passed for ${collectionNames} with environments: ${environmentNames}`,
     );
   }
 } catch (error) {

@@ -5,6 +5,7 @@
 **Document version:** 0.2  
 **Status:** Draft baseline  
 **Date:** 2026-07-05  
+**Last reviewed:** 2026-08-09
 **Architecture style:** API-first modular monolith  
 **Primary deployment target:** Local development workstation  
 **Secondary deployment target:** DevDocker rehearsal environment on local workstation  
@@ -20,6 +21,7 @@ This revision replaces the PostgreSQL and jOOQ baseline with:
 - explicit JDBC repository implementations
 - SQL Server Testcontainers for integration and migration testing
 - SQL Server-specific constraints, indexes, concurrency handling, backup guidance, and deployment restrictions
+- explicit client-outbox, server-acceptance, recipient-delivery, and read-state semantics
 
 jOOQ remains an optional future enhancement if an appropriate commercial licence is available. It is not required by the baseline implementation.
 
@@ -427,6 +429,7 @@ ConversationMember
 - role
 - joinedAt
 - leftAt
+- lastDeliveredSequence
 - lastReadSequence
 ```
 
@@ -439,6 +442,11 @@ MEMBER
 ```
 
 A membership row shall be retained after a user leaves so that historical membership can be audited.
+
+Delivery and read positions are durable, monotonic per-user cursors. The Version 1 baseline treats a
+message as delivered to a user when any authenticated client session for that user explicitly
+acknowledges that it has received and accepted the message for local presentation or persistence.
+Publication to a WebSocket connection by itself is not proof of delivery.
 
 ### 9.6 Message
 
@@ -568,6 +576,8 @@ Examples:
 - unique `(sender_id, client_message_id)`
 - unique `(conversation_id, sequence_number)`
 - non-negative read sequence
+- non-negative delivery sequence
+- read sequence not greater than delivery sequence
 - valid status values
 - valid conversation membership foreign keys
 - non-empty non-deleted message body
@@ -868,6 +878,7 @@ application/problem+json
 /api/v1/conversations
 /api/v1/conversations/{conversationId}/members
 /api/v1/conversations/{conversationId}/messages
+/api/v1/conversations/{conversationId}/delivery-position
 /api/v1/conversations/{conversationId}/read-position
 ```
 
@@ -1036,31 +1047,118 @@ UNIQUE(sender_id, client_message_id)
 
 If two identical requests race, one insert may lose the unique constraint race. The service shall then read and return the already-created message rather than return an internal error.
 
-## 17. Read Position Semantics
+### 16.4 Client outbox and submission acknowledgement
 
-Read state shall be stored per conversation member.
+Clients may optimistically display and locally persist a message before the server accepts it. Each
+locally pending message shall retain the same `clientMessageId` across retries. Browser clients should
+use durable browser storage such as IndexedDB, and native clients should use an appropriate local
+database when pending submissions must survive process termination. Process memory alone is suitable
+only for transient UI state.
+
+The client-visible submission states are:
 
 ```text
+LOCAL_PENDING   - retained in the client outbox; no server acknowledgement
+SERVER_ACCEPTED - committed to SQL Server and returned with its server id and sequence number
+```
+
+Clients should retry pending submissions when connectivity returns, using bounded exponential backoff
+and connectivity/lifecycle signals rather than an unbounded fixed one-second polling loop. If the first
+request committed but its response was lost, retrying the same `clientMessageId` shall return the
+existing persisted message.
+
+## 17. Delivery and Read Position Semantics
+
+Delivery and read state shall be stored per conversation member.
+
+```text
+last_delivered_sequence
 last_read_sequence
 ```
 
-The update shall be monotonic:
+Both positions shall be monotonic. A delivery acknowledgement shall use an atomic update:
 
 ```sql
 UPDATE messaging.conversation_member
-SET last_read_sequence =
+SET last_delivered_sequence =
     CASE
-        WHEN last_read_sequence < ? THEN ?
-        ELSE last_read_sequence
+        WHEN last_delivered_sequence < ? THEN ?
+        ELSE last_delivered_sequence
     END
 WHERE conversation_id = ?
   AND user_id = ?
   AND left_at IS NULL;
 ```
 
-The server shall reject a read sequence beyond the latest known message sequence.
+A read acknowledgement shall advance `last_read_sequence` and, when necessary,
+`last_delivered_sequence` in the same transaction because a message cannot be read without first being
+delivered:
+
+```sql
+UPDATE messaging.conversation_member
+SET
+    last_delivered_sequence =
+        CASE
+            WHEN last_delivered_sequence < ? THEN ?
+            ELSE last_delivered_sequence
+        END,
+    last_read_sequence =
+        CASE
+            WHEN last_read_sequence < ? THEN ?
+            ELSE last_read_sequence
+        END
+WHERE conversation_id = ?
+  AND user_id = ?
+  AND left_at IS NULL;
+```
+
+The server shall reject a delivered or read sequence beyond the latest committed message sequence.
+The authenticated user identity shall determine which membership row is updated; clients shall not
+supply another user's identity.
+
+The baseline HTTP contracts are:
+
+```http
+PUT /api/v1/conversations/{conversationId}/delivery-position
+Content-Type: application/json
+
+{"sequence": 143}
+```
+
+```http
+PUT /api/v1/conversations/{conversationId}/read-position
+Content-Type: application/json
+
+{"sequence": 143}
+```
+
+Both endpoints require authentication, derive the member from the authenticated session, and may
+return `204 No Content` after an idempotent monotonic update. A request with a sequence gap is valid
+only when the client has actually recovered and accepted every preceding sequence through that value.
+
+An explicit client acknowledgement is authoritative for delivery state. Sending or publishing a
+WebSocket event, writing to a broker, or observing an open connection is not sufficient. A recipient
+client should acknowledge delivery only after it has accepted the message for local presentation or
+durable local storage.
 
 Opening a UI window alone does not define read state. A future client shall update the read position only after messages are visibly presented to the user.
+
+For a direct conversation, a sender-facing status can be derived as:
+
+```text
+timer        message exists only in the sender's local outbox
+single tick  message has been committed to SQL Server
+double tick  recipient last_delivered_sequence >= message sequence
+read         recipient last_read_sequence >= message sequence
+```
+
+For a group conversation, delivery and read positions remain per member. API responses may expose
+per-member status or aggregate counts; the UI must not describe a group message as delivered to all
+members unless every applicable active recipient has acknowledged that sequence.
+
+Version 1 uses per-user cursors: acknowledgement by any authenticated session advances the user's
+position. Before implementation, an ADR shall confirm this behavior or replace it with per-device
+cursors if product requirements demand distinct delivery state for every registered device.
 
 ## 18. Message Editing and Deletion
 
@@ -1102,7 +1200,7 @@ WebSocket delivery shall be added only after REST functionality is complete.
 WebSocket shall:
 
 - notify connected users of committed changes
-- carry message-created, message-edited, message-deleted, and read-position events
+- carry message-created, message-edited, message-deleted, delivery-position, and read-position events
 - authenticate the connection
 - enforce authorization for subscriptions
 - support heartbeat and disconnect detection
@@ -1111,12 +1209,20 @@ WebSocket shall not:
 
 - replace database persistence
 - become the only path for message retrieval
-- be trusted as proof that a client has persisted or read a message
+- be trusted as proof that a client has received, persisted, or read a message
 - make missed events unrecoverable
+
+Recipient clients shall acknowledge delivery through an authenticated HTTP endpoint or an explicitly
+acknowledged WebSocket command. The server shall persist the monotonic delivery cursor before notifying
+senders of the updated delivery state. Sender-facing delivery notifications are themselves transient
+signals; reconnecting senders shall be able to query the durable cursor state.
 
 ### 19.2 Reconnection
 
 After reconnecting, the client shall call the REST history endpoint using its last received sequence. This provides deterministic recovery from missed WebSocket events.
+
+After applying the recovered messages locally, the client shall acknowledge the highest contiguous
+sequence it accepted. It must not acknowledge across a gap that it has not recovered.
 
 ## 20. Audit Model
 
@@ -1237,6 +1343,7 @@ Test:
 - sequence allocation
 - idempotency
 - cursor queries
+- monotonic delivery and read cursor updates
 
 #### API integration tests
 
@@ -1284,7 +1391,9 @@ At minimum:
 
 - concurrent sends to one conversation produce unique contiguous sequences
 - concurrent duplicate requests produce one logical message
+- concurrent delivery updates never move backwards
 - concurrent read updates never move backwards
+- read acknowledgement atomically advances delivery when required
 - invitation redemption succeeds once
 - username registration succeeds once
 
@@ -1468,6 +1577,12 @@ Exit criteria:
 
 ## Milestone 3 — Sessions
 
+Implementation status snapshot (2026-08-11):
+
+- login, logout, opaque token storage, and authenticated request filtering are implemented,
+- invalid/revoked/expired and disabled-user session checks are implemented,
+- dedicated administrative revoke-all-sessions API remains planned hardening work.
+
 Deliver:
 
 - login
@@ -1475,7 +1590,7 @@ Deliver:
 - authenticated request filter
 - logout
 - session expiry
-- user disable and revoke-all-sessions
+- user disable enforcement and optional revoke-all-sessions administrative capability
 
 Exit criteria:
 
@@ -1522,20 +1637,32 @@ Exit criteria:
 - history pagination is deterministic
 - unauthorized send and read operations fail
 
-## Milestone 6 — Read state
+## Milestone 6 — Delivery and read state
 
 Deliver:
 
+- migration adding non-negative `last_delivered_sequence` and enforcing
+  `last_read_sequence <= last_delivered_sequence`
+- authenticated delivery-position acknowledgement
 - advance read position
+- persisted per-member `lastDeliveredSequence`
 - unread-count query
+- sender-visible delivery/read status or aggregate status query
 - member read positions where permitted
-- monotonic update enforcement
+- monotonic delivery and read update enforcement
+- reconciliation behavior for clients reconnecting with sequence gaps
+- repository, API, concurrency, and authorization tests for both cursors
 
 Exit criteria:
 
+- WebSocket publication alone never marks a message delivered
+- old delivery acknowledgements cannot move delivery position backwards
 - old requests cannot move read position backwards
-- read position cannot exceed latest sequence
+- read position never exceeds delivery position
+- delivery and read positions cannot exceed the latest committed message sequence
 - unread calculation is covered by tests
+- a sender can distinguish server acceptance, recipient delivery, and recipient read state
+- concurrent and retried acknowledgements are idempotent
 
 ## Milestone 7 — API hardening
 
@@ -1564,6 +1691,7 @@ Deliver:
 - connection registry
 - committed message events
 - edit/delete events
+- delivery-position events
 - read-position events
 - heartbeat
 - reconnect synchronization test
@@ -1572,6 +1700,8 @@ Exit criteria:
 
 - disconnecting does not lose durable data
 - missed events are recovered through REST
+- recipient delivery is recorded only after explicit acknowledgement
+- sender delivery indicators recover from durable cursor state after reconnect
 - non-members cannot subscribe to conversation events
 - expired sessions cause connection closure or reauthentication
 

@@ -17,6 +17,8 @@ When OpenAPI is introduced later, document and enforce one direction only (OpenA
 
 - postman/collections/chat-backend.postman_collection.json
 - postman/environments/local.example.postman_environment.json
+- postman/environments/devdocker.example.postman_environment.json
+- postman/environments/production.example.postman_environment.json
 - postman/config.properties.example
 - scripts/postman/validate-postman.sh
 - scripts/postman/sync-postman.sh
@@ -43,7 +45,14 @@ Create local config for Postman Cloud sync:
    - postman-api-key
    - postman-workspace-id
    - optional postman-collection-id
-   - optional postman-environment-id
+   - optional postman-flow-collection-id
+   - optional postman-local-environment-id
+   - optional postman-dev-environment-id
+   - optional postman-prod-environment-id
+
+Backward compatibility:
+
+- `postman-environment-id` is still supported and treated as the Local environment target.
 
 postman/config.properties is gitignored and must never be committed.
 
@@ -52,7 +61,11 @@ You can also override by environment variables:
 - POSTMAN_API_KEY
 - POSTMAN_WORKSPACE_ID
 - POSTMAN_COLLECTION_ID
+- POSTMAN_FLOW_COLLECTION_ID
 - POSTMAN_ENVIRONMENT_ID
+- POSTMAN_LOCAL_ENVIRONMENT_ID
+- POSTMAN_DEV_ENVIRONMENT_ID
+- POSTMAN_PROD_ENVIRONMENT_ID
 - POSTMAN_CONFIG_FILE (optional custom properties file path)
 
 ## Validate Locally (No Cloud Credential Required)
@@ -78,6 +91,23 @@ Validation covers:
 - hardcoded absolute URLs instead of {{base_url}}
 - obvious secret markers in committed artifacts
 - required Quarkus health requests (`/q/health/live`, `/q/health/ready`) so discovery cannot accidentally remove them
+- Run-all smoke guardrails: every request under Run-all API smoke journey must include a test assertion named with `Expected:` and an explicit HTTP status assertion
+
+By default validation runs against all three committed environment templates:
+
+- postman/environments/local.example.postman_environment.json
+- postman/environments/devdocker.example.postman_environment.json
+- postman/environments/production.example.postman_environment.json
+
+## Smoke Flow Authoring Requirements
+
+These are required for all newly created flow requests and all new additions to Run-all API smoke journey:
+
+- Include at least one post-response `pm.test(...)` assertion per request.
+- Name status assertions with an explicit expectation prefix: `Expected: ...`.
+- Assert HTTP response status explicitly (for example `pm.response.to.have.status(200)` or an explicit allowed set for multi-outcome steps).
+- For identity-creating steps (for example invitation redeem/user creation), generate a unique username per run to avoid collisions in repeat runs.
+- Ensure query params expected to be numeric (for example `message_limit`) resolve to concrete values; the current run-all flow applies a fallback of `50` when globals are absent.
 
 ## Inspect Existing Cloud Assets
 
@@ -125,12 +155,18 @@ Behavior summary:
 
 - validates required configuration
 - verifies workspace exists
-- updates configured collection and environment IDs deterministically
+- updates configured collection IDs and environment IDs deterministically
 - refuses overwrite when configured resource is not found in configured workspace
 - only creates missing resources when --create-missing is provided
 - stores newly created non-secret IDs back into local ignored config
-- updates existing collection/environment in place so desktop Postman receives latest requests without delete/import cycles
+- updates existing collections/environments in place so desktop Postman receives latest requests without delete/import cycles
 - supports strict drift checks for CI gating against configured cloud targets
+
+Environment sync targets:
+
+- Local artifact: postman/environments/local.example.postman_environment.json
+- DevDocker artifact: postman/environments/devdocker.example.postman_environment.json
+- Production artifact: postman/environments/production.example.postman_environment.json
 
 ## GitHub Actions Workflows
 
@@ -141,12 +177,28 @@ Behavior summary:
 - postman-sync.yml runs discovery first and fails when generated collection updates are not committed.
 - postman-sync.yml fails early if required secrets are missing for the selected mode.
 
-## Running Collection Against Local App
+## Running Collections Across Local And DevDocker
 
-Start app locally, then use environment base_url:
+Collections are shared across environments. Use the same collection files with different environment files:
 
-- default base_url is http://localhost:8080
-- update local environment inside Postman as needed for your runtime port
+- Local host-run app environment: postman/environments/local.example.postman_environment.json (base_url http://localhost:8080)
+- DevDocker app environment: postman/environments/devdocker.example.postman_environment.json (base_url http://localhost:8081)
+
+This keeps request generation/discovery identical while allowing runtime-specific targets via base_url only.
+
+### Environment-specific globals convention
+
+Credential and identity defaults should be namespaced by environment and referenced from each Postman environment file:
+
+- Local globals: `WLAdminUser_Local`, `WLAdminPass_Local`, `WLMemberUser_Local`, `WLMemberPass_Local`, `WLAuthUser_Local`, `WLAuthPass_Local`, `WLActorUserId_Local`
+- Dev globals: `WLAdminUser_Dev`, `WLAdminPass_Dev`, `WLMemberUser_Dev`, `WLMemberPass_Dev`, `WLAuthUser_Dev`, `WLAuthPass_Dev`, `WLActorUserId_Dev`
+- Prod globals: `WLAdminUser_Prod`, `WLAdminPass_Prod`, `WLMemberUser_Prod`, `WLMemberPass_Prod`, `WLAuthUser_Prod`, `WLAuthPass_Prod`, `WLActorUserId_Prod`
+
+Recommended shared defaults by environment namespace:
+
+- `WLConversationId_<Env>`
+- `WLSenderUserId_<Env>`
+- `WLMessageLimit_<Env>`
 
 ## Security Rules
 

@@ -93,7 +93,6 @@ final class HttpAuditQueueDispatcherTest {
   @Test
   void startShouldRetryRabbitConnectionUntilAvailable() throws Exception {
     AtomicInteger initializationAttempts = new AtomicInteger();
-    CountDownLatch connectionSucceeded = new CountDownLatch(1);
 
     HttpAuditQueueDispatcher dispatcher =
         new HttpAuditQueueDispatcher(
@@ -103,20 +102,27 @@ final class HttpAuditQueueDispatcherTest {
             8,
             () -> {
               int attempt = initializationAttempts.incrementAndGet();
-              if (attempt >= 2) {
-                connectionSucceeded.countDown();
-                return true;
-              }
-              return false;
+              return attempt >= 2;
             });
 
     dispatcher.start();
     try {
-      assertTrue(connectionSucceeded.await(3, TimeUnit.SECONDS));
-      assertTrue(isRabbitActive(dispatcher));
+      assertTrue(waitForRabbitActive(dispatcher, 3, TimeUnit.SECONDS));
     } finally {
       dispatcher.shutdown();
     }
+  }
+
+  private static boolean waitForRabbitActive(
+      HttpAuditQueueDispatcher dispatcher, long timeout, TimeUnit unit) throws Exception {
+    long deadline = System.nanoTime() + unit.toNanos(timeout);
+    while (System.nanoTime() < deadline) {
+      if (isRabbitActive(dispatcher)) {
+        return true;
+      }
+      Thread.sleep(25L);
+    }
+    return false;
   }
 
   private static boolean isRabbitActive(HttpAuditQueueDispatcher dispatcher) throws Exception {

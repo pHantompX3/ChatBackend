@@ -1,0 +1,76 @@
+name: Flow Smoke Gate
+
+on:
+    pull_request:
+        branches: [main]
+        paths:
+            - "src/main/java/**"
+            - "src/main/resources/**"
+            - "scripts/postman/**"
+            - "scripts/cicd/**"
+            - "scripts/database/**"
+            - "compose.devdocker.yaml"
+            - "Dockerfile"
+            - "postman/collections/chat-backend-user-flows.postman_collection.json"
+            - ".github/workflows/flow-smoke-gate.yml"
+    push:
+        branches: [main]
+        paths:
+            - "src/main/java/**"
+            - "src/main/resources/**"
+            - "scripts/postman/**"
+            - "scripts/cicd/**"
+            - "scripts/database/**"
+            - "compose.devdocker.yaml"
+            - "Dockerfile"
+            - "postman/collections/chat-backend-user-flows.postman_collection.json"
+            - ".github/workflows/flow-smoke-gate.yml"
+    workflow_dispatch:
+
+jobs:
+    flow-smoke:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        env:
+            MSSQL_SA_PASSWORD: "FlowGate_SA_Passw0rd!"
+            WL_CHAT_DB_PASSWORD: "FlowGate_App_Passw0rd!"
+            WL_CHAT_QUEUE_PASSWORD: "FlowGate_Queue_Passw0rd!"
+            WL_CHAT_ENABLE_QUEUE: "false"
+            WL_CHAT_AUDIT_RABBITMQ_ENABLED: "false"
+            WL_CHAT_APP_PORT: "8081"
+            WL_CHAT_FLOW_BASE_URL: "http://localhost:8081"
+            WL_CHAT_NEWMAN_REPORT_DIR: "/tmp/wl-chat-newman-report"
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Build and start devdocker stack
+              shell: bash
+              run: ./scripts/cicd/devdocker-up.sh
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v5
+              with:
+                  node-version: "24"
+
+            - name: Validate Postman artifacts
+              shell: bash
+              run: ./scripts/postman/validate-postman.sh
+
+            - name: Run Newman run-all API smoke journey
+              shell: bash
+              run: bash ./scripts/postman/run-user-flow-newman.sh
+
+            - name: Upload Newman artifacts
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: newman-flow-artifacts
+                  path: ${{ env.WL_CHAT_NEWMAN_REPORT_DIR }}
+                  if-no-files-found: warn
+
+            - name: Stop devdocker stack
+              if: always()
+              shell: bash
+              run: ./scripts/cicd/devdocker-down.sh

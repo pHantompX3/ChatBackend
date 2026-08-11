@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..", "..");
 
 const javaRoot = path.join(repoRoot, "src", "main", "java");
@@ -56,12 +57,12 @@ function listJavaFiles(dirPath, out = []) {
   return out;
 }
 
-function parseApiV1Constant() {
+export function parseApiV1Constant(apiRoutesFilePath = apiRoutesPath) {
   const fallback = "/api/v1";
-  if (!fs.existsSync(apiRoutesPath)) {
+  if (!fs.existsSync(apiRoutesFilePath)) {
     return fallback;
   }
-  const content = fs.readFileSync(apiRoutesPath, "utf8");
+  const content = fs.readFileSync(apiRoutesFilePath, "utf8");
   const match = content.match(/API_V1\s*=\s*"([^"]+)"/);
   return match ? match[1] : fallback;
 }
@@ -101,11 +102,9 @@ function joinPaths(basePath, methodPath) {
   );
 }
 
-function extractDiscoveredEndpoints(apiV1) {
+export function extractDiscoveredEndpoints(apiV1, javaRootPath = javaRoot) {
   const discovered = [];
-  const javaFiles = listJavaFiles(javaRoot);
-  const routeRegex =
-    /@(GET|POST|PUT|DELETE|PATCH)\b(?:[\s\S]*?@Path\(([^)]+)\))?/g;
+  const javaFiles = listJavaFiles(javaRootPath);
 
   for (const filePath of javaFiles) {
     const content = fs.readFileSync(filePath, "utf8");
@@ -115,12 +114,32 @@ function extractDiscoveredEndpoints(apiV1) {
     const classPathExpr = classPathMatch ? classPathMatch[1] : "";
     const classPath = decodePathExpression(classPathExpr, apiV1);
 
-    let match;
-    while ((match = routeRegex.exec(content)) !== null) {
-      const method = match[1];
-      const methodPathExpr = match[2] || "";
+    const httpAnnotationRegex = /@(GET|POST|PUT|DELETE|PATCH)\b/g;
+    const httpMatches = Array.from(content.matchAll(httpAnnotationRegex));
+
+    for (const httpMatch of httpMatches) {
+      const annotationIndex = httpMatch.index;
+      const nextHttpMatch = content
+        .slice(annotationIndex + httpMatch[0].length)
+        .match(/@(GET|POST|PUT|DELETE|PATCH)\b/);
+      const blockEndIndex = nextHttpMatch
+        ? annotationIndex + httpMatch[0].length + nextHttpMatch.index
+        : content.length;
+      const block = content.slice(annotationIndex, blockEndIndex);
+      const methodSignatureMatch = block.match(
+        /\b(?:public|protected|private)\s+(?:static\s+)?(?:final\s+)?(?:<[^>]+>\s*)?(?:[\w.$<>\[\],?]+\s+)+(\w+)\s*\(/,
+      );
+      if (!methodSignatureMatch) {
+        continue;
+      }
+
+      const method = httpMatch[1];
+      const methodPathMatch = block.match(/@Path\(([^)]+)\)/);
+      const methodPathExpr = methodPathMatch ? methodPathMatch[1] : "";
       const methodPath = decodePathExpression(methodPathExpr, apiV1);
-      const fullPath = joinPaths(classPath, methodPath);
+      const fullPath = methodPathExpr
+        ? joinPaths(classPath, methodPath)
+        : classPath;
       if (!fullPath) {
         continue;
       }
@@ -242,6 +261,51 @@ const endpointExampleTemplates = new Map([
           status: "Conflict",
           code: 409,
           body: '{\n  "type": "about:blank",\n  "title": "Bootstrap already completed",\n  "status": 409,\n  "detail": "Bootstrap already completed",\n  "code": "BOOTSTRAP_ALREADY_COMPLETED"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/sessions",
+    {
+      requestBody:
+        '{\n  "username": "Admin Root",\n  "password": "AdminPassw0rd!"\n}',
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: '{\n  "sessionId": "00000000-0000-0000-0000-000000000002",\n  "token": "session-token-abc123"\n}',
+        },
+        {
+          name: "401 Unauthorized",
+          status: "Unauthorized",
+          code: 401,
+          body: '{\n  "type": "about:blank",\n  "title": "Authentication failed",\n  "status": 401,\n  "detail": "Invalid username or password",\n  "code": "INVALID_CREDENTIALS"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/sessions/logout",
+    {
+      requestBody: null,
+      auth: "bearer",
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
+        },
+        {
+          name: "401 Unauthorized",
+          status: "Unauthorized",
+          code: 401,
+          body: '{\n  "type": "about:blank",\n  "title": "Authentication failed",\n  "status": 401,\n  "detail": "Session is invalid",\n  "code": "INVALID_SESSION"\n}',
           contentType: "application/problem+json",
         },
       ],
@@ -556,15 +620,37 @@ function buildDiscoveredRequest(endpoint) {
         .filter(Number.isInteger)
     : [];
 
-  if (isWrite) {
-    request.header.unshift({ key: "Content-Type", value: "application/json" });
-    request.body = {
-      mode: "raw",
-      raw: template?.requestBody || buildFallbackRequestBody(endpoint),
-      options: {
-        raw: { language: "json" },
-      },
+  if (template?.auth === "bearer") {
+    request.auth = {
+      type: "bearer",
+      bearer: [{ key: "token", value: "{{session_token}}", type: "string" }],
     };
+    request.header.unshift({
+      key: "Authorization",
+      value: "Bearer {{session_token}}",
+    });
+  }
+
+  if (isWrite) {
+    if (
+      template &&
+      Object.hasOwn(template, "requestBody") &&
+      template.requestBody === null
+    ) {
+      request.body = undefined;
+    } else {
+      request.header.unshift({
+        key: "Content-Type",
+        value: "application/json",
+      });
+      request.body = {
+        mode: "raw",
+        raw: template?.requestBody || buildFallbackRequestBody(endpoint),
+        options: {
+          raw: { language: "json" },
+        },
+      };
+    }
   }
 
   return {
@@ -611,6 +697,48 @@ function applyEndpointTemplatesToExistingRequests(collection) {
         requestItem.request.body.options = { raw: { language: "json" } };
         changed = true;
       }
+    }
+
+    if (
+      template &&
+      Object.hasOwn(template, "requestBody") &&
+      template.requestBody === null
+    ) {
+      if (requestItem.request.body) {
+        delete requestItem.request.body;
+        changed = true;
+      }
+      if (Array.isArray(requestItem.request.header)) {
+        const filteredHeaders = requestItem.request.header.filter(
+          (header) =>
+            String(header?.key || "").toLowerCase() !== "content-type",
+        );
+        if (filteredHeaders.length !== requestItem.request.header.length) {
+          requestItem.request.header = filteredHeaders;
+          changed = true;
+        }
+      }
+    }
+
+    if (template?.auth === "bearer") {
+      requestItem.request.auth = {
+        type: "bearer",
+        bearer: [{ key: "token", value: "{{session_token}}", type: "string" }],
+      };
+      const headers = Array.isArray(requestItem.request.header)
+        ? requestItem.request.header
+        : [];
+      const hasAuthorization = headers.some(
+        (header) => String(header?.key || "").toLowerCase() === "authorization",
+      );
+      if (!hasAuthorization) {
+        headers.unshift({
+          key: "Authorization",
+          value: "Bearer {{session_token}}",
+        });
+      }
+      requestItem.request.header = headers;
+      changed = true;
     }
 
     if (
@@ -753,7 +881,7 @@ function ensureProtectedHealthRequests(collection) {
   return addedCount;
 }
 
-function mergeDiscoveredEndpoints(collection, endpoints) {
+export function mergeDiscoveredEndpoints(collection, endpoints) {
   const legacyFolder = findFolder(collection, "Discovered APIs");
 
   const nonDiscoveredRequests = [];
@@ -793,6 +921,14 @@ function mergeDiscoveredEndpoints(collection, endpoints) {
   );
 
   const allRequests = collectRequests(collection);
+  const existingByKey = new Map(
+    allRequests
+      .filter((entry) => entry?.request?.method && entry?.request?.url?.raw)
+      .map((entry) => [
+        requestKey(entry.request.method, entry.request.url.raw),
+        entry,
+      ]),
+  );
   const existingKeys = new Set(
     allRequests.map((entry) =>
       requestKey(entry?.request?.method, entry?.request?.url?.raw),
@@ -804,10 +940,26 @@ function mergeDiscoveredEndpoints(collection, endpoints) {
   const grouped = new Map();
 
   const addToGroup = (groupName, requestItem) => {
+    if (!requestItem?.request?.method || !requestItem?.request?.url?.raw) {
+      return;
+    }
     if (!grouped.has(groupName)) {
       grouped.set(groupName, []);
     }
-    grouped.get(groupName).push(requestItem);
+    const groupRequests = grouped.get(groupName);
+    const key = requestKey(
+      requestItem.request.method,
+      requestItem.request.url.raw,
+    );
+    if (
+      groupRequests.some(
+        (entry) =>
+          requestKey(entry?.request?.method, entry?.request?.url?.raw) === key,
+      )
+    ) {
+      return;
+    }
+    groupRequests.push(requestItem);
   };
 
   for (const [key, entry] of reusableByKey.entries()) {
@@ -830,17 +982,24 @@ function mergeDiscoveredEndpoints(collection, endpoints) {
   for (const endpoint of endpoints) {
     const rawUrl = buildRawUrl(endpoint.path);
     const key = requestKey(endpoint.method, rawUrl);
-    if (existingKeys.has(key)) {
+    const domainFolderName = inferDomainFolderByPath(endpoint.path);
+    const existingRequest = existingByKey.get(key);
+
+    if (existingRequest) {
+      if (!domainFolderName) {
+        addToGroup(endpoint.sourceGroup || "Misc", existingRequest);
+      }
       continue;
     }
+
     const requestItem = buildDiscoveredRequest(endpoint);
-    const domainFolderName = inferDomainFolderByPath(endpoint.path);
     if (domainFolderName) {
       const domainFolder = ensureFolder(collection, domainFolderName, "");
       domainFolder.item.push(requestItem);
     } else {
       addToGroup(endpoint.sourceGroup || "Misc", requestItem);
     }
+    existingByKey.set(key, requestItem);
     existingKeys.add(key);
     addedCount += 1;
   }
@@ -866,7 +1025,7 @@ function mergeDiscoveredEndpoints(collection, endpoints) {
   return { addedCount, movedCount, cleanedCount };
 }
 
-function run() {
+export function run() {
   if (!fs.existsSync(collectionPath)) {
     fail(`Collection file not found: ${collectionPath}`);
   }
@@ -899,4 +1058,9 @@ function run() {
   );
 }
 
-run();
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  run();
+}

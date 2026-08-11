@@ -26,8 +26,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('bootstrap_admin_username', 'flow-admin-' + Date.now());",
-                  "pm.environment.set('bootstrap_admin_password', pm.environment.get('bootstrap_admin_password') || 'AdminPassw0rd!');"
+                  "pm.environment.set('bootstrap_admin_username', pm.environment.get('bootstrap_admin_username') || pm.globals.get('WLAdminUser') || ('flow-admin-' + Date.now()));",
+                  "pm.environment.set('bootstrap_admin_password', pm.environment.get('bootstrap_admin_password') || pm.globals.get('WLAdminPass') || 'AdminPassw0rd!');"
                 ]
               }
             },
@@ -67,14 +67,53 @@
           }
         },
         {
-          "name": "02 - Create invitation",
+          "name": "02 - Login bootstrap admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('admin_session_token', jsonData.token);",
+                  "pm.environment.set('admin_bearer_token', 'Bearer ' + jsonData.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrap_admin_username}}\",\n  \"password\": \"{{bootstrap_admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions"]
+            }
+          }
+        },
+        {
+          "name": "03 - Create invitation",
           "event": [
             {
               "listen": "prerequest",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('invitation_expires_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());"
+                  "var invitationTtlHours = Number(pm.globals.get('WLInvitationTtlHours') || 24);\npm.environment.set('invitation_expires_at', new Date(Date.now() + invitationTtlHours * 60 * 60 * 1000).toISOString());",
+                  "pm.environment.set('admin_user_id', pm.environment.get('admin_user_id') || '00000000-0000-0000-0000-000000000000');"
                 ]
               }
             },
@@ -100,6 +139,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
               }
             ],
             "body": {
@@ -114,15 +157,15 @@
           }
         },
         {
-          "name": "03 - Redeem invitation",
+          "name": "04 - Redeem invitation",
           "event": [
             {
               "listen": "prerequest",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('member_username', 'member-' + Date.now());",
-                  "pm.environment.set('member_password', pm.environment.get('member_password') || 'MemberPassw0rd!');"
+                  "pm.environment.set('member_username', pm.environment.get('member_username') || pm.globals.get('WLMemberUser') || ('member-' + Date.now()));",
+                  "pm.environment.set('member_password', pm.environment.get('member_password') || pm.globals.get('WLMemberPass') || 'MemberPassw0rd!');"
                 ]
               }
             },
@@ -160,6 +203,36 @@
               "path": ["api", "v1", "invitations", "redeem"]
             }
           }
+        },
+        {
+          "name": "05 - Logout bootstrap admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "logout"]
+            }
+          }
         }
       ]
     },
@@ -168,14 +241,53 @@
       "description": "Run after bootstrap is complete to create and revoke a second invitation using the bootstrapped admin identity.",
       "item": [
         {
-          "name": "01 - Create follow-up invitation",
+          "name": "01 - Login bootstrap admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('admin_session_token', jsonData.token);",
+                  "pm.environment.set('admin_bearer_token', 'Bearer ' + jsonData.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrap_admin_username}}\",\n  \"password\": \"{{bootstrap_admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions"]
+            }
+          }
+        },
+        {
+          "name": "02 - Create follow-up invitation",
           "event": [
             {
               "listen": "prerequest",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('followup_invitation_expires_at', new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString());"
+                  "var followupInvitationTtlHours = Number(pm.globals.get('WLFollowupInvitationTtlHours') || 12);\npm.environment.set('followup_invitation_expires_at', new Date(Date.now() + followupInvitationTtlHours * 60 * 60 * 1000).toISOString());",
+                  "pm.environment.set('admin_user_id', pm.environment.get('admin_user_id') || '00000000-0000-0000-0000-000000000000');"
                 ]
               }
             },
@@ -201,6 +313,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
               }
             ],
             "body": {
@@ -215,7 +331,7 @@
           }
         },
         {
-          "name": "02 - Revoke follow-up invitation",
+          "name": "03 - Revoke follow-up invitation",
           "event": [
             {
               "listen": "test",
@@ -235,6 +351,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
               }
             ],
             "body": {
@@ -253,8 +373,818 @@
               ]
             }
           }
+        },
+        {
+          "name": "04 - Logout bootstrap admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "logout"]
+            }
+          }
         }
       ]
+    },
+    {
+      "name": "Session lifecycle and authenticated messaging",
+      "description": "Log in, call protected messaging endpoints, log out, and verify the revoked session is rejected.",
+      "item": [
+        {
+          "name": "01 - Login",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('auth_username', pm.environment.get('auth_username') || pm.environment.get('member_username') || pm.environment.get('bootstrap_admin_username'));",
+                  "pm.environment.set('auth_password', pm.environment.get('auth_password') || pm.environment.get('member_password') || pm.environment.get('bootstrap_admin_password'));",
+                  "pm.environment.set('flow_sender_user_id', pm.environment.get('flow_sender_user_id') || pm.environment.get('member_user_id') || pm.environment.get('admin_user_id'));",
+                  "pm.environment.set('flow_conversation_id', 'session-flow-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('session_id', jsonData.sessionId);",
+                  "pm.environment.set('session_token', jsonData.token);",
+                  "pm.environment.set('auth_bearer_token', 'Bearer ' + jsonData.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{auth_username}}\",\n  \"password\": \"{{auth_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions"]
+            }
+          }
+        },
+        {
+          "name": "02 - Send authenticated message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 501', function () {",
+                  "  pm.response.to.have.status(501);",
+                  "});",
+                  "",
+                  "pm.environment.set('message_id', jsonData.id || jsonData.messageId || '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conversationId\": \"{{flow_conversation_id}}\",\n  \"senderUserId\": \"{{flow_sender_user_id}}\",\n  \"content\": \"Session flow message {{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/messages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "messages"]
+            }
+          }
+        },
+        {
+          "name": "03 - List authenticated messages",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 501', function () {",
+                  "  pm.response.to.have.status(501);",
+                  "});",
+                  "",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit={{message_limit}}",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{message_limit}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "04 - Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "logout"]
+            }
+          }
+        },
+        {
+          "name": "05 - Verify revoked session denied",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit={{message_limit}}",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{message_limit}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Run-all API smoke journey",
+      "description": "Single ordered workflow that covers onboarding, invitations, sessions, protected messaging, and post-logout authorization behavior.",
+      "item": [
+        {
+          "name": "RA01 - Bootstrap admin",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('bootstrap_admin_username', pm.environment.get('bootstrap_admin_username') || pm.environment.get('admin_username') || pm.environment.get('auth_username') || ('runall-admin-' + Date.now()));",
+                  "pm.environment.set('bootstrap_admin_password', pm.environment.get('bootstrap_admin_password') || pm.environment.get('admin_password') || pm.environment.get('auth_password') || pm.globals.get('WLAdminPass') || 'AdminPassw0rd!');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: bootstrap admin returns 200 (created) or 409 (already exists)', function () {",
+                  "  pm.expect([200, 409]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('admin_user_id', jsonData.userId);",
+                  "  pm.environment.set('admin_username', jsonData.username);",
+                  "  pm.environment.set('bootstrap_admin_username', jsonData.username);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrap_admin_username}}\",\n  \"password\": \"{{bootstrap_admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bootstrap/admin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bootstrap", "admin"]
+            }
+          }
+        },
+        {
+          "name": "RA02 - Login bootstrap admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: login bootstrap admin returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('admin_session_token', jsonData.token);",
+                  "pm.environment.set('admin_bearer_token', 'Bearer ' + jsonData.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrap_admin_username}}\",\n  \"password\": \"{{bootstrap_admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions"]
+            }
+          }
+        },
+        {
+          "name": "RA03 - Create invitation",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var invitationTtlHours = Number(pm.globals.get('WLInvitationTtlHours') || 24);\npm.environment.set('invitation_expires_at', new Date(Date.now() + invitationTtlHours * 60 * 60 * 1000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: create invitation returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('invitation_id', jsonData.invitationId);",
+                  "pm.environment.set('invitation_token', jsonData.invitationToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actorUserId\": \"{{admin_user_id}}\",\n  \"expiresAt\": \"{{invitation_expires_at}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/invitations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "invitations"]
+            }
+          }
+        },
+        {
+          "name": "RA04 - Redeem invitation",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var randomSuffix = Date.now() + '-' + Math.floor(Math.random() * 100000);",
+                  "var generatedMemberUsername = 'runall-member-' + randomSuffix;",
+                  "var generatedMemberPassword = 'password1';",
+                  "pm.environment.set('member_username', generatedMemberUsername);",
+                  "pm.environment.set('member_password', generatedMemberPassword);",
+                  "pm.environment.set('auth_username', generatedMemberUsername);",
+                  "pm.environment.set('auth_password', generatedMemberPassword);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: redeem invitation returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('member_user_id', jsonData.userId);",
+                  "pm.environment.set('member_username', jsonData.username);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invitationToken\": \"{{invitation_token}}\",\n  \"username\": \"{{member_username}}\",\n  \"password\": \"{{member_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/invitations/redeem",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "invitations", "redeem"]
+            }
+          }
+        },
+        {
+          "name": "RA05 - Login as member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: member login returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('member_session_id', jsonData.sessionId);",
+                  "pm.environment.set('member_session_token', jsonData.token);",
+                  "pm.environment.set('member_bearer_token', 'Bearer ' + jsonData.token);",
+                  "pm.environment.set('session_id', jsonData.sessionId);",
+                  "pm.environment.set('session_token', jsonData.token);",
+                  "pm.environment.set('auth_bearer_token', 'Bearer ' + jsonData.token);",
+                  "pm.environment.set('flow_sender_user_id', pm.environment.get('member_user_id'));",
+                  "pm.environment.set('flow_conversation_id', 'runall-session-' + Date.now());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{member_username}}\",\n  \"password\": \"{{member_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions"]
+            }
+          }
+        },
+        {
+          "name": "RA06 - Send authenticated message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: send message returns 501 until messaging API is implemented', function () {",
+                  "  pm.response.to.have.status(501);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{member_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conversationId\": \"{{flow_conversation_id}}\",\n  \"senderUserId\": \"{{flow_sender_user_id}}\",\n  \"content\": \"Run-all smoke message {{member_session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/messages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "messages"]
+            }
+          }
+        },
+        {
+          "name": "RA07 - List authenticated messages",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: list messages returns 501 until messaging API is implemented', function () {",
+                  "  pm.response.to.have.status(501);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{member_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit={{message_limit}}",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{message_limit}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA08 - Create follow-up invitation",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var followupInvitationTtlHours = Number(pm.globals.get('WLFollowupInvitationTtlHours') || 12);\npm.environment.set('followup_invitation_expires_at', new Date(Date.now() + followupInvitationTtlHours * 60 * 60 * 1000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: create follow-up invitation returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('followup_invitation_id', jsonData.invitationId);",
+                  "pm.environment.set('followup_invitation_token', jsonData.invitationToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actorUserId\": \"{{admin_user_id}}\",\n  \"expiresAt\": \"{{followup_invitation_expires_at}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/invitations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "invitations"]
+            }
+          }
+        },
+        {
+          "name": "RA09 - Revoke follow-up invitation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: revoke follow-up invitation returns 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actorUserId\": \"{{admin_user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/invitations/{{followup_invitation_id}}/revoke",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "invitations",
+                "{{followup_invitation_id}}",
+                "revoke"
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA10 - Logout member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: member logout returns 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{member_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "logout"]
+            }
+          }
+        },
+        {
+          "name": "RA11 - Verify revoked session denied",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: revoked member session is denied with 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{member_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit={{message_limit}}",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{message_limit}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA12 - Logout admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: admin logout returns 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "logout"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "function hasUsableEnvValue(key) {",
+          "  var raw = pm.environment.get(key);",
+          "  if (raw === undefined || raw === null) return false;",
+          "  var s = String(raw).trim();",
+          "  if (!s) return false;",
+          "  if (s.startsWith('{{') && s.endsWith('}}')) return false;",
+          "  var resolved = pm.variables.replaceIn(s).trim();",
+          "  return !!resolved && !(resolved.startsWith('{{') && resolved.endsWith('}}'));",
+          "}",
+          "",
+          "var mappings = [",
+          "  { env: 'bootstrap_admin_username', globals: ['WLAdminUser_Local', 'WLAdminUser_Dev', 'WLAdminUser_Prod', 'WLAdminUser'] },",
+          "  { env: 'bootstrap_admin_password', globals: ['WLAdminPass_Local', 'WLAdminPass_Dev', 'WLAdminPass_Prod', 'WLAdminPass'] },",
+          "  { env: 'member_username', globals: ['WLMemberUser_Local', 'WLMemberUser_Dev', 'WLMemberUser_Prod', 'WLMemberUser'] },",
+          "  { env: 'member_password', globals: ['WLMemberPass_Local', 'WLMemberPass_Dev', 'WLMemberPass_Prod', 'WLMemberPass'] },",
+          "  { env: 'auth_username', globals: ['WLAuthUser_Local', 'WLAuthUser_Dev', 'WLAuthUser_Prod'] },",
+          "  { env: 'auth_password', globals: ['WLAuthPass_Local', 'WLAuthPass_Dev', 'WLAuthPass_Prod'] },",
+          "  { env: 'admin_user_id', globals: ['WLActorUserId_Local', 'WLActorUserId_Dev', 'WLActorUserId_Prod', 'WLActorUserId'] },",
+          "  { env: 'conversation_id', globals: ['WLConversationId_Local', 'WLConversationId_Dev', 'WLConversationId_Prod', 'WLConversationIdDefault'] },",
+          "  { env: 'sender_user_id', globals: ['WLSenderUserId_Local', 'WLSenderUserId_Dev', 'WLSenderUserId_Prod', 'WLSenderUserIdDefault'] },",
+          "  { env: 'message_limit', globals: ['WLMessageLimit_Local', 'WLMessageLimit_Dev', 'WLMessageLimit_Prod', 'WLMessageLimitDefault'] }",
+          "];",
+          "",
+          "mappings.forEach(function (entry) {",
+          "  if (hasUsableEnvValue(entry.env)) return;",
+          "  for (var i = 0; i < entry.globals.length; i += 1) {",
+          "    var g = pm.globals.get(entry.globals[i]);",
+          "    if (g !== undefined && g !== null && String(g).trim() !== '') {",
+          "      pm.environment.set(entry.env, g);",
+          "      return;",
+          "    }",
+          "  }",
+          "});",
+          "",
+          "if (!hasUsableEnvValue('message_limit')) {",
+          "  pm.environment.set('message_limit', '50');",
+          "}"
+        ]
+      }
     }
   ]
 }
