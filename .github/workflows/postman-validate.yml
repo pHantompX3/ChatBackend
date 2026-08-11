@@ -28,6 +28,10 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Run Postman discovery regression test
+        shell: bash
+        run: node --test scripts/postman/discover-postman.test.mjs
+
       - name: Discover API routes and preserve protected health checks
         shell: bash
         run: ./scripts/postman/discover-postman.sh

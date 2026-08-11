@@ -255,6 +255,657 @@
           }
         }
       ]
+    },
+    {
+      "name": "Session lifecycle and authenticated messaging",
+      "description": "Log in, call protected messaging endpoints, log out, and verify the revoked session is rejected.",
+      "item": [
+        {
+          "name": "01 - Login",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('auth_username', pm.environment.get('auth_username') || pm.environment.get('member_username') || pm.environment.get('bootstrap_admin_username'));",
+                  "pm.environment.set('auth_password', pm.environment.get('auth_password') || pm.environment.get('member_password') || pm.environment.get('bootstrap_admin_password'));",
+                  "pm.environment.set('flow_sender_user_id', pm.environment.get('flow_sender_user_id') || pm.environment.get('member_user_id') || pm.environment.get('admin_user_id'));",
+                  "pm.environment.set('flow_conversation_id', 'session-flow-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('session_id', jsonData.sessionId);",
+                  "pm.environment.set('session_token', jsonData.token);",
+                  "pm.environment.set('auth_bearer_token', 'Bearer ' + jsonData.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{auth_username}}\",\n  \"password\": \"{{auth_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions"]
+            }
+          }
+        },
+        {
+          "name": "02 - Send authenticated message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('message_id', jsonData.id || jsonData.messageId || '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conversationId\": \"{{flow_conversation_id}}\",\n  \"senderUserId\": \"{{flow_sender_user_id}}\",\n  \"content\": \"Session flow message {{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/messages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "messages"]
+            }
+          }
+        },
+        {
+          "name": "03 - List authenticated messages",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(Array.isArray(jsonData)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "04 - Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "logout"]
+            }
+          }
+        },
+        {
+          "name": "05 - Verify revoked session denied",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Run-all API smoke journey",
+      "description": "Single ordered workflow that covers onboarding, invitations, sessions, protected messaging, and post-logout authorization behavior.",
+      "item": [
+        {
+          "name": "RA01 - Bootstrap admin",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('bootstrap_admin_username', 'runall-admin-' + Date.now());",
+                  "pm.environment.set('bootstrap_admin_password', pm.environment.get('bootstrap_admin_password') || 'AdminPassw0rd!');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('admin_user_id', jsonData.userId);",
+                  "pm.environment.set('admin_username', jsonData.username);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrap_admin_username}}\",\n  \"password\": \"{{bootstrap_admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bootstrap/admin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bootstrap", "admin"]
+            }
+          }
+        },
+        {
+          "name": "RA02 - Create invitation",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('invitation_expires_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('invitation_id', jsonData.invitationId);",
+                  "pm.environment.set('invitation_token', jsonData.invitationToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actorUserId\": \"{{admin_user_id}}\",\n  \"expiresAt\": \"{{invitation_expires_at}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/invitations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "invitations"]
+            }
+          }
+        },
+        {
+          "name": "RA03 - Redeem invitation",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('member_username', 'runall-member-' + Date.now());",
+                  "pm.environment.set('member_password', pm.environment.get('member_password') || 'MemberPassw0rd!');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('member_user_id', jsonData.userId);",
+                  "pm.environment.set('member_username', jsonData.username);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invitationToken\": \"{{invitation_token}}\",\n  \"username\": \"{{member_username}}\",\n  \"password\": \"{{member_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/invitations/redeem",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "invitations", "redeem"]
+            }
+          }
+        },
+        {
+          "name": "RA04 - Login as member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('session_id', jsonData.sessionId);",
+                  "pm.environment.set('session_token', jsonData.token);",
+                  "pm.environment.set('auth_bearer_token', 'Bearer ' + jsonData.token);",
+                  "pm.environment.set('flow_sender_user_id', pm.environment.get('member_user_id'));",
+                  "pm.environment.set('flow_conversation_id', 'runall-session-' + Date.now());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{member_username}}\",\n  \"password\": \"{{member_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions"]
+            }
+          }
+        },
+        {
+          "name": "RA05 - Send authenticated message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conversationId\": \"{{flow_conversation_id}}\",\n  \"senderUserId\": \"{{flow_sender_user_id}}\",\n  \"content\": \"Run-all smoke message {{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/messages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "messages"]
+            }
+          }
+        },
+        {
+          "name": "RA06 - List authenticated messages",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(Array.isArray(jsonData)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA07 - Create follow-up invitation",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('followup_invitation_expires_at', new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('followup_invitation_id', jsonData.invitationId);",
+                  "pm.environment.set('followup_invitation_token', jsonData.invitationToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actorUserId\": \"{{admin_user_id}}\",\n  \"expiresAt\": \"{{followup_invitation_expires_at}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/invitations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "invitations"]
+            }
+          }
+        },
+        {
+          "name": "RA08 - Revoke follow-up invitation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actorUserId\": \"{{admin_user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/invitations/{{followup_invitation_id}}/revoke",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "invitations",
+                "{{followup_invitation_id}}",
+                "revoke"
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA09 - Logout member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "logout"]
+            }
+          }
+        },
+        {
+          "name": "RA10 - Verify revoked session denied",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{auth_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

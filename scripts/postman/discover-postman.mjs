@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..", "..");
 
 const javaRoot = path.join(repoRoot, "src", "main", "java");
@@ -56,12 +57,12 @@ function listJavaFiles(dirPath, out = []) {
   return out;
 }
 
-function parseApiV1Constant() {
+export function parseApiV1Constant(apiRoutesFilePath = apiRoutesPath) {
   const fallback = "/api/v1";
-  if (!fs.existsSync(apiRoutesPath)) {
+  if (!fs.existsSync(apiRoutesFilePath)) {
     return fallback;
   }
-  const content = fs.readFileSync(apiRoutesPath, "utf8");
+  const content = fs.readFileSync(apiRoutesFilePath, "utf8");
   const match = content.match(/API_V1\s*=\s*"([^"]+)"/);
   return match ? match[1] : fallback;
 }
@@ -101,9 +102,9 @@ function joinPaths(basePath, methodPath) {
   );
 }
 
-function extractDiscoveredEndpoints(apiV1) {
+export function extractDiscoveredEndpoints(apiV1, javaRootPath = javaRoot) {
   const discovered = [];
-  const javaFiles = listJavaFiles(javaRoot);
+  const javaFiles = listJavaFiles(javaRootPath);
 
   for (const filePath of javaFiles) {
     const content = fs.readFileSync(filePath, "utf8");
@@ -113,11 +114,26 @@ function extractDiscoveredEndpoints(apiV1) {
     const classPathExpr = classPathMatch ? classPathMatch[1] : "";
     const classPath = decodePathExpression(classPathExpr, apiV1);
 
-    const methodBlockPattern =
-      /@(GET|POST|PUT|DELETE|PATCH)\b[\s\S]*?(?=@(?:GET|POST|PUT|DELETE|PATCH)\b|public\s+[\w<><\[\],.?]+\s+\w+\s*\()/g;
-    for (const methodBlockMatch of content.matchAll(methodBlockPattern)) {
-      const block = methodBlockMatch[0];
-      const method = methodBlockMatch[1];
+    const httpAnnotationRegex = /@(GET|POST|PUT|DELETE|PATCH)\b/g;
+    const httpMatches = Array.from(content.matchAll(httpAnnotationRegex));
+
+    for (const httpMatch of httpMatches) {
+      const annotationIndex = httpMatch.index;
+      const nextHttpMatch = content
+        .slice(annotationIndex + httpMatch[0].length)
+        .match(/@(GET|POST|PUT|DELETE|PATCH)\b/);
+      const blockEndIndex = nextHttpMatch
+        ? annotationIndex + httpMatch[0].length + nextHttpMatch.index
+        : content.length;
+      const block = content.slice(annotationIndex, blockEndIndex);
+      const methodSignatureMatch = block.match(
+        /\b(?:public|protected|private)\s+(?:static\s+)?(?:final\s+)?(?:<[^>]+>\s*)?(?:[\w.$<>\[\],?]+\s+)+(\w+)\s*\(/,
+      );
+      if (!methodSignatureMatch) {
+        continue;
+      }
+
+      const method = httpMatch[1];
       const methodPathMatch = block.match(/@Path\(([^)]+)\)/);
       const methodPathExpr = methodPathMatch ? methodPathMatch[1] : "";
       const methodPath = decodePathExpression(methodPathExpr, apiV1);
@@ -260,7 +276,7 @@ const endpointExampleTemplates = new Map([
           name: "200 OK",
           status: "OK",
           code: 200,
-          body: '{\n  "sessionId": "{{session_id}}",\n  "token": "session-token-abc123"\n}',
+          body: '{\n  "sessionId": "00000000-0000-0000-0000-000000000002",\n  "token": "session-token-abc123"\n}',
         },
         {
           name: "401 Unauthorized",
@@ -800,7 +816,7 @@ function ensureProtectedHealthRequests(collection) {
   return addedCount;
 }
 
-function mergeDiscoveredEndpoints(collection, endpoints) {
+export function mergeDiscoveredEndpoints(collection, endpoints) {
   const legacyFolder = findFolder(collection, "Discovered APIs");
 
   const nonDiscoveredRequests = [];
@@ -840,6 +856,14 @@ function mergeDiscoveredEndpoints(collection, endpoints) {
   );
 
   const allRequests = collectRequests(collection);
+  const existingByKey = new Map(
+    allRequests
+      .filter((entry) => entry?.request?.method && entry?.request?.url?.raw)
+      .map((entry) => [
+        requestKey(entry.request.method, entry.request.url.raw),
+        entry,
+      ]),
+  );
   const existingKeys = new Set(
     allRequests.map((entry) =>
       requestKey(entry?.request?.method, entry?.request?.url?.raw),
@@ -851,10 +875,26 @@ function mergeDiscoveredEndpoints(collection, endpoints) {
   const grouped = new Map();
 
   const addToGroup = (groupName, requestItem) => {
+    if (!requestItem?.request?.method || !requestItem?.request?.url?.raw) {
+      return;
+    }
     if (!grouped.has(groupName)) {
       grouped.set(groupName, []);
     }
-    grouped.get(groupName).push(requestItem);
+    const groupRequests = grouped.get(groupName);
+    const key = requestKey(
+      requestItem.request.method,
+      requestItem.request.url.raw,
+    );
+    if (
+      groupRequests.some(
+        (entry) =>
+          requestKey(entry?.request?.method, entry?.request?.url?.raw) === key,
+      )
+    ) {
+      return;
+    }
+    groupRequests.push(requestItem);
   };
 
   for (const [key, entry] of reusableByKey.entries()) {
@@ -877,17 +917,24 @@ function mergeDiscoveredEndpoints(collection, endpoints) {
   for (const endpoint of endpoints) {
     const rawUrl = buildRawUrl(endpoint.path);
     const key = requestKey(endpoint.method, rawUrl);
-    if (existingKeys.has(key)) {
+    const domainFolderName = inferDomainFolderByPath(endpoint.path);
+    const existingRequest = existingByKey.get(key);
+
+    if (existingRequest) {
+      if (!domainFolderName) {
+        addToGroup(endpoint.sourceGroup || "Misc", existingRequest);
+      }
       continue;
     }
+
     const requestItem = buildDiscoveredRequest(endpoint);
-    const domainFolderName = inferDomainFolderByPath(endpoint.path);
     if (domainFolderName) {
       const domainFolder = ensureFolder(collection, domainFolderName, "");
       domainFolder.item.push(requestItem);
     } else {
       addToGroup(endpoint.sourceGroup || "Misc", requestItem);
     }
+    existingByKey.set(key, requestItem);
     existingKeys.add(key);
     addedCount += 1;
   }
@@ -913,7 +960,7 @@ function mergeDiscoveredEndpoints(collection, endpoints) {
   return { addedCount, movedCount, cleanedCount };
 }
 
-function run() {
+export function run() {
   if (!fs.existsSync(collectionPath)) {
     fail(`Collection file not found: ${collectionPath}`);
   }
@@ -946,4 +993,9 @@ function run() {
   );
 }
 
-run();
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  run();
+}

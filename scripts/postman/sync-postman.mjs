@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { run as runDiscovery } from "./discover-postman.mjs";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const repoRoot = path.resolve(__dirname, "..", "..");
@@ -26,6 +27,8 @@ const defaultEnvironmentPath = path.join(
   "environments",
   "local.example.postman_environment.json",
 );
+
+runDiscovery();
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
