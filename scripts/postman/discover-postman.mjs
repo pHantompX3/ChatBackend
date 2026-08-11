@@ -251,6 +251,50 @@ const endpointExampleTemplates = new Map([
     },
   ],
   [
+    "POST /api/v1/sessions",
+    {
+      requestBody:
+        '{\n  "username": "Admin Root",\n  "password": "AdminPassw0rd!"\n}',
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: '{\n  "sessionId": "{{session_id}}",\n  "token": "session-token-abc123"\n}',
+        },
+        {
+          name: "401 Unauthorized",
+          status: "Unauthorized",
+          code: 401,
+          body: '{\n  "type": "about:blank",\n  "title": "Unauthorized",\n  "status": 401,\n  "detail": "Invalid credentials",\n  "code": "UNAUTHORIZED"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/sessions/logout",
+    {
+      requestBody: null,
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
+        },
+        {
+          name: "401 Unauthorized",
+          status: "Unauthorized",
+          code: 401,
+          body: '{\n  "type": "about:blank",\n  "title": "Unauthorized",\n  "status": 401,\n  "detail": "Session not authorized",\n  "code": "UNAUTHORIZED"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
     "POST /api/v1/invitations",
     {
       requestBody:

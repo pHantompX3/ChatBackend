@@ -1202,7 +1202,7 @@
       "description": "Auto-discovered endpoints from SessionResource.java.",
       "item": [
         {
-          "name": "POST /api/v1/sessions",
+          "name": "POST /api/v1/sessions/logout",
           "request": {
             "auth": {
               "type": "noauth"
@@ -1219,14 +1219,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/sessions",
+              "raw": "{{base_url}}/api/v1/sessions/logout",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "sessions"
+                "sessions",
+                "logout"
               ]
             },
             "description": "Auto-discovered from src/main/java/com/wayden/messenger/session/api/SessionResource.java.",
@@ -1242,7 +1243,7 @@
           },
           "response": [
             {
-              "name": "200 Example",
+              "name": "204 No Content",
               "originalRequest": {
                 "method": "POST",
                 "header": [
@@ -1265,27 +1266,69 @@
                   }
                 },
                 "url": {
-                  "raw": "{{base_url}}/api/v1/sessions",
+                  "raw": "{{base_url}}/api/v1/sessions/logout",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "sessions"
+                    "sessions",
+                    "logout"
                   ]
                 }
               },
-              "status": "OK",
-              "code": 200,
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "body": ""
+            },
+            {
+              "name": "401 Unauthorized",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"exampleField\": \"replace_me\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/sessions/logout",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sessions",
+                    "logout"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
               "_postman_previewlanguage": "json",
               "header": [
                 {
                   "key": "Content-Type",
-                  "value": "application/json"
+                  "value": "application/problem+json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\"\n}"
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Session not authorized\",\n  \"code\": \"UNAUTHORIZED\"\n}"
             }
           ],
           "event": [
@@ -1294,8 +1337,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is one of ', function () {",
-                  "  pm.expect([]).to.include(pm.response.code);",
+                  "pm.test('Status code is one of 204, 401', function () {",
+                  "  pm.expect([204, 401]).to.include(pm.response.code);",
                   "});",
                   "",
                   "pm.test('Response is JSON when body is present', function () {",
