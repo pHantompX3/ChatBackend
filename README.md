@@ -287,8 +287,11 @@ Script order:
 5. `./scripts/cicd/run-quarkus-dev.sh`
 
 - This startup script sets `WL_CHAT_LOG_DIR` to `logs` before launching Quarkus.
-- Active file: `logs/chat_backend/chatback.log`
-- Rolled files: `logs/chat_backend/<year>/<month>/chatback.log.<yyyyMMdd>.gz`
+- This startup script sets `WL_CHAT_LOG_DIR` to `logs/<yyyy>/<MM>` before launching Quarkus.
+- Active app log: `logs/<yyyy>/<MM>/chat_backend/chatback.log`
+- Active HTTP/audit transport log: `logs/<yyyy>/<MM>/chat_backend/http-audit.log`
+- Rolled app logs: `logs/<yyyy>/<MM>/chat_backend/chatback.log.<yyyy-MM-dd>.gz` (intraday size rollover appends backup index)
+- Rolled HTTP/audit logs: `logs/<yyyy>/<MM>/chat_backend/http-audit.log.<yyyy-MM-dd>.gz` (intraday size rollover appends backup index)
 
 Direct startup is also supported:
 

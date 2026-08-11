@@ -14,9 +14,9 @@ if [[ -f "${SECRETS_FILE}" ]]; then
 fi
 
 LOG_ROOT_DIR="${REPO_ROOT}/logs"
-mkdir -p "${LOG_ROOT_DIR}/chat_backend"
-
-export WL_CHAT_LOG_DIR="${LOG_ROOT_DIR}"
+LOG_PERIOD_DIR="$(date +%Y/%m)"
+export WL_CHAT_LOG_DIR="${LOG_ROOT_DIR}/${LOG_PERIOD_DIR}"
+mkdir -p "${WL_CHAT_LOG_DIR}/chat_backend"
 
 echo "Starting Quarkus dev mode with WL_CHAT_LOG_DIR=${WL_CHAT_LOG_DIR}"
 cd "${REPO_ROOT}"
