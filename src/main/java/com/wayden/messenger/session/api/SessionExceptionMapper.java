@@ -34,6 +34,9 @@ public class SessionExceptionMapper implements ExceptionMapper<SessionExceptions
       if (current instanceof SessionExceptions.InvalidSessionException) {
         return problem(401, "Authentication failed", "INVALID_SESSION", current.getMessage());
       }
+      if (current instanceof SessionExceptions.SessionUserNotFoundException) {
+        return problem(404, "User not found", "USER_NOT_FOUND", current.getMessage());
+      }
       current = current.getCause();
     }
 

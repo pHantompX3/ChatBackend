@@ -2,6 +2,8 @@ package com.wayden.messenger.session.api;
 
 import com.wayden.messenger.common.api.ApiRoutes;
 import com.wayden.messenger.common.http.AuditOperation;
+import com.wayden.messenger.identity.domain.SystemRole;
+import com.wayden.messenger.identity.domain.UserId;
 import com.wayden.messenger.session.application.SessionService;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -10,9 +12,11 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 
 @Path(ApiRoutes.API_V1 + "/sessions")
@@ -46,6 +50,17 @@ public class SessionResource {
     return Response.noContent().build();
   }
 
+  @POST
+  @Path("/users/{userId}/revoke-all")
+  @Consumes(MediaType.WILDCARD)
+  @RequiresRole(SystemRole.ADMIN)
+  @AuditOperation("identity.session.revoke-all")
+  public Response revokeAllSessions(@PathParam("userId") String userId) {
+    sessionService.revokeAllSessionsForUser(
+        new SessionService.RevokeAllSessionsCommand(parseUserId(userId)));
+    return Response.noContent().build();
+  }
+
   private void validateLoginRequest(SessionLoginRequest request) {
     if (request == null) {
       throw new BadRequestException("Request body must not be empty");
@@ -57,5 +72,13 @@ public class SessionResource {
       return authorizationHeader.substring(7).trim();
     }
     return authorizationHeader;
+  }
+
+  private static UserId parseUserId(String rawUserId) {
+    try {
+      return new UserId(UUID.fromString(rawUserId));
+    } catch (IllegalArgumentException exception) {
+      throw new BadRequestException("Invalid UUID for field: userId");
+    }
   }
 }

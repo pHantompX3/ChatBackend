@@ -180,6 +180,7 @@
                   "",
                   "var jsonData = pm.response.json();",
                   "pm.environment.set('member_user_id', jsonData.userId);",
+                  "pm.environment.set('target_user_id', jsonData.userId);",
                   "pm.environment.set('member_username', jsonData.username);"
                 ]
               }
@@ -621,7 +622,7 @@
     },
     {
       "name": "Run-all API smoke journey",
-      "description": "Single ordered workflow that covers onboarding, invitations, sessions, protected messaging, and post-logout authorization behavior.",
+      "description": "Single ordered workflow that covers onboarding, invitations, sessions, protected messaging, an administrator revoking a member's sessions, post-revocation authorization behavior, and admin logout.",
       "item": [
         {
           "name": "RA01 - Bootstrap admin",
@@ -792,6 +793,7 @@
                   "",
                   "var jsonData = pm.response.json();",
                   "pm.environment.set('member_user_id', jsonData.userId);",
+                  "pm.environment.set('target_user_id', jsonData.userId);",
                   "pm.environment.set('member_username', jsonData.username);"
                 ]
               }
@@ -1036,14 +1038,14 @@
           }
         },
         {
-          "name": "RA10 - Logout member",
+          "name": "RA10 - Admin revokes all member sessions",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Expected: member logout returns 204', function () {",
+                  "pm.test('Expected: admin revoke-all for member returns 204', function () {",
                   "  pm.response.to.have.status(204);",
                   "});"
                 ]
@@ -1055,13 +1057,20 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "{{member_bearer_token}}"
+                "value": "{{admin_bearer_token}}"
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "raw": "{{base_url}}/api/v1/sessions/users/{{target_user_id}}/revoke-all",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sessions", "logout"]
+              "path": [
+                "api",
+                "v1",
+                "sessions",
+                "users",
+                "{{target_user_id}}",
+                "revoke-all"
+              ]
             }
           }
         },

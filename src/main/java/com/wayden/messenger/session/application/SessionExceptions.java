@@ -45,4 +45,10 @@ public final class SessionExceptions {
       super("Session has expired");
     }
   }
+
+  public static final class SessionUserNotFoundException extends SessionException {
+    public SessionUserNotFoundException() {
+      super("User was not found");
+    }
+  }
 }

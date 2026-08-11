@@ -445,7 +445,7 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 ## Authoritative Documentation
 
-Milestone 3 status snapshot (2026-08-11): session schema plus login/logout/filter baseline is implemented and validated; dedicated administrative revoke-all-sessions API remains follow-on hardening work.
+Milestone 3 status snapshot (2026-08-11): session schema, login/logout/filter behavior, and the administrative revoke-all-sessions API are implemented and validated.
 
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
