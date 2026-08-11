@@ -7,7 +7,7 @@
 **Database:** Microsoft SQL Server 2022  
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven  
 **Status:** Implemented baseline; keep updated as behavior evolves
-**Last reviewed:** 2026-08-08
+**Last reviewed:** 2026-08-11
 
 ---
 
@@ -30,6 +30,8 @@ Current implementation status:
 
 - Milestone 2 identity and invitation flows are present.
 - Session schema, login/logout endpoints, and an authentication filter are now in place.
+- Disabled users are rejected on login and authenticated request resolution.
+- A dedicated administrative revoke-all-sessions API is not yet exposed; treat it as follow-on hardening work.
 - This runbook remains the operational reference for expected behavior and follow-on hardening.
 
 ---
@@ -43,7 +45,7 @@ Current implementation status:
 - authenticated request filter
 - logout endpoint
 - session expiry handling
-- user-disable and revoke-all-sessions behavior
+- user-disable enforcement and follow-on revoke-all-sessions hardening
 - session-aware audit actor context
 
 ### Exit criteria
@@ -73,7 +75,7 @@ Milestone 3 must add:
 1. a durable session table and supporting indexes/constraints,
 2. a token generator and token hasher abstraction,
 3. a login service that validates credentials and creates a session,
-4. a logout/revoke-all-sessions pathway,
+4. a logout pathway, with optional revoke-all-sessions administrative capability,
 5. an authentication filter that resolves the session from an HTTP header,
 6. integration tests for success and failure paths,
 7. Postman flows for login/logout and protected endpoint access.
@@ -289,7 +291,7 @@ Create a repository interface with methods for:
 - insert new session,
 - find by token hash,
 - mark a session revoked,
-- revoke all sessions for a user,
+- optional: revoke all sessions for a user,
 - update last-seen timestamp.
 
 Where possible, use database-level updates to keep the revocation logic race-safe.
@@ -398,21 +400,22 @@ A lightweight `GET /api/v1/auth/me` endpoint can be useful for local smoke testi
 
 ---
 
-## 9. Step 5 - Enforce User Disable and Revoke-All-Sessions
+## 9. Step 5 - Enforce User Disable (Revoke-All-Sessions Optional)
 
 When a user is disabled:
 
-- all active sessions for that user must be revoked,
 - subsequent requests using those tokens must fail with an authentication error,
-- existing session records should be marked revoked rather than deleted.
+- existing session records should remain auditable,
+- optional hardening can revoke all active sessions for that user proactively.
 
 Implement this as a domain invariant instead of relying on ad hoc checks in each endpoint.
 
 Recommended flow:
 
 1. disable the user,
-2. revoke all sessions for that user,
-3. emit an audit event reflecting the disable action.
+2. enforce disabled-user rejection in login and authenticated session resolution,
+3. optionally revoke all sessions for that user,
+4. emit an audit event reflecting the disable action.
 
 ---
 
@@ -428,7 +431,7 @@ Write tests that cover the core session lifecycle.
 4. revoked session fails on subsequent authenticated request,
 5. expired session fails,
 6. disabled user cannot continue using existing sessions,
-7. revoke-all-sessions removes access for all sessions of a user.
+7. optional: revoke-all-sessions removes access for all sessions of a user when this capability is implemented.
 
 Where possible, use SQL Server Testcontainers and real database interactions rather than mocking the repository layer.
 

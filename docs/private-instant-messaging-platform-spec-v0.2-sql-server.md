@@ -1577,6 +1577,12 @@ Exit criteria:
 
 ## Milestone 3 — Sessions
 
+Implementation status snapshot (2026-08-11):
+
+- login, logout, opaque token storage, and authenticated request filtering are implemented,
+- invalid/revoked/expired and disabled-user session checks are implemented,
+- dedicated administrative revoke-all-sessions API remains planned hardening work.
+
 Deliver:
 
 - login
@@ -1584,7 +1590,7 @@ Deliver:
 - authenticated request filter
 - logout
 - session expiry
-- user disable and revoke-all-sessions
+- user disable enforcement and optional revoke-all-sessions administrative capability
 
 Exit criteria:
 

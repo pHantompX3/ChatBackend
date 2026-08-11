@@ -206,13 +206,7 @@ public class HttpAuditQueueDispatcher {
     running = true;
     if (rabbitEnabled) {
       if (rabbitInitializer.getAsBoolean()) {
-        rabbitActive = true;
-        if (rabbitConsumerEnabled) {
-          startRabbitConsumer();
-        }
-        LOG.infof(
-            "HTTP audit RabbitMQ transport enabled host=%s port=%d exchange=%s queue=%s",
-            activeRabbitHost, rabbitPort, rabbitExchange, rabbitQueue);
+        activateRabbitTransport();
       } else {
         startRabbitRetryLoop();
       }
@@ -221,6 +215,17 @@ public class HttpAuditQueueDispatcher {
     if (asyncEnabled) {
       startLocalWorker();
     }
+  }
+
+  private void activateRabbitTransport() {
+    rabbitActive = true;
+    if (rabbitConsumerEnabled
+        && (rabbitConsumerThread == null || !rabbitConsumerThread.isAlive())) {
+      startRabbitConsumer();
+    }
+    LOG.infof(
+        "HTTP audit RabbitMQ transport enabled host=%s port=%d exchange=%s queue=%s",
+        activeRabbitHost, rabbitPort, rabbitExchange, rabbitQueue);
   }
 
   public void submit(HttpAuditEvent event) {
@@ -305,14 +310,7 @@ public class HttpAuditQueueDispatcher {
     while (running && rabbitEnabled && !rabbitActive) {
       try {
         if (rabbitInitializer.getAsBoolean()) {
-          rabbitActive = true;
-          if (rabbitConsumerEnabled
-              && (rabbitConsumerThread == null || !rabbitConsumerThread.isAlive())) {
-            startRabbitConsumer();
-          }
-          LOG.infof(
-              "HTTP audit RabbitMQ transport enabled host=%s port=%d exchange=%s queue=%s",
-              activeRabbitHost, rabbitPort, rabbitExchange, rabbitQueue);
+          activateRabbitTransport();
           return;
         }
         TimeUnit.SECONDS.sleep(2L);

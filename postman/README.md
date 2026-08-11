@@ -107,6 +107,7 @@ These are required for all newly created flow requests and all new additions to 
 - Name status assertions with an explicit expectation prefix: `Expected: ...`.
 - Assert HTTP response status explicitly (for example `pm.response.to.have.status(200)` or an explicit allowed set for multi-outcome steps).
 - For identity-creating steps (for example invitation redeem/user creation), generate a unique username per run to avoid collisions in repeat runs.
+- Ensure query params expected to be numeric (for example `message_limit`) resolve to concrete values; the current run-all flow applies a fallback of `50` when globals are absent.
 
 ## Inspect Existing Cloud Assets
 

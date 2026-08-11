@@ -378,6 +378,13 @@ Workflows in `.github/workflows` currently include both DB validation and a self
   - Manual workflow scaffold for remote SQL bootstrap/migration
   - Kept as deferred guidance until a persistent hosted environment is available
 
+- `flow-smoke-gate.yml`
+  - Trigger: pull requests and pushes to `main` for backend/database/postman flow changes
+  - Runner: `ubuntu-latest`
+  - Execution order: start DevDocker stack -> validate Postman artifacts -> run Newman `Run-all API smoke journey` -> upload Newman artifacts -> stop stack
+  - Queue transport is disabled for this gate (`WL_CHAT_ENABLE_QUEUE=false`, `WL_CHAT_AUDIT_RABBITMQ_ENABLED=false`), but compose interpolation still requires `WL_CHAT_QUEUE_PASSWORD`, so the workflow sets a non-secret dummy value
+  - CI Flyway bootstrap/migrate scripts use CI-safe defaults (`sqlserver-dev:1433` on `wl-chat-devdocker_default`) instead of relying on `host.docker.internal:1434`
+
 - `dev-self-hosted-build-migrate-deploy.yml`
   - Trigger: push to `main` or manual dispatch
   - Runner: `self-hosted` (must run on this Dev machine)
@@ -438,6 +445,8 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 ## Authoritative Documentation
 
+Milestone 3 status snapshot (2026-08-11): session schema plus login/logout/filter baseline is implemented and validated; dedicated administrative revoke-all-sessions API remains follow-on hardening work.
+
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
 - Milestone 1 database foundation runbook:
@@ -466,7 +475,10 @@ Authoritative source currently used for Postman maintenance:
 Committed artifacts:
 
 - `postman/collections/chat-backend.postman_collection.json`
+- `postman/collections/chat-backend-user-flows.postman_collection.json`
 - `postman/environments/local.example.postman_environment.json`
+- `postman/environments/devdocker.example.postman_environment.json`
+- `postman/environments/production.example.postman_environment.json`
 
 Local-only Postman Cloud config:
 
