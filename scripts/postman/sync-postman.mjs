@@ -28,13 +28,15 @@ const defaultEnvironmentPath = path.join(
   "local.example.postman_environment.json",
 );
 
-runDiscovery();
-
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
 const createMissing = args.has("--create-missing");
 const skipEnvironment = args.has("--skip-environment");
 const checkDrift = args.has("--check-drift");
+
+if (!dryRun && !checkDrift) {
+  runDiscovery();
+}
 
 function log(msg) {
   console.log(msg);

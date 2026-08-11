@@ -37,6 +37,16 @@ final class SessionApiIntegrationTest {
   void loginShouldCreateSessionAndAuthorizeProtectedRoute() {
     String adminUserId = bootstrapAdmin("Session Admin");
 
+    given()
+        .contentType(ContentType.JSON)
+        .body(Map.of("actorUserId", adminUserId, "expiresAt", "2099-01-01T00:00:00Z"))
+        .when()
+        .post("/api/v1/invitations")
+        .then()
+        .statusCode(401)
+        .contentType(startsWith("application/problem+json"))
+        .body("code", equalTo("MISSING_TOKEN"));
+
     var loginResponse =
         given()
             .contentType(ContentType.JSON)

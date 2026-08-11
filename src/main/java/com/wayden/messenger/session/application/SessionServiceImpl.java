@@ -127,7 +127,7 @@ public class SessionServiceImpl implements SessionService {
     if (session.status() != SessionStatus.ACTIVE) {
       throw sessionStatusException(session);
     }
-    if (session.expiresAt().isBefore(clock.instant())) {
+    if (!session.expiresAt().isAfter(clock.instant())) {
       throw new SessionExceptions.ExpiredSessionException();
     }
 

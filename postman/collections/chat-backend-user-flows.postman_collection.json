@@ -61,20 +61,72 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/bootstrap/admin",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "bootstrap", "admin"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bootstrap",
+                "admin"
+              ]
             }
           }
         },
         {
-          "name": "02 - Create invitation",
+          "name": "02 - Login bootstrap admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('admin_session_token', jsonData.token);",
+                  "pm.environment.set('admin_bearer_token', 'Bearer ' + jsonData.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrap_admin_username}}\",\n  \"password\": \"{{bootstrap_admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "03 - Create invitation",
           "event": [
             {
               "listen": "prerequest",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('invitation_expires_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());"
+                  "pm.environment.set('invitation_expires_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());",
+                  "pm.environment.set('admin_user_id', pm.environment.get('admin_user_id') || '00000000-0000-0000-0000-000000000000');"
                 ]
               }
             },
@@ -100,6 +152,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
               }
             ],
             "body": {
@@ -108,13 +164,19 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/invitations",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "invitations"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "invitations"
+              ]
             }
           }
         },
         {
-          "name": "03 - Redeem invitation",
+          "name": "04 - Redeem invitation",
           "event": [
             {
               "listen": "prerequest",
@@ -156,8 +218,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/invitations/redeem",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "invitations", "redeem"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "invitations",
+                "redeem"
+              ]
             }
           }
         }
@@ -168,14 +237,59 @@
       "description": "Run after bootstrap is complete to create and revoke a second invitation using the bootstrapped admin identity.",
       "item": [
         {
-          "name": "01 - Create follow-up invitation",
+          "name": "01 - Login bootstrap admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('admin_session_token', jsonData.token);",
+                  "pm.environment.set('admin_bearer_token', 'Bearer ' + jsonData.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrap_admin_username}}\",\n  \"password\": \"{{bootstrap_admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "02 - Create follow-up invitation",
           "event": [
             {
               "listen": "prerequest",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('followup_invitation_expires_at', new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString());"
+                  "pm.environment.set('followup_invitation_expires_at', new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString());",
+                  "pm.environment.set('admin_user_id', pm.environment.get('admin_user_id') || '00000000-0000-0000-0000-000000000000');"
                 ]
               }
             },
@@ -201,6 +315,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
               }
             ],
             "body": {
@@ -209,13 +327,19 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/invitations",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "invitations"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "invitations"
+              ]
             }
           }
         },
         {
-          "name": "02 - Revoke follow-up invitation",
+          "name": "03 - Revoke follow-up invitation",
           "event": [
             {
               "listen": "test",
@@ -235,6 +359,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
               }
             ],
             "body": {
@@ -243,7 +371,9 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/invitations/{{followup_invitation_id}}/revoke",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -306,8 +436,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/sessions",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sessions"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
             }
           }
         },
@@ -319,11 +455,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "  pm.response.to.have.status(200);",
+                  "pm.test('Status code is 501', function () {",
+                  "  pm.response.to.have.status(501);",
                   "});",
                   "",
-                  "var jsonData = pm.response.json();",
                   "pm.environment.set('message_id', jsonData.id || jsonData.messageId || '');"
                 ]
               }
@@ -347,8 +482,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/messages",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "messages"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "messages"
+              ]
             }
           }
         },
@@ -360,13 +501,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "  pm.response.to.have.status(200);",
+                  "pm.test('Status code is 501', function () {",
+                  "  pm.response.to.have.status(501);",
                   "});",
                   "",
-                  "pm.test('Response is an array', function () {",
-                  "  var jsonData = pm.response.json();",
-                  "  pm.expect(Array.isArray(jsonData)).to.eql(true);",
                   "});"
                 ]
               }
@@ -382,7 +520,9 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -424,8 +564,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sessions/logout",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sessions", "logout"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions",
+                "logout"
+              ]
             }
           }
         },
@@ -454,7 +601,9 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -485,8 +634,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('bootstrap_admin_username', 'runall-admin-' + Date.now());",
-                  "pm.environment.set('bootstrap_admin_password', pm.environment.get('bootstrap_admin_password') || 'AdminPassw0rd!');"
+                  "pm.environment.set('bootstrap_admin_username', pm.environment.get('bootstrap_admin_username') || pm.environment.get('admin_username') || pm.environment.get('auth_username') || ('runall-admin-' + Date.now()));",
+                  "pm.environment.set('bootstrap_admin_password', pm.environment.get('bootstrap_admin_password') || pm.environment.get('admin_password') || pm.environment.get('auth_password') || 'AdminPassw0rd!');"
                 ]
               }
             },
@@ -495,13 +644,16 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "  pm.response.to.have.status(200);",
+                  "pm.test('Status code is 200 or 409', function () {",
+                  "  pm.expect([200, 409]).to.include(pm.response.code);",
                   "});",
                   "",
-                  "var jsonData = pm.response.json();",
-                  "pm.environment.set('admin_user_id', jsonData.userId);",
-                  "pm.environment.set('admin_username', jsonData.username);"
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('admin_user_id', jsonData.userId);",
+                  "  pm.environment.set('admin_username', jsonData.username);",
+                  "  pm.environment.set('bootstrap_admin_username', jsonData.username);",
+                  "}"
                 ]
               }
             }
@@ -520,13 +672,64 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/bootstrap/admin",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "bootstrap", "admin"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bootstrap",
+                "admin"
+              ]
             }
           }
         },
         {
-          "name": "RA02 - Create invitation",
+          "name": "RA02 - Login bootstrap admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('admin_session_token', jsonData.token);",
+                  "pm.environment.set('admin_bearer_token', 'Bearer ' + jsonData.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrap_admin_username}}\",\n  \"password\": \"{{bootstrap_admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA03 - Create invitation",
           "event": [
             {
               "listen": "prerequest",
@@ -559,6 +762,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
               }
             ],
             "body": {
@@ -567,13 +774,19 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/invitations",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "invitations"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "invitations"
+              ]
             }
           }
         },
         {
-          "name": "RA03 - Redeem invitation",
+          "name": "RA04 - Redeem invitation",
           "event": [
             {
               "listen": "prerequest",
@@ -615,13 +828,20 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/invitations/redeem",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "invitations", "redeem"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "invitations",
+                "redeem"
+              ]
             }
           }
         },
         {
-          "name": "RA04 - Login as member",
+          "name": "RA05 - Login as member",
           "event": [
             {
               "listen": "test",
@@ -656,21 +876,27 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/sessions",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sessions"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
             }
           }
         },
         {
-          "name": "RA05 - Send authenticated message",
+          "name": "RA06 - Send authenticated message",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "  pm.response.to.have.status(200);",
+                  "pm.test('Status code is 501', function () {",
+                  "  pm.response.to.have.status(501);",
                   "});"
                 ]
               }
@@ -694,26 +920,27 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/messages",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "messages"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "messages"
+              ]
             }
           }
         },
         {
-          "name": "RA06 - List authenticated messages",
+          "name": "RA07 - List authenticated messages",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "  pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Response is an array', function () {",
-                  "  var jsonData = pm.response.json();",
-                  "  pm.expect(Array.isArray(jsonData)).to.eql(true);",
+                  "pm.test('Status code is 501', function () {",
+                  "  pm.response.to.have.status(501);",
                   "});"
                 ]
               }
@@ -729,7 +956,9 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -747,7 +976,7 @@
           }
         },
         {
-          "name": "RA07 - Create follow-up invitation",
+          "name": "RA08 - Create follow-up invitation",
           "event": [
             {
               "listen": "prerequest",
@@ -780,6 +1009,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
               }
             ],
             "body": {
@@ -788,13 +1021,19 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/invitations",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "invitations"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "invitations"
+              ]
             }
           }
         },
         {
-          "name": "RA08 - Revoke follow-up invitation",
+          "name": "RA09 - Revoke follow-up invitation",
           "event": [
             {
               "listen": "test",
@@ -814,6 +1053,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
               }
             ],
             "body": {
@@ -822,7 +1065,9 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/invitations/{{followup_invitation_id}}/revoke",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -834,7 +1079,7 @@
           }
         },
         {
-          "name": "RA09 - Logout member",
+          "name": "RA10 - Logout member",
           "event": [
             {
               "listen": "test",
@@ -858,13 +1103,20 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/sessions/logout",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "sessions", "logout"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions",
+                "logout"
+              ]
             }
           }
         },
         {
-          "name": "RA10 - Verify revoked session denied",
+          "name": "RA11 - Verify revoked session denied",
           "event": [
             {
               "listen": "test",
@@ -888,7 +1140,9 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",

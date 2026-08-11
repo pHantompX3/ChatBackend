@@ -6,7 +6,7 @@
 **Milestone:** 3 - Sessions and authentication  
 **Database:** Microsoft SQL Server 2022  
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven  
-**Status:** Planned for implementation  
+**Status:** Implemented baseline; keep updated as behavior evolves
 **Last reviewed:** 2026-08-08
 
 ---
@@ -28,9 +28,9 @@ Milestone 3 does not include conversations or messaging behavior. It focuses on 
 
 Current implementation status:
 
-- Milestone 2 implemented identity and invitation flows.
-- The repository already has audit plumbing and request-context support that can carry actor identity.
-- No session schema, login/logout endpoints, or authenticated request filter exist yet.
+- Milestone 2 identity and invitation flows are present.
+- Session schema, login/logout endpoints, and an authentication filter are now in place.
+- This runbook remains the operational reference for expected behavior and follow-on hardening.
 
 ---
 
@@ -141,8 +141,8 @@ VYYYYMMDDHHMMSS__description_in_snake_case.sql
 
 Recommended migration sequence:
 
-1. `V20260808130000__create_identity_session.sql`
-2. `V20260808130500__create_identity_session_indexes.sql`
+1. `VYYYYMMDDHHMMSS__create_identity_session.sql`
+2. `VYYYYMMDDHHMMSS__create_identity_session_indexes.sql`
 
 ### 5.1 Session table requirements
 
@@ -164,7 +164,8 @@ Required constraints:
 
 ### 5.2 Recommended SQL DDL
 
-Use the following as the starting point for the session migration:
+Use the following as the starting point for the primary session-table migration.
+Place indexes in the dedicated `__create_identity_session_indexes.sql` migration so table creation and indexing remain independently deployable.
 
 ```sql
 IF SCHEMA_ID(N'identity') IS NULL
@@ -196,6 +197,11 @@ CREATE TABLE identity.session (
     CHECK (expires_at > created_at)
 );
 
+```
+
+Recommended index migration snippet:
+
+```sql
 CREATE UNIQUE INDEX ux_identity_session_token_hash
   ON identity.session (token_hash);
 
@@ -217,8 +223,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'messenger_mi
 IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'wl_chat_app')
     CREATE USER [wl_chat_app] FOR LOGIN [wl_chat_app];
 
-GRANT INSERT, SELECT ON identity.session TO [wl_chat_app];
-GRANT UPDATE, SELECT ON identity.session TO [wl_chat_app];
+GRANT SELECT, INSERT, UPDATE ON identity.session TO [wl_chat_app];
 DENY DELETE ON identity.session TO [wl_chat_app];
 GRANT SELECT ON identity.session TO [messenger_migrator];
 ```
@@ -261,7 +266,7 @@ Introduce a `Session` value object or entity with the key properties:
 Implement an application service that supports:
 
 - `login(username, password)`
-- `logout(sessionToken)`
+- `logout(sessionId)` (resolved from the authenticated request context)
 - `revokeAllSessionsForUser(userId)`
 - `findActiveSessionByTokenHash(tokenHash)`
 - `touchSession(sessionId)` for last-seen updates
@@ -358,8 +363,8 @@ Do not leak token values or stack traces in the response payload.
 
 Add an authentication resource with at least:
 
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/logout`
+- `POST /api/v1/sessions`
+- `POST /api/v1/sessions/logout`
 
 ### 8.1 Login endpoint
 
@@ -368,7 +373,7 @@ Request body:
 ```json
 {
   "username": "admin-user",
-  "password": "Secret123!"
+  "password": "<set_at_runtime>"
 }
 ```
 

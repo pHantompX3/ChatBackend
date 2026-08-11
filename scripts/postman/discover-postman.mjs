@@ -282,7 +282,7 @@ const endpointExampleTemplates = new Map([
           name: "401 Unauthorized",
           status: "Unauthorized",
           code: 401,
-          body: '{\n  "type": "about:blank",\n  "title": "Unauthorized",\n  "status": 401,\n  "detail": "Invalid credentials",\n  "code": "UNAUTHORIZED"\n}',
+          body: '{\n  "type": "about:blank",\n  "title": "Authentication failed",\n  "status": 401,\n  "detail": "Invalid username or password",\n  "code": "INVALID_CREDENTIALS"\n}',
           contentType: "application/problem+json",
         },
       ],
@@ -292,6 +292,7 @@ const endpointExampleTemplates = new Map([
     "POST /api/v1/sessions/logout",
     {
       requestBody: null,
+      auth: "bearer",
       responses: [
         {
           name: "204 No Content",
@@ -304,7 +305,7 @@ const endpointExampleTemplates = new Map([
           name: "401 Unauthorized",
           status: "Unauthorized",
           code: 401,
-          body: '{\n  "type": "about:blank",\n  "title": "Unauthorized",\n  "status": 401,\n  "detail": "Session not authorized",\n  "code": "UNAUTHORIZED"\n}',
+          body: '{\n  "type": "about:blank",\n  "title": "Authentication failed",\n  "status": 401,\n  "detail": "Session is invalid",\n  "code": "INVALID_SESSION"\n}',
           contentType: "application/problem+json",
         },
       ],
@@ -619,15 +620,37 @@ function buildDiscoveredRequest(endpoint) {
         .filter(Number.isInteger)
     : [];
 
-  if (isWrite) {
-    request.header.unshift({ key: "Content-Type", value: "application/json" });
-    request.body = {
-      mode: "raw",
-      raw: template?.requestBody || buildFallbackRequestBody(endpoint),
-      options: {
-        raw: { language: "json" },
-      },
+  if (template?.auth === "bearer") {
+    request.auth = {
+      type: "bearer",
+      bearer: [{ key: "token", value: "{{session_token}}", type: "string" }],
     };
+    request.header.unshift({
+      key: "Authorization",
+      value: "Bearer {{session_token}}",
+    });
+  }
+
+  if (isWrite) {
+    if (
+      template &&
+      Object.hasOwn(template, "requestBody") &&
+      template.requestBody === null
+    ) {
+      request.body = undefined;
+    } else {
+      request.header.unshift({
+        key: "Content-Type",
+        value: "application/json",
+      });
+      request.body = {
+        mode: "raw",
+        raw: template?.requestBody || buildFallbackRequestBody(endpoint),
+        options: {
+          raw: { language: "json" },
+        },
+      };
+    }
   }
 
   return {
@@ -674,6 +697,48 @@ function applyEndpointTemplatesToExistingRequests(collection) {
         requestItem.request.body.options = { raw: { language: "json" } };
         changed = true;
       }
+    }
+
+    if (
+      template &&
+      Object.hasOwn(template, "requestBody") &&
+      template.requestBody === null
+    ) {
+      if (requestItem.request.body) {
+        delete requestItem.request.body;
+        changed = true;
+      }
+      if (Array.isArray(requestItem.request.header)) {
+        const filteredHeaders = requestItem.request.header.filter(
+          (header) =>
+            String(header?.key || "").toLowerCase() !== "content-type",
+        );
+        if (filteredHeaders.length !== requestItem.request.header.length) {
+          requestItem.request.header = filteredHeaders;
+          changed = true;
+        }
+      }
+    }
+
+    if (template?.auth === "bearer") {
+      requestItem.request.auth = {
+        type: "bearer",
+        bearer: [{ key: "token", value: "{{session_token}}", type: "string" }],
+      };
+      const headers = Array.isArray(requestItem.request.header)
+        ? requestItem.request.header
+        : [];
+      const hasAuthorization = headers.some(
+        (header) => String(header?.key || "").toLowerCase() === "authorization",
+      );
+      if (!hasAuthorization) {
+        headers.unshift({
+          key: "Authorization",
+          value: "Bearer {{session_token}}",
+        });
+      }
+      requestItem.request.header = headers;
+      changed = true;
     }
 
     if (

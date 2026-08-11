@@ -3,6 +3,7 @@ package com.wayden.messenger.session.api;
 import com.wayden.messenger.common.api.ApiRoutes;
 import com.wayden.messenger.common.http.RequestAuditContext;
 import com.wayden.messenger.identity.domain.SystemRole;
+import com.wayden.messenger.session.application.SessionExceptions;
 import com.wayden.messenger.session.application.SessionService;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
@@ -50,7 +51,12 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       return;
     }
 
-    String rawToken = stripBearerPrefix(authorizationHeader);
+    if (!hasBearerScheme(authorizationHeader)) {
+      abort(requestContext, Response.Status.UNAUTHORIZED, "INVALID_SESSION");
+      return;
+    }
+
+    String rawToken = extractBearerToken(authorizationHeader);
     try {
       var user = sessionService.resolveAuthenticatedUser(rawToken);
       requestContext.setProperty("authenticatedUserId", user.id().value().toString());
@@ -60,7 +66,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       requestAuditContext.putCustomAttribute("actorUserId", user.id().value().toString());
       requestAuditContext.putCustomAttribute("actorUsername", user.username());
       requestAuditContext.putCustomAttribute("actorAuthType", "session");
-    } catch (RuntimeException exception) {
+    } catch (SessionExceptions.SessionException exception) {
       abort(requestContext, Response.Status.UNAUTHORIZED, errorCode(exception));
     }
   }
@@ -113,8 +119,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       RequiresRole requiredRole = resourceMethod.getAnnotation(RequiresRole.class);
       if (requiredRole != null && !Arrays.asList(requiredRole.value()).contains(userRole)) {
         abort(requestContext, Response.Status.FORBIDDEN, "FORBIDDEN");
+        return;
       }
-      return;
     }
 
     Class<?> resourceClass = resourceInfo.getResourceClass();
@@ -142,13 +148,24 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         com.wayden.messenger.session.application.SessionExceptions.InvalidSessionException) {
       return "INVALID_SESSION";
     }
+    if (exception
+        instanceof
+        com.wayden.messenger.session.application.SessionExceptions.DisabledUserException) {
+      return "USER_DISABLED";
+    }
+    if (exception
+        instanceof
+        com.wayden.messenger.session.application.SessionExceptions.MissingTokenException) {
+      return "MISSING_TOKEN";
+    }
     return "INVALID_CREDENTIALS";
   }
 
-  private static String stripBearerPrefix(String authorizationHeader) {
-    if (authorizationHeader.regionMatches(true, 0, "Bearer ", 0, 7)) {
-      return authorizationHeader.substring(7).trim();
-    }
-    return authorizationHeader;
+  private static boolean hasBearerScheme(String authorizationHeader) {
+    return authorizationHeader.regionMatches(true, 0, "Bearer ", 0, 7);
+  }
+
+  private static String extractBearerToken(String authorizationHeader) {
+    return authorizationHeader.substring(7).trim();
   }
 }

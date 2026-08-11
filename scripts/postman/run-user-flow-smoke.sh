@@ -4,12 +4,20 @@ set -euo pipefail
 BASE_URL="${WL_CHAT_FLOW_BASE_URL:-${1:-http://localhost:8080}}"
 TMP_ROOT="${WL_CHAT_FLOW_TMPDIR:-$(mktemp -d "${TMPDIR:-/tmp}/wl-chat-flow-smoke.XXXXXX")}"
 KEEP_TMP="${WL_CHAT_KEEP_FLOW_TMP:-false}"
+TMP_CREATED_BY_SCRIPT=false
+
+if [[ -z "${WL_CHAT_FLOW_TMPDIR:-}" ]]; then
+  TMP_CREATED_BY_SCRIPT=true
+elif [[ ! -d "${TMP_ROOT}" ]]; then
+  mkdir -p "${TMP_ROOT}"
+  TMP_CREATED_BY_SCRIPT=true
+fi
 
 mkdir -p "${TMP_ROOT}"
 
 success=false
 cleanup() {
-  if [[ "${success}" == "true" && "${KEEP_TMP}" != "true" ]]; then
+  if [[ "${success}" == "true" && "${KEEP_TMP}" != "true" && "${TMP_CREATED_BY_SCRIPT}" == "true" ]]; then
     rm -rf "${TMP_ROOT}"
   else
     echo "Flow artifacts kept at: ${TMP_ROOT}"
@@ -110,29 +118,32 @@ log "Temp artifact directory: ${TMP_ROOT}"
 request_json "01_bootstrap_admin" "POST" "/api/v1/bootstrap/admin" "200" "{\"username\":\"${admin_username}\",\"password\":\"${admin_password}\"}"
 admin_user_id="$(json_get "${TMP_ROOT}/01_bootstrap_admin.body.json" '.userId')"
 
-request_json "02_create_invitation" "POST" "/api/v1/invitations" "200" "{\"actorUserId\":\"${admin_user_id}\",\"expiresAt\":\"${expires_at}\"}"
-invitation_id="$(json_get "${TMP_ROOT}/02_create_invitation.body.json" '.invitationId')"
-invitation_token="$(json_get "${TMP_ROOT}/02_create_invitation.body.json" '.invitationToken')"
+request_json "02_login_admin" "POST" "/api/v1/sessions" "200" "{\"username\":\"${admin_username}\",\"password\":\"${admin_password}\"}"
+admin_session_token="$(json_get "${TMP_ROOT}/02_login_admin.body.json" '.token')"
 
-request_json "03_redeem_invitation" "POST" "/api/v1/invitations/redeem" "200" "{\"invitationToken\":\"${invitation_token}\",\"username\":\"${member_username}\",\"password\":\"${member_password}\"}"
-member_user_id="$(json_get "${TMP_ROOT}/03_redeem_invitation.body.json" '.userId')"
+request_json "03_create_invitation" "POST" "/api/v1/invitations" "200" "{\"actorUserId\":\"${admin_user_id}\",\"expiresAt\":\"${expires_at}\"}" "${admin_session_token}"
+invitation_id="$(json_get "${TMP_ROOT}/03_create_invitation.body.json" '.invitationId')"
+invitation_token="$(json_get "${TMP_ROOT}/03_create_invitation.body.json" '.invitationToken')"
 
-request_json "04_login_member" "POST" "/api/v1/sessions" "200" "{\"username\":\"${member_username}\",\"password\":\"${member_password}\"}"
-session_id="$(json_get "${TMP_ROOT}/04_login_member.body.json" '.sessionId')"
-session_token="$(json_get "${TMP_ROOT}/04_login_member.body.json" '.token')"
+request_json "04_redeem_invitation" "POST" "/api/v1/invitations/redeem" "200" "{\"invitationToken\":\"${invitation_token}\",\"username\":\"${member_username}\",\"password\":\"${member_password}\"}"
+member_user_id="$(json_get "${TMP_ROOT}/04_redeem_invitation.body.json" '.userId')"
 
-request_json "05_send_message" "POST" "/api/v1/messages" "200" "{\"conversationId\":\"${conversation_id}\",\"senderUserId\":\"${member_user_id}\",\"content\":\"Run-all smoke message ${session_id}\"}" "${session_token}"
+request_json "05_login_member" "POST" "/api/v1/sessions" "200" "{\"username\":\"${member_username}\",\"password\":\"${member_password}\"}"
+session_id="$(json_get "${TMP_ROOT}/05_login_member.body.json" '.sessionId')"
+session_token="$(json_get "${TMP_ROOT}/05_login_member.body.json" '.token')"
 
-request_json "06_list_messages" "GET" "/api/v1/conversations/${conversation_id}/messages?limit=10" "200" "" "${session_token}"
+request_json "06_send_message" "POST" "/api/v1/messages" "501" "{\"conversationId\":\"${conversation_id}\",\"senderUserId\":\"${member_user_id}\",\"content\":\"Run-all smoke message ${session_id}\"}" "${session_token}"
 
-request_json "07_create_followup_invitation" "POST" "/api/v1/invitations" "200" "{\"actorUserId\":\"${admin_user_id}\",\"expiresAt\":\"${followup_expires_at}\"}"
-followup_invitation_id="$(json_get "${TMP_ROOT}/07_create_followup_invitation.body.json" '.invitationId')"
+request_json "07_list_messages" "GET" "/api/v1/conversations/${conversation_id}/messages?limit=10" "501" "" "${session_token}"
 
-request_json "08_revoke_followup_invitation" "POST" "/api/v1/invitations/${followup_invitation_id}/revoke" "204" "{\"actorUserId\":\"${admin_user_id}\"}"
+request_json "08_create_followup_invitation" "POST" "/api/v1/invitations" "200" "{\"actorUserId\":\"${admin_user_id}\",\"expiresAt\":\"${followup_expires_at}\"}" "${admin_session_token}"
+followup_invitation_id="$(json_get "${TMP_ROOT}/08_create_followup_invitation.body.json" '.invitationId')"
 
-request_json "09_logout_member" "POST" "/api/v1/sessions/logout" "204" "" "${session_token}"
+request_json "09_revoke_followup_invitation" "POST" "/api/v1/invitations/${followup_invitation_id}/revoke" "204" "{\"actorUserId\":\"${admin_user_id}\"}" "${admin_session_token}"
 
-request_json "10_verify_revoked_session_denied" "GET" "/api/v1/conversations/${conversation_id}/messages?limit=10" "401" "" "${session_token}"
+request_json "10_logout_member" "POST" "/api/v1/sessions/logout" "204" "" "${session_token}"
+
+request_json "11_verify_revoked_session_denied" "GET" "/api/v1/conversations/${conversation_id}/messages?limit=10" "401" "" "${session_token}"
 
 summary_file="${TMP_ROOT}/flow-summary.json"
 cat >"${summary_file}" <<JSON

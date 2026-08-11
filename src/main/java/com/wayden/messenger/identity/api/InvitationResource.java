@@ -27,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 @Path(ApiRoutes.API_V1 + "/invitations")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@PublicEndpoint
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class InvitationResource {
 
@@ -73,6 +72,7 @@ public class InvitationResource {
 
   @POST
   @Path("/redeem")
+  @PublicEndpoint
   @AuditOperation("identity.invitation.redeem")
   public jakarta.ws.rs.core.Response redeemInvitation(@Valid RedeemInvitationRequest request) {
     try {

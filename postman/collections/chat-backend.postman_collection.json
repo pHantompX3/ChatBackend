@@ -1331,7 +1331,7 @@
                   "value": "application/problem+json"
                 }
               ],
-              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Invalid credentials\",\n  \"code\": \"UNAUTHORIZED\"\n}"
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Invalid username or password\",\n  \"code\": \"INVALID_CREDENTIALS\"\n}"
             }
           ],
           "event": [
@@ -1358,13 +1358,20 @@
           "name": "POST /api/v1/sessions/logout",
           "request": {
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{session_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
+                "key": "Authorization",
+                "value": "Bearer {{session_token}}"
               },
               {
                 "key": "Accept",
@@ -1383,16 +1390,7 @@
                 "logout"
               ]
             },
-            "description": "Auto-discovered from src/main/java/com/wayden/messenger/session/api/SessionResource.java.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"exampleField\": \"replace_me\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Auto-discovered from src/main/java/com/wayden/messenger/session/api/SessionResource.java."
           },
           "response": [
             {
@@ -1401,23 +1399,14 @@
                 "method": "POST",
                 "header": [
                   {
-                    "key": "Content-Type",
-                    "value": "application/json"
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
                   },
                   {
                     "key": "Accept",
                     "value": "application/json"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"exampleField\": \"replace_me\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
                 "url": {
                   "raw": "{{base_url}}/api/v1/sessions/logout",
                   "host": [
@@ -1442,23 +1431,14 @@
                 "method": "POST",
                 "header": [
                   {
-                    "key": "Content-Type",
-                    "value": "application/json"
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
                   },
                   {
                     "key": "Accept",
                     "value": "application/json"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"exampleField\": \"replace_me\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
                 "url": {
                   "raw": "{{base_url}}/api/v1/sessions/logout",
                   "host": [
@@ -1481,7 +1461,7 @@
                   "value": "application/problem+json"
                 }
               ],
-              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Session not authorized\",\n  \"code\": \"UNAUTHORIZED\"\n}"
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Session is invalid\",\n  \"code\": \"INVALID_SESSION\"\n}"
             }
           ],
           "event": [
