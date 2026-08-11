@@ -190,9 +190,11 @@ This keeps request generation/discovery identical while allowing runtime-specifi
 
 Credential and identity defaults should be namespaced by environment and referenced from each Postman environment file:
 
-- Local globals: `WLAdminUser_Local`, `WLAdminPass_Local`, `WLMemberUser_Local`, `WLMemberPass_Local`, `WLAuthUser_Local`, `WLAuthPass_Local`, `WLActorUserId_Local`
-- Dev globals: `WLAdminUser_Dev`, `WLAdminPass_Dev`, `WLMemberUser_Dev`, `WLMemberPass_Dev`, `WLAuthUser_Dev`, `WLAuthPass_Dev`, `WLActorUserId_Dev`
-- Prod globals: `WLAdminUser_Prod`, `WLAdminPass_Prod`, `WLMemberUser_Prod`, `WLMemberPass_Prod`, `WLAuthUser_Prod`, `WLAuthPass_Prod`, `WLActorUserId_Prod`
+- Local globals: `WLAdminUser_Local`, `WLAdminPass_Local`, `WLMemberUser_Local`, `WLMemberPass_Local`, `WLAuthUser_Local`, `WLAuthPass_Local`, `WLActorUserId_Local`, `WLTargetUserId_Local`
+- Dev globals: `WLAdminUser_Dev`, `WLAdminPass_Dev`, `WLMemberUser_Dev`, `WLMemberPass_Dev`, `WLAuthUser_Dev`, `WLAuthPass_Dev`, `WLActorUserId_Dev`, `WLTargetUserId_Dev`
+- Prod globals: `WLAdminUser_Prod`, `WLAdminPass_Prod`, `WLMemberUser_Prod`, `WLMemberPass_Prod`, `WLAuthUser_Prod`, `WLAuthPass_Prod`, `WLActorUserId_Prod`, `WLTargetUserId_Prod`
+
+`WLTargetUserId_<Env>` must contain the UUID of the user whose sessions an administrator intends to revoke; it is distinct from the member username stored in `WLMemberUser_<Env>`.
 
 Recommended shared defaults by environment namespace:
 

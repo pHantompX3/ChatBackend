@@ -31,6 +31,9 @@ public class JdbcSessionRepository implements SessionRepository {
           + "FROM [identity].[session] WHERE token_hash = ?";
   private static final String REVOKE_SQL =
       "UPDATE [identity].[session] SET revoked_at = ?, status = ? WHERE id = ?";
+  private static final String REVOKE_ALL_FOR_USER_SQL =
+      "UPDATE [identity].[session] SET revoked_at = ?, status = ? "
+          + "WHERE user_id = ? AND status = ? AND revoked_at IS NULL";
   private static final String TOUCH_SQL =
       "UPDATE [identity].[session] SET last_seen_at = ? WHERE id = ?";
 
@@ -92,6 +95,20 @@ public class JdbcSessionRepository implements SessionRepository {
       return statement.executeUpdate() == 1;
     } catch (SQLException e) {
       throw new IllegalStateException("Failed to revoke session", e);
+    }
+  }
+
+  @Override
+  public int revokeAllForUser(UserId userId, Instant revokedAt) {
+    try (var connection = dataSource.getConnection();
+        var statement = connection.prepareStatement(REVOKE_ALL_FOR_USER_SQL)) {
+      statement.setObject(1, toUtcLocalDateTime(revokedAt));
+      statement.setString(2, SessionStatus.REVOKED.name());
+      statement.setObject(3, userId.value());
+      statement.setString(4, SessionStatus.ACTIVE.name());
+      return statement.executeUpdate();
+    } catch (SQLException e) {
+      throw new IllegalStateException("Failed to revoke all sessions for user", e);
     }
   }
 

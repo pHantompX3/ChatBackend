@@ -31,8 +31,8 @@ Current implementation status:
 - Milestone 2 identity and invitation flows are present.
 - Session schema, login/logout endpoints, and an authentication filter are now in place.
 - Disabled users are rejected on login and authenticated request resolution.
-- A dedicated administrative revoke-all-sessions API is not yet exposed; treat it as follow-on hardening work.
-- This runbook remains the operational reference for expected behavior and follow-on hardening.
+- Administrators can revoke every active session for a user through `POST /api/v1/sessions/users/{userId}/revoke-all`.
+- This runbook remains the operational reference for expected behavior and future hardening.
 
 ---
 
@@ -45,7 +45,7 @@ Current implementation status:
 - authenticated request filter
 - logout endpoint
 - session expiry handling
-- user-disable enforcement and follow-on revoke-all-sessions hardening
+- user-disable enforcement and administrative revoke-all-sessions capability
 - session-aware audit actor context
 
 ### Exit criteria
@@ -75,7 +75,7 @@ Milestone 3 must add:
 1. a durable session table and supporting indexes/constraints,
 2. a token generator and token hasher abstraction,
 3. a login service that validates credentials and creates a session,
-4. a logout pathway, with optional revoke-all-sessions administrative capability,
+4. a logout pathway and a revoke-all-sessions administrative capability,
 5. an authentication filter that resolves the session from an HTTP header,
 6. integration tests for success and failure paths,
 7. Postman flows for login/logout and protected endpoint access.
@@ -291,7 +291,7 @@ Create a repository interface with methods for:
 - insert new session,
 - find by token hash,
 - mark a session revoked,
-- optional: revoke all sessions for a user,
+- revoke all active sessions for a user in one database update,
 - update last-seen timestamp.
 
 Where possible, use database-level updates to keep the revocation logic race-safe.
@@ -400,13 +400,13 @@ A lightweight `GET /api/v1/auth/me` endpoint can be useful for local smoke testi
 
 ---
 
-## 9. Step 5 - Enforce User Disable (Revoke-All-Sessions Optional)
+## 9. Step 5 - Enforce User Disable and Administrative Revoke-All
 
 When a user is disabled:
 
 - subsequent requests using those tokens must fail with an authentication error,
 - existing session records should remain auditable,
-- optional hardening can revoke all active sessions for that user proactively.
+- an administrator can proactively revoke all active sessions for a user through `POST /api/v1/sessions/users/{userId}/revoke-all`.
 
 Implement this as a domain invariant instead of relying on ad hoc checks in each endpoint.
 
@@ -414,7 +414,7 @@ Recommended flow:
 
 1. disable the user,
 2. enforce disabled-user rejection in login and authenticated session resolution,
-3. optionally revoke all sessions for that user,
+3. invoke the administrative revoke-all operation when immediate durable revocation is required,
 4. emit an audit event reflecting the disable action.
 
 ---
@@ -431,7 +431,8 @@ Write tests that cover the core session lifecycle.
 4. revoked session fails on subsequent authenticated request,
 5. expired session fails,
 6. disabled user cannot continue using existing sessions,
-7. optional: revoke-all-sessions removes access for all sessions of a user when this capability is implemented.
+7. an administrator can revoke all active sessions for a user, after which every affected token is rejected,
+8. a non-administrator cannot invoke revoke-all-sessions, and an unknown target returns `404 USER_NOT_FOUND`.
 
 Where possible, use SQL Server Testcontainers and real database interactions rather than mocking the repository layer.
 
@@ -442,6 +443,8 @@ Where possible, use SQL Server Testcontainers and real database interactions rat
 - `logout_revokes_current_session`
 - `revoked_session_cannot_access_protected_resource`
 - `disabled_user_sessions_are_rejected`
+- `admin_revoke_all_sessions_rejects_every_active_token`
+- `non_admin_cannot_revoke_all_sessions`
 
 ---
 

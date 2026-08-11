@@ -113,6 +113,26 @@ public class SessionServiceImpl implements SessionService {
   }
 
   @Override
+  public int revokeAllSessionsForUser(RevokeAllSessionsCommand command) {
+    if (command == null || command.targetUserId() == null) {
+      throw new IllegalArgumentException("Target user must not be null");
+    }
+    if (userRepository.findById(command.targetUserId()).isEmpty()) {
+      throw new SessionExceptions.SessionUserNotFoundException();
+    }
+
+    int revokedSessionCount =
+        sessionRepository.revokeAllForUser(command.targetUserId(), clock.instant());
+
+    requestAuditContext.putCustomAttribute("identityEvent", "session.revoked.all");
+    requestAuditContext.putCustomAttribute(
+        "targetUserId", command.targetUserId().value().toString());
+    requestAuditContext.putCustomAttribute(
+        "revokedSessionCount", Integer.toString(revokedSessionCount));
+    return revokedSessionCount;
+  }
+
+  @Override
   public Session resolveActiveSession(String rawToken) {
     if (rawToken == null || rawToken.isBlank()) {
       throw new SessionExceptions.MissingTokenException();

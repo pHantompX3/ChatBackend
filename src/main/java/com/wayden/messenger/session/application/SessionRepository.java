@@ -1,5 +1,6 @@
 package com.wayden.messenger.session.application;
 
+import com.wayden.messenger.identity.domain.UserId;
 import com.wayden.messenger.session.domain.Session;
 import com.wayden.messenger.session.domain.SessionId;
 import java.time.Instant;
@@ -11,6 +12,8 @@ public interface SessionRepository {
   Optional<Session> findByTokenHash(byte[] tokenHash);
 
   boolean revoke(SessionId sessionId, Instant revokedAt);
+
+  int revokeAllForUser(UserId userId, Instant revokedAt);
 
   void touch(SessionId sessionId, Instant lastSeenAt);
 }

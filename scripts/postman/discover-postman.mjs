@@ -221,6 +221,9 @@ function toCollectionPathParam(segment) {
     return segment;
   }
   const name = match[1].replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
+  if (name === "user_id") {
+    return "{{target_user_id}}";
+  }
   return `{{${name}}}`;
 }
 
@@ -306,6 +309,36 @@ const endpointExampleTemplates = new Map([
           status: "Unauthorized",
           code: 401,
           body: '{\n  "type": "about:blank",\n  "title": "Authentication failed",\n  "status": 401,\n  "detail": "Session is invalid",\n  "code": "INVALID_SESSION"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/sessions/users/{userId}/revoke-all",
+    {
+      requestBody: null,
+      auth: "bearer",
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
+        },
+        {
+          name: "403 Forbidden",
+          status: "Forbidden",
+          code: 403,
+          body: '{\n  "type": "about:blank",\n  "title": "Forbidden",\n  "status": 403,\n  "detail": "Required role is missing",\n  "code": "FORBIDDEN"\n}',
+          contentType: "application/problem+json",
+        },
+        {
+          name: "404 Not Found",
+          status: "Not Found",
+          code: 404,
+          body: '{\n  "type": "about:blank",\n  "title": "User not found",\n  "status": 404,\n  "detail": "User was not found",\n  "code": "USER_NOT_FOUND"\n}',
           contentType: "application/problem+json",
         },
       ],
