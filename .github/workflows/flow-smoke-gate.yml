@@ -38,7 +38,7 @@ jobs:
             WL_CHAT_AUDIT_RABBITMQ_ENABLED: "false"
             WL_CHAT_APP_PORT: "8081"
             WL_CHAT_FLOW_BASE_URL: "http://localhost:8081"
-            WL_CHAT_NEWMAN_REPORT_DIR: "${{ runner.temp }}/wl-chat-newman-report"
+            WL_CHAT_NEWMAN_REPORT_DIR: "/tmp/wl-chat-newman-report"
 
         steps:
             - name: Checkout
@@ -66,7 +66,7 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: newman-flow-artifacts
-                  path: ${{ runner.temp }}/wl-chat-newman-report
+                  path: ${{ env.WL_CHAT_NEWMAN_REPORT_DIR }}
                   if-no-files-found: warn
 
             - name: Stop devdocker stack
