@@ -1178,7 +1178,11 @@
           "      return;",
           "    }",
           "  }",
-          "});"
+          "});",
+          "",
+          "if (!hasUsableEnvValue('message_limit')) {",
+          "  pm.environment.set('message_limit', '50');",
+          "}"
         ]
       }
     }
