@@ -104,8 +104,6 @@ function joinPaths(basePath, methodPath) {
 function extractDiscoveredEndpoints(apiV1) {
   const discovered = [];
   const javaFiles = listJavaFiles(javaRoot);
-  const routeRegex =
-    /@(GET|POST|PUT|DELETE|PATCH)\b(?:[\s\S]*?@Path\(([^)]+)\))?/g;
 
   for (const filePath of javaFiles) {
     const content = fs.readFileSync(filePath, "utf8");
@@ -115,10 +113,13 @@ function extractDiscoveredEndpoints(apiV1) {
     const classPathExpr = classPathMatch ? classPathMatch[1] : "";
     const classPath = decodePathExpression(classPathExpr, apiV1);
 
-    let match;
-    while ((match = routeRegex.exec(content)) !== null) {
-      const method = match[1];
-      const methodPathExpr = match[2] || "";
+    const methodBlockPattern =
+      /@(GET|POST|PUT|DELETE|PATCH)\b[\s\S]*?(?=@(?:GET|POST|PUT|DELETE|PATCH)\b|public\s+[\w<><\[\],.?]+\s+\w+\s*\()/g;
+    for (const methodBlockMatch of content.matchAll(methodBlockPattern)) {
+      const block = methodBlockMatch[0];
+      const method = methodBlockMatch[1];
+      const methodPathMatch = block.match(/@Path\(([^)]+)\)/);
+      const methodPathExpr = methodPathMatch ? methodPathMatch[1] : "";
       const methodPath = decodePathExpression(methodPathExpr, apiV1);
       const fullPath = joinPaths(classPath, methodPath);
       if (!fullPath) {
