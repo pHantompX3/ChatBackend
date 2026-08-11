@@ -121,7 +121,9 @@ function extractDiscoveredEndpoints(apiV1) {
       const methodPathMatch = block.match(/@Path\(([^)]+)\)/);
       const methodPathExpr = methodPathMatch ? methodPathMatch[1] : "";
       const methodPath = decodePathExpression(methodPathExpr, apiV1);
-      const fullPath = joinPaths(classPath, methodPath);
+      const fullPath = methodPathExpr
+        ? joinPaths(classPath, methodPath)
+        : classPath;
       if (!fullPath) {
         continue;
       }

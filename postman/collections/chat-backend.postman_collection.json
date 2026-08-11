@@ -1202,7 +1202,7 @@
       "description": "Auto-discovered endpoints from SessionResource.java.",
       "item": [
         {
-          "name": "POST /api/v1/sessions/logout",
+          "name": "POST /api/v1/sessions",
           "request": {
             "auth": {
               "type": "noauth"
@@ -1219,15 +1219,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "raw": "{{base_url}}/api/v1/sessions",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "sessions",
-                "logout"
+                "sessions"
               ]
             },
             "description": "Auto-discovered from src/main/java/com/wayden/messenger/session/api/SessionResource.java.",
@@ -1266,15 +1265,14 @@
                   }
                 },
                 "url": {
-                  "raw": "{{base_url}}/api/v1/sessions/logout",
+                  "raw": "{{base_url}}/api/v1/sessions",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "sessions",
-                    "logout"
+                    "sessions"
                   ]
                 }
               },
