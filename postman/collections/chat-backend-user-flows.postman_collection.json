@@ -203,6 +203,36 @@
               "path": ["api", "v1", "invitations", "redeem"]
             }
           }
+        },
+        {
+          "name": "05 - Logout bootstrap admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "logout"]
+            }
+          }
         }
       ]
     },
@@ -341,6 +371,36 @@
                 "{{followup_invitation_id}}",
                 "revoke"
               ]
+            }
+          }
+        },
+        {
+          "name": "04 - Logout bootstrap admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "logout"]
             }
           }
         }
@@ -581,7 +641,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200 or 409', function () {",
+                  "pm.test('Expected: bootstrap admin returns 200 (created) or 409 (already exists)', function () {",
                   "  pm.expect([200, 409]).to.include(pm.response.code);",
                   "});",
                   "",
@@ -622,7 +682,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
+                  "pm.test('Expected: login bootstrap admin returns 200', function () {",
                   "  pm.response.to.have.status(200);",
                   "});",
                   "",
@@ -669,7 +729,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
+                  "pm.test('Expected: create invitation returns 200', function () {",
                   "  pm.response.to.have.status(200);",
                   "});",
                   "",
@@ -711,8 +771,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('member_username', pm.environment.get('member_username') || pm.globals.get('WLMemberUser') || ('runall-member-' + Date.now()));",
-                  "pm.environment.set('member_password', pm.environment.get('member_password') || pm.globals.get('WLMemberPass') || 'MemberPassw0rd!');"
+                  "var randomSuffix = Date.now() + '-' + Math.floor(Math.random() * 100000);",
+                  "var generatedMemberUsername = 'runall-member-' + randomSuffix;",
+                  "var generatedMemberPassword = 'password1';",
+                  "pm.environment.set('member_username', generatedMemberUsername);",
+                  "pm.environment.set('member_password', generatedMemberPassword);",
+                  "pm.environment.set('auth_username', generatedMemberUsername);",
+                  "pm.environment.set('auth_password', generatedMemberPassword);"
                 ]
               }
             },
@@ -721,7 +786,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
+                  "pm.test('Expected: redeem invitation returns 200', function () {",
                   "  pm.response.to.have.status(200);",
                   "});",
                   "",
@@ -759,11 +824,14 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
+                  "pm.test('Expected: member login returns 200', function () {",
                   "  pm.response.to.have.status(200);",
                   "});",
                   "",
                   "var jsonData = pm.response.json();",
+                  "pm.environment.set('member_session_id', jsonData.sessionId);",
+                  "pm.environment.set('member_session_token', jsonData.token);",
+                  "pm.environment.set('member_bearer_token', 'Bearer ' + jsonData.token);",
                   "pm.environment.set('session_id', jsonData.sessionId);",
                   "pm.environment.set('session_token', jsonData.token);",
                   "pm.environment.set('auth_bearer_token', 'Bearer ' + jsonData.token);",
@@ -800,7 +868,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 501', function () {",
+                  "pm.test('Expected: send message returns 501 until messaging API is implemented', function () {",
                   "  pm.response.to.have.status(501);",
                   "});"
                 ]
@@ -816,12 +884,12 @@
               },
               {
                 "key": "Authorization",
-                "value": "{{auth_bearer_token}}"
+                "value": "{{member_bearer_token}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"conversationId\": \"{{flow_conversation_id}}\",\n  \"senderUserId\": \"{{flow_sender_user_id}}\",\n  \"content\": \"Run-all smoke message {{session_id}}\"\n}"
+              "raw": "{\n  \"conversationId\": \"{{flow_conversation_id}}\",\n  \"senderUserId\": \"{{flow_sender_user_id}}\",\n  \"content\": \"Run-all smoke message {{member_session_id}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/messages",
@@ -838,7 +906,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 501', function () {",
+                  "pm.test('Expected: list messages returns 501 until messaging API is implemented', function () {",
                   "  pm.response.to.have.status(501);",
                   "});"
                 ]
@@ -850,7 +918,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "{{auth_bearer_token}}"
+                "value": "{{member_bearer_token}}"
               }
             ],
             "url": {
@@ -889,7 +957,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
+                  "pm.test('Expected: create follow-up invitation returns 200', function () {",
                   "  pm.response.to.have.status(200);",
                   "});",
                   "",
@@ -931,7 +999,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 204', function () {",
+                  "pm.test('Expected: revoke follow-up invitation returns 204', function () {",
                   "  pm.response.to.have.status(204);",
                   "});"
                 ]
@@ -975,7 +1043,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 204', function () {",
+                  "pm.test('Expected: member logout returns 204', function () {",
                   "  pm.response.to.have.status(204);",
                   "});"
                 ]
@@ -987,7 +1055,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "{{auth_bearer_token}}"
+                "value": "{{member_bearer_token}}"
               }
             ],
             "url": {
@@ -1005,7 +1073,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 401', function () {",
+                  "pm.test('Expected: revoked member session is denied with 401', function () {",
                   "  pm.response.to.have.status(401);",
                   "});"
                 ]
@@ -1017,7 +1085,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "{{auth_bearer_token}}"
+                "value": "{{member_bearer_token}}"
               }
             ],
             "url": {
@@ -1036,6 +1104,36 @@
                   "value": "{{message_limit}}"
                 }
               ]
+            }
+          }
+        },
+        {
+          "name": "RA12 - Logout admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: admin logout returns 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "sessions", "logout"]
             }
           }
         }

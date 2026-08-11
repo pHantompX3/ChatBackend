@@ -109,6 +109,74 @@ function collectRequestUrlRaw(items, out = []) {
   return out;
 }
 
+function collectRunAllSmokeViolations(
+  items,
+  folderTrail = [],
+  violations = [],
+) {
+  for (const item of items ?? []) {
+    if (item.item) {
+      collectRunAllSmokeViolations(
+        item.item,
+        [...folderTrail, String(item.name || "")],
+        violations,
+      );
+      continue;
+    }
+
+    if (!folderTrail.includes("Run-all API smoke journey")) {
+      continue;
+    }
+
+    const requestName = String(item.name || "<unnamed-request>");
+    const testEvent = (item.event ?? []).find(
+      (event) =>
+        event?.listen === "test" &&
+        Array.isArray(event?.script?.exec) &&
+        event.script.exec.length > 0,
+    );
+
+    if (!testEvent) {
+      violations.push(
+        `${requestName}: missing test event script in Run-all API smoke journey`,
+      );
+      continue;
+    }
+
+    const scriptLines = testEvent.script.exec.map((line) => String(line));
+    const pmTestCalls = scriptLines.filter((line) => line.includes("pm.test("));
+    if (pmTestCalls.length === 0) {
+      violations.push(
+        `${requestName}: missing pm.test assertion in Run-all API smoke journey`,
+      );
+    }
+
+    const hasExpectedNaming = pmTestCalls.some((line) =>
+      /pm\.test\((['"])Expected:/.test(line),
+    );
+    if (!hasExpectedNaming) {
+      violations.push(
+        `${requestName}: test name must start with 'Expected:' in Run-all API smoke journey`,
+      );
+    }
+
+    const hasStatusAssertion = scriptLines.some(
+      (line) =>
+        /pm\.response\.to\.have\.status\(/.test(line) ||
+        /pm\.expect\(\[[^\]]+\]\)\.to\.include\(pm\.response\.code\)/.test(
+          line,
+        ),
+    );
+    if (!hasStatusAssertion) {
+      violations.push(
+        `${requestName}: missing explicit HTTP status assertion in Run-all API smoke journey`,
+      );
+    }
+  }
+
+  return violations;
+}
+
 function extractVariables(strings) {
   const vars = new Set();
   const regex = /{{\s*([a-zA-Z0-9_.\-$]+)\s*}}/g;
@@ -218,6 +286,17 @@ try {
       fail(
         `Hardcoded absolute URLs detected in ${path.relative(repoRoot, collectionPath)}. Use {{base_url}}.`,
       );
+    }
+
+    if (
+      collectionPath.endsWith("chat-backend-user-flows.postman_collection.json")
+    ) {
+      const runAllViolations = collectRunAllSmokeViolations(collection.item);
+      if (runAllViolations.length > 0) {
+        fail(
+          `Run-all smoke validation failed in ${path.relative(repoRoot, collectionPath)}: ${runAllViolations.join("; ")}`,
+        );
+      }
     }
   }
 

@@ -91,12 +91,22 @@ Validation covers:
 - hardcoded absolute URLs instead of {{base_url}}
 - obvious secret markers in committed artifacts
 - required Quarkus health requests (`/q/health/live`, `/q/health/ready`) so discovery cannot accidentally remove them
+- Run-all smoke guardrails: every request under Run-all API smoke journey must include a test assertion named with `Expected:` and an explicit HTTP status assertion
 
 By default validation runs against all three committed environment templates:
 
 - postman/environments/local.example.postman_environment.json
 - postman/environments/devdocker.example.postman_environment.json
 - postman/environments/production.example.postman_environment.json
+
+## Smoke Flow Authoring Requirements
+
+These are required for all newly created flow requests and all new additions to Run-all API smoke journey:
+
+- Include at least one post-response `pm.test(...)` assertion per request.
+- Name status assertions with an explicit expectation prefix: `Expected: ...`.
+- Assert HTTP response status explicitly (for example `pm.response.to.have.status(200)` or an explicit allowed set for multi-outcome steps).
+- For identity-creating steps (for example invitation redeem/user creation), generate a unique username per run to avoid collisions in repeat runs.
 
 ## Inspect Existing Cloud Assets
 
