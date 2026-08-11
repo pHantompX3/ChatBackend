@@ -28,14 +28,25 @@ echo "Resetting local database '${DB_NAME}' and bootstrap Flyway history on ${DB
 
 docker run --rm \
   --add-host=host.docker.internal:host-gateway \
+  -e DB_HOST="${DB_HOST}" \
+  -e DB_PORT="${DB_PORT}" \
+  -e SA_PASSWORD="${SA_PASSWORD}" \
+  -e DB_NAME="${DB_NAME}" \
   mcr.microsoft.com/mssql-tools:latest \
-  /opt/mssql-tools18/bin/sqlcmd \
-  -S "${DB_HOST},${DB_PORT}" \
-  -U "sa" \
-  -P "${SA_PASSWORD}" \
-  -C \
-  -b \
-  -d "master" \
-  -Q "IF DB_ID(N'${DB_NAME}') IS NOT NULL BEGIN ALTER DATABASE [${DB_NAME}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [${DB_NAME}]; END; IF OBJECT_ID(N'dbo.flyway_schema_history', N'U') IS NOT NULL DROP TABLE dbo.flyway_schema_history;"
+  sh -lc '
+    SQLCMD="/opt/mssql-tools18/bin/sqlcmd"
+    if [[ ! -x "${SQLCMD}" ]]; then
+      SQLCMD="/opt/mssql-tools/bin/sqlcmd"
+    fi
+
+    "${SQLCMD}" \
+      -S "${DB_HOST},${DB_PORT}" \
+      -U "sa" \
+      -P "${SA_PASSWORD}" \
+      -C \
+      -b \
+      -d "master" \
+      -Q "IF DB_ID(N''${DB_NAME}'') IS NOT NULL BEGIN ALTER DATABASE [${DB_NAME}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [${DB_NAME}]; END; IF OBJECT_ID(N''dbo.flyway_schema_history'', N''U'') IS NOT NULL DROP TABLE dbo.flyway_schema_history;"
+  '
 
 echo "Local reset complete."

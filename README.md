@@ -71,7 +71,8 @@ WL_CHAT_QUEUE_MGMT_HOST_IP=127.0.0.1
 
 # Optional RabbitMQ-backed audit transport
 WL_CHAT_AUDIT_RABBITMQ_ENABLED=true
-WL_CHAT_AUDIT_RABBITMQ_HOST=queue-dev
+WL_CHAT_AUDIT_RABBITMQ_HOST=127.0.0.1
+WL_CHAT_AUDIT_RABBITMQ_HOST_CANDIDATES=queue-dev,127.0.0.1,host.docker.internal
 WL_CHAT_AUDIT_RABBITMQ_PORT=5672
 WL_CHAT_AUDIT_RABBITMQ_USERNAME=wl_chat_queue
 WL_CHAT_AUDIT_RABBITMQ_PASSWORD=replace_with_audit_password
@@ -81,6 +82,9 @@ Notes:
 
 - `WL_CHAT_QUEUE_HOST_IP=0.0.0.0` exposes AMQP to other hosts that can reach this machine.
 - Keep `WL_CHAT_QUEUE_MGMT_HOST_IP=127.0.0.1` unless remote UI access is explicitly required.
+- `WL_CHAT_AUDIT_RABBITMQ_HOST_CANDIDATES` is an optional ordered fallback list.
+- With `queue-dev,127.0.0.1,host.docker.internal`, the same config works for both host-local and DevDocker runs.
+- For a fully remote broker, set `WL_CHAT_AUDIT_RABBITMQ_HOST` and optionally `WL_CHAT_AUDIT_RABBITMQ_HOST_CANDIDATES` to remote-only values.
 
 ### Start/stop queue server only
 

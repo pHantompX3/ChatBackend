@@ -21,12 +21,26 @@ const defaultCollectionPaths = [
     "chat-backend-user-flows.postman_collection.json",
   ),
 ];
-const defaultEnvironmentPath = path.join(
-  repoRoot,
-  "postman",
-  "environments",
-  "local.example.postman_environment.json",
-);
+const defaultEnvironmentPaths = [
+  path.join(
+    repoRoot,
+    "postman",
+    "environments",
+    "local.example.postman_environment.json",
+  ),
+  path.join(
+    repoRoot,
+    "postman",
+    "environments",
+    "devdocker.example.postman_environment.json",
+  ),
+  path.join(
+    repoRoot,
+    "postman",
+    "environments",
+    "production.example.postman_environment.json",
+  ),
+];
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
@@ -101,6 +115,49 @@ function loadConfig(configPath) {
       "postman-environment-id",
       "POSTMAN_ENVIRONMENT_ID",
     ]),
+    localEnvironmentId: get("POSTMAN_LOCAL_ENVIRONMENT_ID", [
+      "postman-local-environment-id",
+      "POSTMAN_LOCAL_ENVIRONMENT_ID",
+    ]),
+    devEnvironmentId: get("POSTMAN_DEV_ENVIRONMENT_ID", [
+      "postman-dev-environment-id",
+      "POSTMAN_DEV_ENVIRONMENT_ID",
+    ]),
+    prodEnvironmentId: get("POSTMAN_PROD_ENVIRONMENT_ID", [
+      "postman-prod-environment-id",
+      "POSTMAN_PROD_ENVIRONMENT_ID",
+    ]),
+  };
+}
+
+function environmentIdKeyForFile(environmentPath) {
+  const fileName = path.basename(environmentPath);
+  if (fileName === "local.example.postman_environment.json") {
+    return {
+      id: "localEnvironmentId",
+      property: "postman-local-environment-id",
+      label: "Local",
+    };
+  }
+  if (fileName === "devdocker.example.postman_environment.json") {
+    return {
+      id: "devEnvironmentId",
+      property: "postman-dev-environment-id",
+      label: "DevDocker",
+    };
+  }
+  if (fileName === "production.example.postman_environment.json") {
+    return {
+      id: "prodEnvironmentId",
+      property: "postman-prod-environment-id",
+      label: "Production",
+    };
+  }
+
+  return {
+    id: "environmentId",
+    property: "postman-environment-id",
+    label: fileName,
   };
 }
 
@@ -266,17 +323,17 @@ function normalizeEnvironment(environment) {
   };
 }
 
-async function runDriftCheck(config, localCollection, localEnvironment) {
-  if (!config.collectionId) {
+async function runDriftCheck(config, localCollection, collectionId) {
+  if (!collectionId) {
     fail(
-      "Collection id is required for --check-drift. Set postman-collection-id in local ignored config.",
+      "Collection id is required for --check-drift. Set postman-collection-id (or postman-flow-collection-id for flow collection) in local ignored config.",
     );
   }
 
   const remoteCollectionEnvelope = await postmanRequest(
     config,
     "GET",
-    `/collections/${encodeURIComponent(config.collectionId)}`,
+    `/collections/${encodeURIComponent(collectionId)}`,
   );
   const remoteCollection = remoteCollectionEnvelope?.collection;
   if (!remoteCollection) {
@@ -296,40 +353,6 @@ async function runDriftCheck(config, localCollection, localEnvironment) {
     log(
       "Drift detected: collection artifact differs from Postman Cloud target.",
     );
-  }
-
-  if (!skipEnvironment) {
-    if (!config.environmentId) {
-      fail(
-        "Environment id is required for --check-drift unless --skip-environment is set.",
-      );
-    }
-
-    const remoteEnvironmentEnvelope = await postmanRequest(
-      config,
-      "GET",
-      `/environments/${encodeURIComponent(config.environmentId)}`,
-    );
-    const remoteEnvironment = remoteEnvironmentEnvelope?.environment;
-    if (!remoteEnvironment) {
-      fail(
-        "Configured environment id could not be fetched for drift checking.",
-      );
-    }
-
-    const localEnvironmentFingerprint = stableStringify(
-      normalizeEnvironment(localEnvironment),
-    );
-    const remoteEnvironmentFingerprint = stableStringify(
-      normalizeEnvironment(remoteEnvironment),
-    );
-
-    if (localEnvironmentFingerprint !== remoteEnvironmentFingerprint) {
-      hasDrift = true;
-      log(
-        "Drift detected: environment artifact differs from Postman Cloud target.",
-      );
-    }
   }
 
   if (hasDrift) {
@@ -415,29 +438,43 @@ async function postmanRequest(config, method, apiPath, body = undefined) {
   return response.json();
 }
 
-function containsWorkspaceResource(workspace, collectionId, environmentId) {
-  const collectionMatch =
-    !collectionId ||
-    (workspace?.collections ?? []).some(
-      (c) =>
-        c.id === collectionId ||
-        c.uid === collectionId ||
-        c.name === collectionId,
-    );
+function workspaceHasCollection(workspace, collectionId) {
+  if (!collectionId) {
+    return true;
+  }
+  return (workspace?.collections ?? []).some(
+    (c) =>
+      c.id === collectionId ||
+      c.uid === collectionId ||
+      c.name === collectionId,
+  );
+}
 
-  const environmentMatch =
-    !environmentId ||
-    (workspace?.environments ?? []).some(
-      (e) =>
-        e.id === environmentId ||
-        e.uid === environmentId ||
-        e.name === environmentId,
-    );
+function workspaceHasEnvironment(workspace, environmentId) {
+  if (!environmentId) {
+    return true;
+  }
+  return (workspace?.environments ?? []).some(
+    (e) =>
+      e.id === environmentId ||
+      e.uid === environmentId ||
+      e.name === environmentId,
+  );
+}
 
-  return { collectionMatch, environmentMatch };
+function findWorkspaceEnvironmentIdByName(workspace, environmentName) {
+  if (!environmentName) {
+    return "";
+  }
+  const match = (workspace?.environments ?? []).find(
+    (e) => e.name === environmentName,
+  );
+  return match?.uid || match?.id || "";
 }
 
 async function syncCollection(config, workspaceId, collection, collectionId) {
+  const targetPropertyKey = "postman-collection-id";
+  const targetLabel = "Primary";
   if (!collectionId) {
     if (!createMissing) {
       fail(
@@ -462,9 +499,9 @@ async function syncCollection(config, workspaceId, collection, collectionId) {
       fail("Postman collection creation returned no collection identifier.");
     }
 
-    writeProperty(config.configPath, "postman-collection-id", newId);
+    writeProperty(config.configPath, targetPropertyKey, newId);
     log(
-      "Collection created and local config updated with postman-collection-id.",
+      `${targetLabel} collection created and local config updated with ${targetPropertyKey}.`,
     );
     return newId;
   }
@@ -486,25 +523,80 @@ async function syncCollection(config, workspaceId, collection, collectionId) {
   return collectionId;
 }
 
-async function syncEnvironment(
-  config,
-  workspaceId,
-  environment,
-  environmentId,
-) {
+async function syncCollectionTarget(config, workspaceId, collection, target) {
+  if (!target.collectionId) {
+    if (!createMissing) {
+      log(
+        `${target.label} collection id not configured; skipping collection sync.`,
+      );
+      return "";
+    }
+
+    if (dryRun) {
+      log(
+        `Dry-run: would create ${target.label} collection in configured workspace.`,
+      );
+      return "";
+    }
+
+    const created = await postmanRequest(
+      config,
+      "POST",
+      `/collections?workspace=${encodeURIComponent(workspaceId)}`,
+      { collection },
+    );
+
+    const newId = created?.collection?.uid || created?.collection?.id;
+    if (!newId) {
+      fail("Postman collection creation returned no collection identifier.");
+    }
+
+    writeProperty(config.configPath, target.propertyKey, newId);
+    log(
+      `${target.label} collection created and local config updated with ${target.propertyKey}.`,
+    );
+    target.collectionId = newId;
+    return newId;
+  }
+
+  if (dryRun) {
+    log(`Dry-run: would update ${target.label} collection in Postman Cloud.`);
+    return target.collectionId;
+  }
+
+  await postmanRequest(
+    config,
+    "PUT",
+    `/collections/${encodeURIComponent(target.collectionId)}`,
+    {
+      collection,
+    },
+  );
+  log(`${target.label} collection synchronized successfully.`);
+  return target.collectionId;
+}
+
+async function syncEnvironment(config, workspaceId, environment, syncTarget) {
   if (skipEnvironment) {
     log("Environment sync skipped by --skip-environment.");
     return "";
   }
 
+  const environmentId = syncTarget.environmentId;
+  const environmentLabel = syncTarget.label;
+
   if (!environmentId) {
     if (!createMissing) {
-      log("Environment id not configured; skipping environment sync.");
+      log(
+        `Environment id not configured for ${environmentLabel}; skipping environment sync.`,
+      );
       return "";
     }
 
     if (dryRun) {
-      log("Dry-run: would create environment in configured workspace.");
+      log(
+        `Dry-run: would create ${environmentLabel} environment in configured workspace.`,
+      );
       return "";
     }
 
@@ -520,15 +612,17 @@ async function syncEnvironment(
       fail("Postman environment creation returned no environment identifier.");
     }
 
-    writeProperty(config.configPath, "postman-environment-id", newId);
+    writeProperty(config.configPath, syncTarget.propertyKey, newId);
     log(
-      "Environment created and local config updated with postman-environment-id.",
+      `${environmentLabel} environment created and local config updated with ${syncTarget.propertyKey}.`,
     );
     return newId;
   }
 
   if (dryRun) {
-    log("Dry-run: would update configured environment in Postman Cloud.");
+    log(
+      `Dry-run: would update ${environmentLabel} environment in Postman Cloud.`,
+    );
     return environmentId;
   }
 
@@ -540,7 +634,7 @@ async function syncEnvironment(
       environment,
     },
   );
-  log("Environment synchronized successfully.");
+  log(`${environmentLabel} environment synchronized successfully.`);
   return environmentId;
 }
 
@@ -563,7 +657,40 @@ async function run() {
     path: collectionPath,
     content: readJson(collectionPath),
   }));
-  const environment = readJson(defaultEnvironmentPath);
+  const collectionTargets = collections.map(({ path: collectionPath }) => {
+    const collectionName = path.basename(collectionPath);
+    if (collectionName === "chat-backend-user-flows.postman_collection.json") {
+      return {
+        collectionPath,
+        label: "Flow",
+        propertyKey: "postman-flow-collection-id",
+        collectionId: config.flowCollectionId,
+      };
+    }
+
+    return {
+      collectionPath,
+      label: "Primary",
+      propertyKey: "postman-collection-id",
+      collectionId: config.collectionId,
+    };
+  });
+  const environments = defaultEnvironmentPaths.map((environmentPath) => {
+    const descriptor = environmentIdKeyForFile(environmentPath);
+    const configuredEnvironmentId =
+      descriptor.id === "localEnvironmentId"
+        ? config.localEnvironmentId || config.environmentId
+        : config[descriptor.id];
+    const content = readJson(environmentPath);
+
+    return {
+      path: environmentPath,
+      content,
+      label: descriptor.label,
+      propertyKey: descriptor.property,
+      environmentId: configuredEnvironmentId,
+    };
+  });
 
   const workspaceEnvelope = await postmanRequest(
     config,
@@ -575,60 +702,124 @@ async function run() {
     fail("Configured workspace could not be resolved.");
   }
 
-  const { collectionMatch, environmentMatch } = containsWorkspaceResource(
-    workspace,
-    config.collectionId,
-    config.environmentId,
-  );
-
-  if (config.collectionId && !collectionMatch) {
-    fail(
-      "Configured collection id is not present in the configured workspace. Refusing overwrite.",
-    );
-  }
-  if (config.environmentId && !environmentMatch) {
-    fail(
-      "Configured environment id is not present in the configured workspace. Refusing overwrite.",
-    );
+  for (const environmentTarget of environments) {
+    if (!environmentTarget.environmentId) {
+      environmentTarget.environmentId = findWorkspaceEnvironmentIdByName(
+        workspace,
+        environmentTarget.content?.name,
+      );
+    }
   }
 
-  if (config.collectionId) {
+  const collectionIdsToCheck = collectionTargets
+    .map((target) => target.collectionId)
+    .filter(Boolean)
+    .filter((value, index, arr) => arr.indexOf(value) === index);
+
+  for (const collectionId of collectionIdsToCheck) {
+    if (!workspaceHasCollection(workspace, collectionId)) {
+      fail(
+        "Configured collection id is not present in the configured workspace. Refusing overwrite.",
+      );
+    }
+  }
+
+  for (const environmentTarget of environments) {
+    if (
+      environmentTarget.environmentId &&
+      !workspaceHasEnvironment(workspace, environmentTarget.environmentId)
+    ) {
+      fail(
+        `Configured environment id for ${environmentTarget.label} is not present in the configured workspace. Refusing overwrite.`,
+      );
+    }
+  }
+
+  for (const target of collectionTargets) {
+    if (!target.collectionId) {
+      continue;
+    }
     await postmanRequest(
       config,
       "GET",
-      `/collections/${encodeURIComponent(config.collectionId)}`,
-    );
-  }
-  if (config.environmentId && !skipEnvironment) {
-    await postmanRequest(
-      config,
-      "GET",
-      `/environments/${encodeURIComponent(config.environmentId)}`,
+      `/collections/${encodeURIComponent(target.collectionId)}`,
     );
   }
 
   if (checkDrift) {
     for (const { path: collectionPath, content: collection } of collections) {
-      await runDriftCheck(config, collection, environment);
+      const target = collectionTargets.find(
+        (entry) => entry.collectionPath === collectionPath,
+      );
+      const targetCollectionId = target?.collectionId;
+
+      if (!targetCollectionId) {
+        fail(
+          `Collection id is required for --check-drift (${target?.label || path.basename(collectionPath)}). Set ${target?.propertyKey || "postman-collection-id"} in local ignored config.`,
+        );
+      }
+
+      await runDriftCheck(config, collection, targetCollectionId);
       log(
-        `Drift check completed for ${path.relative(repoRoot, collectionPath)}.`,
+        `Collection drift check completed for ${path.relative(repoRoot, collectionPath)}.`,
       );
     }
+
+    if (!skipEnvironment) {
+      for (const environmentTarget of environments) {
+        if (!environmentTarget.environmentId) {
+          fail(
+            `Environment id is required for --check-drift (${environmentTarget.label}). Set ${environmentTarget.propertyKey} in local ignored config or use --skip-environment.`,
+          );
+        }
+
+        const remoteEnvironmentEnvelope = await postmanRequest(
+          config,
+          "GET",
+          `/environments/${encodeURIComponent(environmentTarget.environmentId)}`,
+        );
+        const remoteEnvironment = remoteEnvironmentEnvelope?.environment;
+        if (!remoteEnvironment) {
+          fail(
+            `Configured environment id for ${environmentTarget.label} could not be fetched for drift checking.`,
+          );
+        }
+
+        const localEnvironmentFingerprint = stableStringify(
+          normalizeEnvironment(environmentTarget.content),
+        );
+        const remoteEnvironmentFingerprint = stableStringify(
+          normalizeEnvironment(remoteEnvironment),
+        );
+
+        if (localEnvironmentFingerprint !== remoteEnvironmentFingerprint) {
+          fail(
+            `Drift detected: ${environmentTarget.label} environment artifact differs from Postman Cloud target.`,
+          );
+        }
+
+        log(
+          `Environment drift check completed for ${path.relative(repoRoot, environmentTarget.path)}.`,
+        );
+      }
+    }
+
+    log(
+      "No Postman drift detected between repository artifacts and configured cloud targets.",
+    );
     return;
   }
 
   for (const { path: collectionPath, content: collection } of collections) {
-    const collectionName = path.basename(collectionPath);
-    const targetCollectionId =
-      collectionName === "chat-backend-user-flows.postman_collection.json"
-        ? config.flowCollectionId || config.collectionId
-        : config.collectionId;
+    const target = collectionTargets.find(
+      (entry) => entry.collectionPath === collectionPath,
+    );
 
-    const syncedCollectionId = await syncCollection(
+    const syncedCollectionId = await syncCollectionTarget(
       config,
       config.workspaceId,
       collection,
-      targetCollectionId,
+      target,
     );
     if (syncedCollectionId) {
       log(
@@ -637,16 +828,27 @@ async function run() {
     }
   }
 
-  const syncedEnvironmentId = await syncEnvironment(
-    config,
-    config.workspaceId,
-    environment,
-    config.environmentId,
-  );
+  const syncedEnvironmentIds = [];
+  for (const environmentTarget of environments) {
+    const syncedEnvironmentId = await syncEnvironment(
+      config,
+      config.workspaceId,
+      environmentTarget.content,
+      environmentTarget,
+    );
+    if (syncedEnvironmentId) {
+      syncedEnvironmentIds.push({
+        label: environmentTarget.label,
+        id: syncedEnvironmentId,
+      });
+    }
+  }
 
   log(`Sync complete for workspace ${config.workspaceId}.`);
-  if (syncedEnvironmentId) {
-    log("Environment target confirmed.");
+  if (syncedEnvironmentIds.length > 0) {
+    for (const synced of syncedEnvironmentIds) {
+      log(`${synced.label} environment target confirmed.`);
+    }
   }
 }
 

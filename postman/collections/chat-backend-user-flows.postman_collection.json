@@ -26,8 +26,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('bootstrap_admin_username', 'flow-admin-' + Date.now());",
-                  "pm.environment.set('bootstrap_admin_password', pm.environment.get('bootstrap_admin_password') || 'AdminPassw0rd!');"
+                  "pm.environment.set('bootstrap_admin_username', pm.environment.get('bootstrap_admin_username') || pm.globals.get('WLAdminUser') || ('flow-admin-' + Date.now()));",
+                  "pm.environment.set('bootstrap_admin_password', pm.environment.get('bootstrap_admin_password') || pm.globals.get('WLAdminPass') || 'AdminPassw0rd!');"
                 ]
               }
             },
@@ -112,7 +112,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('invitation_expires_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());",
+                  "var invitationTtlHours = Number(pm.globals.get('WLInvitationTtlHours') || 24);\npm.environment.set('invitation_expires_at', new Date(Date.now() + invitationTtlHours * 60 * 60 * 1000).toISOString());",
                   "pm.environment.set('admin_user_id', pm.environment.get('admin_user_id') || '00000000-0000-0000-0000-000000000000');"
                 ]
               }
@@ -164,8 +164,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('member_username', 'member-' + Date.now());",
-                  "pm.environment.set('member_password', pm.environment.get('member_password') || 'MemberPassw0rd!');"
+                  "pm.environment.set('member_username', pm.environment.get('member_username') || pm.globals.get('WLMemberUser') || ('member-' + Date.now()));",
+                  "pm.environment.set('member_password', pm.environment.get('member_password') || pm.globals.get('WLMemberPass') || 'MemberPassw0rd!');"
                 ]
               }
             },
@@ -256,7 +256,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('followup_invitation_expires_at', new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString());",
+                  "var followupInvitationTtlHours = Number(pm.globals.get('WLFollowupInvitationTtlHours') || 12);\npm.environment.set('followup_invitation_expires_at', new Date(Date.now() + followupInvitationTtlHours * 60 * 60 * 1000).toISOString());",
                   "pm.environment.set('admin_user_id', pm.environment.get('admin_user_id') || '00000000-0000-0000-0000-000000000000');"
                 ]
               }
@@ -467,7 +467,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit={{message_limit}}",
               "host": ["{{base_url}}"],
               "path": [
                 "api",
@@ -479,7 +479,7 @@
               "query": [
                 {
                   "key": "limit",
-                  "value": "10"
+                  "value": "{{message_limit}}"
                 }
               ]
             }
@@ -539,7 +539,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit={{message_limit}}",
               "host": ["{{base_url}}"],
               "path": [
                 "api",
@@ -551,7 +551,7 @@
               "query": [
                 {
                   "key": "limit",
-                  "value": "10"
+                  "value": "{{message_limit}}"
                 }
               ]
             }
@@ -572,7 +572,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.environment.set('bootstrap_admin_username', pm.environment.get('bootstrap_admin_username') || pm.environment.get('admin_username') || pm.environment.get('auth_username') || ('runall-admin-' + Date.now()));",
-                  "pm.environment.set('bootstrap_admin_password', pm.environment.get('bootstrap_admin_password') || pm.environment.get('admin_password') || pm.environment.get('auth_password') || 'AdminPassw0rd!');"
+                  "pm.environment.set('bootstrap_admin_password', pm.environment.get('bootstrap_admin_password') || pm.environment.get('admin_password') || pm.environment.get('auth_password') || pm.globals.get('WLAdminPass') || 'AdminPassw0rd!');"
                 ]
               }
             },
@@ -660,7 +660,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('invitation_expires_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());"
+                  "var invitationTtlHours = Number(pm.globals.get('WLInvitationTtlHours') || 24);\npm.environment.set('invitation_expires_at', new Date(Date.now() + invitationTtlHours * 60 * 60 * 1000).toISOString());"
                 ]
               }
             },
@@ -711,8 +711,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('member_username', 'runall-member-' + Date.now());",
-                  "pm.environment.set('member_password', pm.environment.get('member_password') || 'MemberPassw0rd!');"
+                  "pm.environment.set('member_username', pm.environment.get('member_username') || pm.globals.get('WLMemberUser') || ('runall-member-' + Date.now()));",
+                  "pm.environment.set('member_password', pm.environment.get('member_password') || pm.globals.get('WLMemberPass') || 'MemberPassw0rd!');"
                 ]
               }
             },
@@ -854,7 +854,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit={{message_limit}}",
               "host": ["{{base_url}}"],
               "path": [
                 "api",
@@ -866,7 +866,7 @@
               "query": [
                 {
                   "key": "limit",
-                  "value": "10"
+                  "value": "{{message_limit}}"
                 }
               ]
             }
@@ -880,7 +880,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('followup_invitation_expires_at', new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString());"
+                  "var followupInvitationTtlHours = Number(pm.globals.get('WLFollowupInvitationTtlHours') || 12);\npm.environment.set('followup_invitation_expires_at', new Date(Date.now() + followupInvitationTtlHours * 60 * 60 * 1000).toISOString());"
                 ]
               }
             },
@@ -1021,7 +1021,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit=10",
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit={{message_limit}}",
               "host": ["{{base_url}}"],
               "path": [
                 "api",
@@ -1033,13 +1033,56 @@
               "query": [
                 {
                   "key": "limit",
-                  "value": "10"
+                  "value": "{{message_limit}}"
                 }
               ]
             }
           }
         }
       ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "function hasUsableEnvValue(key) {",
+          "  var raw = pm.environment.get(key);",
+          "  if (raw === undefined || raw === null) return false;",
+          "  var s = String(raw).trim();",
+          "  if (!s) return false;",
+          "  if (s.startsWith('{{') && s.endsWith('}}')) return false;",
+          "  var resolved = pm.variables.replaceIn(s).trim();",
+          "  return !!resolved && !(resolved.startsWith('{{') && resolved.endsWith('}}'));",
+          "}",
+          "",
+          "var mappings = [",
+          "  { env: 'bootstrap_admin_username', globals: ['WLAdminUser_Local', 'WLAdminUser_Dev', 'WLAdminUser_Prod', 'WLAdminUser'] },",
+          "  { env: 'bootstrap_admin_password', globals: ['WLAdminPass_Local', 'WLAdminPass_Dev', 'WLAdminPass_Prod', 'WLAdminPass'] },",
+          "  { env: 'member_username', globals: ['WLMemberUser_Local', 'WLMemberUser_Dev', 'WLMemberUser_Prod', 'WLMemberUser'] },",
+          "  { env: 'member_password', globals: ['WLMemberPass_Local', 'WLMemberPass_Dev', 'WLMemberPass_Prod', 'WLMemberPass'] },",
+          "  { env: 'auth_username', globals: ['WLAuthUser_Local', 'WLAuthUser_Dev', 'WLAuthUser_Prod'] },",
+          "  { env: 'auth_password', globals: ['WLAuthPass_Local', 'WLAuthPass_Dev', 'WLAuthPass_Prod'] },",
+          "  { env: 'admin_user_id', globals: ['WLActorUserId_Local', 'WLActorUserId_Dev', 'WLActorUserId_Prod', 'WLActorUserId'] },",
+          "  { env: 'conversation_id', globals: ['WLConversationId_Local', 'WLConversationId_Dev', 'WLConversationId_Prod', 'WLConversationIdDefault'] },",
+          "  { env: 'sender_user_id', globals: ['WLSenderUserId_Local', 'WLSenderUserId_Dev', 'WLSenderUserId_Prod', 'WLSenderUserIdDefault'] },",
+          "  { env: 'message_limit', globals: ['WLMessageLimit_Local', 'WLMessageLimit_Dev', 'WLMessageLimit_Prod', 'WLMessageLimitDefault'] }",
+          "];",
+          "",
+          "mappings.forEach(function (entry) {",
+          "  if (hasUsableEnvValue(entry.env)) return;",
+          "  for (var i = 0; i < entry.globals.length; i += 1) {",
+          "    var g = pm.globals.get(entry.globals[i]);",
+          "    if (g !== undefined && g !== null && String(g).trim() !== '') {",
+          "      pm.environment.set(entry.env, g);",
+          "      return;",
+          "    }",
+          "  }",
+          "});"
+        ]
+      }
     }
   ]
 }
