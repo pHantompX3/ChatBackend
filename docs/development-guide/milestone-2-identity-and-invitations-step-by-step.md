@@ -812,8 +812,8 @@ Required message fields:
 - `requestHeaders` (sanitized subset only)
 - `responseHeaders` (sanitized subset only)
 - `errorCode` (nullable)
-- `errorMessage` (nullable, sanitized)
-- `metadata` (sanitized key-value map)
+- `errorMessage` (nullable, bounded diagnostic summary for privileged server-side review)
+- `metadata` (sanitized key-value map; may contain bounded internal-failure diagnostics)
 
 HTTP request and response capture requirements:
 
@@ -825,8 +825,12 @@ HTTP request and response capture requirements:
 Error capture requirements:
 
 - Store stable application error code for handled failures.
-- Store sanitized error message suitable for compliance/audit review.
-- Do not store stack traces or internal SQL/driver exception payloads in audit records.
+- Keep client-facing problem details sanitized independently from the privileged audit record.
+- For unexpected internal failures, store the bounded root-cause message, wrapper/root exception
+  types, and one application/root source location so operators can diagnose the failure from the
+  persisted RabbitMQ audit event.
+- Do not store full stack traces, SQL statements, credentials, tokens, or complete driver exception
+  payloads in audit records.
 
 Sensitive data and compliance controls:
 
@@ -848,9 +852,9 @@ The following decisions are now locked for Milestone 2:
 - [x] Final event schema version and required fields.
       Decision: `schemaVersion=1.0` with required fields from section 9.4.
 - [x] Sensitive-field redaction rules for `metadata`.
-      Decision: `metadata` is allowlist-first. Allowed keys must be explicitly declared per event type. Any key matching case-insensitive patterns `password|passphrase|secret|token|authorization|cookie|session|key|credential|ssn|dob|email|phone|address` is redacted.
+      Decision: `metadata` is allowlist-first. Allowed keys must be explicitly declared per event type. Any key matching case-insensitive patterns `password|passphrase|secret|token|authorization|cookie|session|key|credential|ssn|dob|email|phone|address` is redacted. Internal-failure events additionally allow `failureCode`, `failureMessage`, `failureDetail`, `failureExceptionType`, `failureRootCauseType`, `failureLocation`, and `failureRootCauseLocation`; these fields are privileged operational diagnostics and must not be copied into client responses.
 - [x] Sensitive-field redaction rules for headers, query parameters, and error messages.
-      Decision: request/response header capture uses an allowlist only: `x-request-id`, `x-correlation-id`, `content-type`, `content-length`, `accept`, `user-agent`, `x-forwarded-for`, `x-real-ip`, `forwarded`. Never persist `authorization`, `cookie`, `set-cookie`, or custom auth headers. Query parameter values are redacted when parameter names match the sensitive pattern list above. Error messages are sanitized to remove stack traces, SQL statements, and secrets, and truncated to 256 chars.
+      Decision: request/response header capture uses an allowlist only: `x-request-id`, `x-correlation-id`, `content-type`, `content-length`, `accept`, `user-agent`, `x-forwarded-for`, `x-real-ip`, `forwarded`. Never persist `authorization`, `cookie`, `set-cookie`, or custom auth headers. Query parameter values are redacted when parameter names match the sensitive pattern list above. Client-facing error messages remain sanitized. For unexpected internal failures, the audit-only root-cause message is truncated to 256 characters in `error_message` and 2048 characters in metadata; full stack traces, credentials, tokens, SQL statements, and complete driver payloads remain prohibited.
 - [x] Queue publish timeout and retry policy.
       Decision: publish timeout `200ms`, one retry with jittered backoff `50-100ms`, then fail-open (do not fail API request).
 - [x] Consumer retry count and backoff strategy.

@@ -1261,6 +1261,13 @@ metadata
 
 Private message bodies, raw passwords, raw session tokens, and raw invitation tokens shall not be written to audit records.
 
+Unexpected server failures shall keep client-facing problem details generic while retaining bounded
+diagnostic context in the privileged audit record. That diagnostic context may include the stable
+application error code, root-cause message, wrapper/root exception types, and selected application
+and root-cause source locations. Full stack traces, credentials, tokens, private message bodies, and
+complete database-driver payloads shall not be persisted in the audit record. The same diagnostic
+fields shall survive asynchronous audit transport and database persistence.
+
 ## 21. Observability
 
 ### 21.1 Logs

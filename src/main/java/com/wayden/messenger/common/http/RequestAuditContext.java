@@ -12,6 +12,9 @@ import lombok.Setter;
 @Setter
 public class RequestAuditContext {
 
+  private static final int ERROR_MESSAGE_LIMIT = 256;
+  private static final int ERROR_DETAIL_LIMIT = 2048;
+
   private String requestId;
   private String traceId;
   private String operation;
@@ -198,6 +201,26 @@ public class RequestAuditContext {
     }
   }
 
+  public void recordFailure(String code, Throwable failure) {
+    if (code == null || code.isBlank() || failure == null) {
+      return;
+    }
+
+    Throwable rootCause = rootCause(failure);
+    String rootMessage =
+        rootCause.getMessage() == null || rootCause.getMessage().isBlank()
+            ? rootCause.getClass().getName()
+            : rootCause.getMessage();
+
+    putCustomAttribute("failureCode", code);
+    putCustomAttribute("failureMessage", truncate(rootMessage, ERROR_MESSAGE_LIMIT));
+    putCustomAttribute("failureDetail", truncate(rootMessage, ERROR_DETAIL_LIMIT));
+    putCustomAttribute("failureExceptionType", failure.getClass().getName());
+    putCustomAttribute("failureRootCauseType", rootCause.getClass().getName());
+    putCustomAttribute("failureLocation", location(failure));
+    putCustomAttribute("failureRootCauseLocation", location(rootCause));
+  }
+
   public void redactQuery() {
     this.query = "REDACTED";
   }
@@ -216,5 +239,30 @@ public class RequestAuditContext {
     this.deviceMobileHint = "REDACTED";
     this.osFamily = "REDACTED";
     this.browserFamily = "REDACTED";
+  }
+
+  private static Throwable rootCause(Throwable failure) {
+    Throwable current = failure;
+    while (current.getCause() != null && current.getCause() != current) {
+      current = current.getCause();
+    }
+    return current;
+  }
+
+  private static String location(Throwable failure) {
+    StackTraceElement[] stackTrace = failure.getStackTrace();
+    if (stackTrace.length == 0) {
+      return "unknown";
+    }
+    for (StackTraceElement element : stackTrace) {
+      if (element.getClassName().startsWith("com.wayden.messenger.")) {
+        return element.toString();
+      }
+    }
+    return stackTrace[0].toString();
+  }
+
+  private static String truncate(String value, int limit) {
+    return value.length() <= limit ? value : value.substring(0, limit);
   }
 }

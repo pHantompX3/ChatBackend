@@ -674,6 +674,14 @@ The authenticated request context supplies the actor. Audit attributes may inclu
 
 Authorization failures should remain observable through request IDs and audit events without disclosing the private resource to the caller.
 
+Unexpected conversation failures must preserve the client/server trust boundary while remaining
+diagnosable. The problem response returns the stable `CONVERSATION_INTERNAL_ERROR` code and a safe
+generic detail. Separately, the request audit context records the bounded root-cause message,
+wrapper/root exception types, and one application/root source location. Those fields travel in the
+existing `HttpAuditEvent` RabbitMQ payload and are persisted in `audit.http_audit_event.error_message`
+and `metadata`; the full stack trace remains in the server log and is not sent to the client or
+stored in the audit row.
+
 ---
 
 ## 13. Local Validation Sequence

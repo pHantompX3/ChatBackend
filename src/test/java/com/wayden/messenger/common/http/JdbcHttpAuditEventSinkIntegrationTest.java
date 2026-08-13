@@ -176,8 +176,22 @@ final class JdbcHttpAuditEventSinkIntegrationTest {
             Map.of("x-forwarded-for", "198.51.100.20"),
             Map.of("content-type", "application/problem+json"),
             "INVITATION_ACTOR_FORBIDDEN",
-            "HTTP 403",
-            Map.of("failureCode", "INVITATION_ACTOR_FORBIDDEN"),
+            "Invitation actor is not authorized",
+            Map.of(
+                "failureCode",
+                "INVITATION_ACTOR_FORBIDDEN",
+                "failureMessage",
+                "Invitation actor is not authorized",
+                "failureDetail",
+                "Invitation actor is not authorized",
+                "failureExceptionType",
+                "com.wayden.messenger.identity.application.IdentityExceptions$ActorNotAuthorizedException",
+                "failureRootCauseType",
+                "java.lang.SecurityException",
+                "failureLocation",
+                "InvitationServiceImpl.java:42",
+                "failureRootCauseLocation",
+                "AuthorizationPolicy.java:28"),
             new byte[] {1, 2, 3, 4}));
 
     try (var connection =
@@ -195,9 +209,12 @@ final class JdbcHttpAuditEventSinkIntegrationTest {
         assertEquals("1.0", resultSet.getString("schema_version"));
         assertEquals("INVITATION_ACTOR_FORBIDDEN", resultSet.getString("response_code"));
         assertEquals("INVITATION_ACTOR_FORBIDDEN", resultSet.getString("error_code"));
-        assertEquals("HTTP 403", resultSet.getString("error_message"));
+        assertEquals("Invitation actor is not authorized", resultSet.getString("error_message"));
         assertEquals(403, resultSet.getInt("response_status"));
         assertTrue(resultSet.getString("metadata").contains("INVITATION_ACTOR_FORBIDDEN"));
+        assertTrue(resultSet.getString("metadata").contains("java.lang.SecurityException"));
+        assertTrue(resultSet.getString("metadata").contains("InvitationServiceImpl.java:42"));
+        assertTrue(resultSet.getString("metadata").contains("AuthorizationPolicy.java:28"));
       }
     }
   }
