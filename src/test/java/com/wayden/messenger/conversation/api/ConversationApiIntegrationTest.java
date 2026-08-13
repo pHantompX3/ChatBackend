@@ -276,6 +276,34 @@ final class ConversationApiIntegrationTest {
         .body("code", equalTo("INVALID_CURSOR"));
   }
 
+  @Test
+  void conversationMessageRouteShouldRemainReachableAndAuthenticated() {
+    Account owner = bootstrapAdmin("Message Route Owner");
+    String conversationId = createGroup(owner, "Message Route Group", List.of());
+
+    given()
+        .header("Authorization", bearer(owner.token()))
+        .when()
+        .get("/api/v1/conversations/{conversationId}/messages", conversationId)
+        .then()
+        .statusCode(501);
+
+    given()
+        .contentType(ContentType.JSON)
+        .header("Authorization", bearer(owner.token()))
+        .when()
+        .post("/api/v1/sessions/logout")
+        .then()
+        .statusCode(204);
+
+    given()
+        .header("Authorization", bearer(owner.token()))
+        .when()
+        .get("/api/v1/conversations/{conversationId}/messages", conversationId)
+        .then()
+        .statusCode(401);
+  }
+
   private static String createDirect(Account actor, String targetUserId) {
     return given()
         .contentType(ContentType.JSON)
