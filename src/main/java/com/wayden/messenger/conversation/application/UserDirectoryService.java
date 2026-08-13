@@ -58,5 +58,10 @@ public class UserDirectoryService {
   public record UserSummary(
       UserId userId, String username, NormalizedUsername normalizedUsername) {}
 
-  public record UserPage(List<UserSummary> items, String nextCursor) {}
+  public record UserPage(List<UserSummary> items, String nextCursor) {
+
+    public UserPage {
+      items = List.copyOf(items);
+    }
+  }
 }

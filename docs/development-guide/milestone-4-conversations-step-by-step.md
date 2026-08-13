@@ -6,7 +6,8 @@
 **Milestone:** 4 - Conversations  
 **Database:** Microsoft SQL Server 2022  
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven  
-**Status:** Planned implementation baseline  
+**Status:** Implemented and validated
+
 **Last reviewed:** 2026-08-13
 
 ---
@@ -30,10 +31,11 @@ Milestone 4 does not implement message persistence, message sequencing, delivery
 
 Current implementation status:
 
-- Milestones 0 through 3 are implemented and validated.
-- Authenticated actor identity and system roles are available from the session filter.
-- The current `message` package is a stub and is not a conversation implementation baseline.
-- No durable conversation or membership schema exists yet.
+- The forward-only conversation, membership, and canonical direct-pair migration is implemented.
+- Authenticated user discovery and all Version 1 conversation and membership endpoints are implemented.
+- Actor identity comes exclusively from the authenticated session; conversation roles remain separate from system roles.
+- SQL-backed integration tests cover privacy, membership transitions, direct-pair idempotency and concurrency, and seek pagination.
+- The current `message` package remains a stub; message persistence and delivery semantics are reserved for Milestone 5 and later.
 
 ---
 

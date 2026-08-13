@@ -35,5 +35,10 @@ public interface ConversationService {
 
   record DirectResult(ConversationView conversation, boolean created) {}
 
-  record ConversationPage(List<ConversationView> items, String nextCursor) {}
+  record ConversationPage(List<ConversationView> items, String nextCursor) {
+
+    public ConversationPage {
+      items = List.copyOf(items);
+    }
+  }
 }

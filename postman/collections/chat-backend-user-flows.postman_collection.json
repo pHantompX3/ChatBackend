@@ -863,7 +863,246 @@
           }
         },
         {
-          "name": "RA06 - Send authenticated message",
+          "name": "RA06 - Search member directory",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: authenticated user search returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.expect(jsonData.items.length).to.be.greaterThan(0);",
+                  "pm.environment.set('target_user_id', jsonData.items[0].userId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users?query={{member_username}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "users"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "{{member_username}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA07 - Create direct conversation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: new direct conversation returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('direct_conversation_id', jsonData.conversationId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetUserId\": \"{{target_user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/direct",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "direct"]
+            }
+          }
+        },
+        {
+          "name": "RA08 - Resolve reverse direct conversation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: reverse direct conversation returns existing resource with 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.expect(jsonData.conversationId).to.eql(pm.environment.get('direct_conversation_id'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{member_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetUserId\": \"{{admin_user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/direct",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "direct"]
+            }
+          }
+        },
+        {
+          "name": "RA09 - Create group conversation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: group creation returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('flow_conversation_id', jsonData.conversationId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Run-all group\",\n  \"initialMemberIds\": [\"{{target_user_id}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/groups",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "groups"]
+            }
+          }
+        },
+        {
+          "name": "RA10 - Verify member conversation access",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: active member can inspect group with 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{member_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}"]
+            }
+          }
+        },
+        {
+          "name": "RA11 - Verify member cannot change roles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: ordinary member role change is forbidden with 403', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{member_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/members/{{target_user_id}}/role",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "members",
+                "{{target_user_id}}",
+                "role"
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA12 - Send authenticated message",
           "event": [
             {
               "listen": "test",
@@ -901,7 +1140,7 @@
           }
         },
         {
-          "name": "RA07 - List authenticated messages",
+          "name": "RA13 - List authenticated messages",
           "event": [
             {
               "listen": "test",
@@ -943,7 +1182,7 @@
           }
         },
         {
-          "name": "RA08 - Create follow-up invitation",
+          "name": "RA14 - Create follow-up invitation",
           "event": [
             {
               "listen": "prerequest",
@@ -994,7 +1233,7 @@
           }
         },
         {
-          "name": "RA09 - Revoke follow-up invitation",
+          "name": "RA15 - Revoke follow-up invitation",
           "event": [
             {
               "listen": "test",
@@ -1038,7 +1277,75 @@
           }
         },
         {
-          "name": "RA10 - Admin revokes all member sessions",
+          "name": "RA16 - Remove member from group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: owner removes member with 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{admin_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/members/{{target_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "members",
+                "{{target_user_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA17 - Verify removed member denied",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: removed member receives private-resource 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "pm.expect(pm.response.json().code).to.eql('CONVERSATION_ACCESS_DENIED');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{member_bearer_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}"]
+            }
+          }
+        },
+        {
+          "name": "RA18 - Admin revokes all member sessions",
           "event": [
             {
               "listen": "test",
@@ -1075,7 +1382,7 @@
           }
         },
         {
-          "name": "RA11 - Verify revoked session denied",
+          "name": "RA19 - Verify revoked session denied",
           "event": [
             {
               "listen": "test",
@@ -1117,7 +1424,7 @@
           }
         },
         {
-          "name": "RA12 - Logout admin",
+          "name": "RA20 - Logout admin",
           "event": [
             {
               "listen": "test",

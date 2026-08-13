@@ -46,6 +46,7 @@ final class JdbcRepositoriesIntegrationTest {
           .withPassword(DB_PASSWORD);
 
   private static DataSource dataSource;
+  private static DataSource cleanupDataSource;
 
   private JdbcUserRepository userRepository;
   private JdbcInvitationRepository invitationRepository;
@@ -61,6 +62,13 @@ final class JdbcRepositoriesIntegrationTest {
     sqlServerDataSource.setUser(APP_LOGIN);
     sqlServerDataSource.setPassword(APP_PASSWORD);
     dataSource = sqlServerDataSource;
+
+    SQLServerDataSource adminDataSource = new SQLServerDataSource();
+    adminDataSource.setURL(
+        jdbcUrl(SQL_SERVER.getHost(), SQL_SERVER.getMappedPort(1433), "wl_chat"));
+    adminDataSource.setUser("sa");
+    adminDataSource.setPassword(DB_PASSWORD);
+    cleanupDataSource = adminDataSource;
   }
 
   @BeforeEach
@@ -216,7 +224,7 @@ final class JdbcRepositoriesIntegrationTest {
   }
 
   private static void clearIdentityTables() {
-    try (var connection = dataSource.getConnection();
+    try (var connection = cleanupDataSource.getConnection();
         var statement = connection.createStatement()) {
       statement.executeUpdate("DELETE FROM [messaging].[direct_conversation_pair]");
       statement.executeUpdate("DELETE FROM [messaging].[conversation_member]");

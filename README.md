@@ -447,7 +447,7 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 Milestone 3 status snapshot (2026-08-11): session schema, login/logout/filter behavior, and the administrative revoke-all-sessions API are implemented and validated.
 
-Milestone 4 status snapshot (2026-08-13): the conversations and membership-authorization implementation guide and ADR-0013 are defined; implementation has not started.
+Milestone 4 status snapshot (2026-08-13): conversation persistence, authenticated user discovery, direct and group conversation APIs, membership authorization, SQL-backed tests, and Postman coverage are implemented and validated under ADR-0013.
 
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`

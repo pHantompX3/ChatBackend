@@ -1600,11 +1600,11 @@ Exit criteria:
 
 ## Milestone 4 — Conversations
 
-Implementation planning status snapshot (2026-08-13):
+Implementation status snapshot (2026-08-13):
 
 - the implementation guide is defined in `docs/development-guide/milestone-4-conversations-step-by-step.md`,
 - the governing decisions are recorded in `docs/architecture/decision/ADR-0013-define-conversation-identity-membership-and-discovery.md`,
-- conversation schema, domain, APIs, and tests are not yet implemented.
+- conversation schema, domain services, authenticated user discovery, APIs, authorization rules, SQL-backed tests, and Postman coverage are implemented and validated.
 
 Deliver:
 

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wayden.messenger.conversation.domain.ConversationId;
 import com.wayden.messenger.identity.domain.NormalizedUsername;
 import com.wayden.messenger.identity.domain.UserId;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +24,9 @@ public class ConversationCursorCodec {
   private final ObjectMapper objectMapper;
 
   @Inject
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification = "ObjectMapper is an application-scoped, container-managed collaborator.")
   public ConversationCursorCodec(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
   }
