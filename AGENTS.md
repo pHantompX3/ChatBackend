@@ -7,6 +7,8 @@ ChatBackend is a Java 25 Quarkus backend for a private messaging platform, curre
 ## Fast orientation
 
 - Primary setup and runbook: [README.md](README.md)
+- Release history: [CHANGELOG.md](CHANGELOG.md)
+- Versioning and changelog policy: [docs/development-guide/versioning-and-changelog-policy.md](docs/development-guide/versioning-and-changelog-policy.md)
 - Architecture overview: [docs/architecture/single-host-layered-container-architecture.md](docs/architecture/single-host-layered-container-architecture.md)
 - Architecture decisions (ADR): [docs/architecture/decision](docs/architecture/decision)
 - Development guides: [docs/development-guide](docs/development-guide)
@@ -27,6 +29,8 @@ ChatBackend is a Java 25 Quarkus backend for a private messaging platform, curre
 - Do not rewrite applied Flyway versions; add a new migration instead.
 - Do not use SQL Server `sa` as the application runtime principal.
 - Record new architecture decisions as ADR files under [docs/architecture/decision](docs/architecture/decision).
+- Update [CHANGELOG.md](CHANGELOG.md) in the same change set for every notable change, following the
+  canonical [versioning and changelog policy](docs/development-guide/versioning-and-changelog-policy.md).
 
 ## Copilot context architecture
 

@@ -246,6 +246,9 @@ function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+const messageResponseBody =
+  '{\n  "messageId": "{{message_id}}",\n  "conversationId": "{{conversation_id}}",\n  "senderId": "{{sender_user_id}}",\n  "clientMessageId": "{{client_message_id}}",\n  "sequenceNumber": 1,\n  "type": "TEXT",\n  "body": "{{message_content}}",\n  "createdAt": "2026-08-13T18:00:00Z",\n  "editedAt": null,\n  "deletedAt": null\n}';
+
 const endpointExampleTemplates = new Map([
   [
     "POST /api/v1/bootstrap/admin",
@@ -449,6 +452,79 @@ const endpointExampleTemplates = new Map([
           status: "OK",
           code: 200,
           body: '[\n  {\n    "userId": "{{admin_user_id}}",\n    "username": "Admin Root",\n    "role": "OWNER",\n    "joinedAt": "2026-08-13T12:00:00Z"\n  }\n]',
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/conversations/{conversationId}/messages",
+    {
+      auth: "bearer",
+      requestBody:
+        '{\n  "clientMessageId": "{{client_message_id}}",\n  "body": "{{message_content}}"\n}',
+      responses: [
+        {
+          name: "201 Created",
+          status: "Created",
+          code: 201,
+          body: messageResponseBody,
+        },
+        {
+          name: "200 Accepted Retry",
+          status: "OK",
+          code: 200,
+          body: messageResponseBody,
+        },
+      ],
+    },
+  ],
+  [
+    "GET /api/v1/conversations/{conversationId}/messages",
+    {
+      auth: "bearer",
+      query: [
+        { key: "afterSequence", value: "0" },
+        { key: "limit", value: "{{message_limit}}" },
+      ],
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: `{\n  "items": [\n${messageResponseBody
+            .split("\n")
+            .map((line) => `    ${line}`)
+            .join("\n")}\n  ],\n  "nextAfterSequence": null\n}`,
+        },
+      ],
+    },
+  ],
+  [
+    "PUT /api/v1/conversations/{conversationId}/messages/{messageId}",
+    {
+      auth: "bearer",
+      requestBody: '{\n  "body": "{{message_content}}"\n}',
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: messageResponseBody,
+        },
+      ],
+    },
+  ],
+  [
+    "DELETE /api/v1/conversations/{conversationId}/messages/{messageId}",
+    {
+      auth: "bearer",
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
         },
       ],
     },
@@ -784,7 +860,9 @@ function extractSourceGroupFromRequest(entry) {
 }
 
 function buildDefaultEvent(method, expectedStatusCodes = [200, 201]) {
-  const sortedCodes = Array.from(new Set(expectedStatusCodes)).sort(
+  const effectiveStatusCodes =
+    expectedStatusCodes.length > 0 ? expectedStatusCodes : [200, 201];
+  const sortedCodes = Array.from(new Set(effectiveStatusCodes)).sort(
     (a, b) => a - b,
   );
   const hasSingleCode = sortedCodes.length === 1;

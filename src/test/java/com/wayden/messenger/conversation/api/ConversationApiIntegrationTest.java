@@ -37,6 +37,7 @@ final class ConversationApiIntegrationTest {
                 IdentitySqlServerTestResource.saPassword());
         var statement = connection.createStatement()) {
       statement.executeUpdate("DELETE FROM [audit].[http_audit_event]");
+      statement.executeUpdate("DELETE FROM [messaging].[message]");
       statement.executeUpdate("DELETE FROM [messaging].[direct_conversation_pair]");
       statement.executeUpdate("DELETE FROM [messaging].[conversation_member]");
       statement.executeUpdate("DELETE FROM [messaging].[conversation]");
@@ -285,7 +286,7 @@ final class ConversationApiIntegrationTest {
   }
 
   @Test
-  void conversationMessageRouteShouldRemainReachableAndAuthenticated() {
+  void conversationMessageRouteShouldRequireAuthentication() {
     Account owner = bootstrapAdmin("Message Route Owner");
     String conversationId = createGroup(owner, "Message Route Group", List.of());
 
@@ -294,7 +295,8 @@ final class ConversationApiIntegrationTest {
         .when()
         .get("/api/v1/conversations/{conversationId}/messages", conversationId)
         .then()
-        .statusCode(501);
+        .statusCode(200)
+        .body("items", empty());
 
     given()
         .contentType(ContentType.JSON)

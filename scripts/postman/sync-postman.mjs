@@ -184,6 +184,47 @@ function stableStringify(value) {
   return JSON.stringify(value);
 }
 
+function firstDifferencePath(localValue, remoteValue, path = "collection") {
+  if (stableStringify(localValue) === stableStringify(remoteValue)) {
+    return null;
+  }
+  if (Array.isArray(localValue) && Array.isArray(remoteValue)) {
+    const length = Math.max(localValue.length, remoteValue.length);
+    for (let index = 0; index < length; index += 1) {
+      const difference = firstDifferencePath(
+        localValue[index],
+        remoteValue[index],
+        `${path}[${index}]`,
+      );
+      if (difference) {
+        return difference;
+      }
+    }
+  }
+  if (
+    localValue &&
+    remoteValue &&
+    typeof localValue === "object" &&
+    typeof remoteValue === "object" &&
+    !Array.isArray(localValue) &&
+    !Array.isArray(remoteValue)
+  ) {
+    const keys = [...new Set([...Object.keys(localValue), ...Object.keys(remoteValue)])]
+      .sort((a, b) => a.localeCompare(b));
+    for (const key of keys) {
+      const difference = firstDifferencePath(
+        localValue[key],
+        remoteValue[key],
+        `${path}.${key}`,
+      );
+      if (difference) {
+        return difference;
+      }
+    }
+  }
+  return path;
+}
+
 function normalizeCollection(collection) {
   const normalizeVariable = (variable) => ({
     key: variable?.key ?? "",
@@ -273,7 +314,7 @@ function normalizeCollection(collection) {
     description: item?.description ?? undefined,
     item: Array.isArray(item?.item) ? item.item.map(normalizeItem) : undefined,
     request: normalizeRequest(item?.request),
-    response: Array.isArray(item?.response)
+    response: Array.isArray(item?.response) && item.response.length > 0
       ? item.response.map(normalizeResponse)
       : undefined,
     event: Array.isArray(item?.event)
@@ -311,7 +352,7 @@ function normalizeEnvironment(environment) {
         .map((entry) => ({
           key: entry?.key ?? "",
           value: entry?.value ?? "",
-          type: entry?.type ?? undefined,
+          type: entry?.type ?? "default",
           enabled: entry?.enabled ?? true,
         }))
         .sort((a, b) => a.key.localeCompare(b.key))
@@ -340,18 +381,20 @@ async function runDriftCheck(config, localCollection, collectionId) {
     fail("Configured collection id could not be fetched for drift checking.");
   }
 
-  const localCollectionFingerprint = stableStringify(
-    normalizeCollection(localCollection),
-  );
-  const remoteCollectionFingerprint = stableStringify(
-    normalizeCollection(remoteCollection),
-  );
+  const normalizedLocalCollection = normalizeCollection(localCollection);
+  const normalizedRemoteCollection = normalizeCollection(remoteCollection);
+  const localCollectionFingerprint = stableStringify(normalizedLocalCollection);
+  const remoteCollectionFingerprint = stableStringify(normalizedRemoteCollection);
 
   let hasDrift = false;
   if (localCollectionFingerprint !== remoteCollectionFingerprint) {
     hasDrift = true;
+    const differencePath = firstDifferencePath(
+      normalizedLocalCollection,
+      normalizedRemoteCollection,
+    );
     log(
-      "Drift detected: collection artifact differs from Postman Cloud target.",
+      `Drift detected: collection artifact differs from Postman Cloud target${differencePath ? ` at ${differencePath}` : ""}.`,
     );
   }
 
@@ -785,16 +828,28 @@ async function run() {
           );
         }
 
+        const normalizedLocalEnvironment = normalizeEnvironment(
+          environmentTarget.content,
+        );
+        const normalizedRemoteEnvironment =
+          normalizeEnvironment(remoteEnvironment);
         const localEnvironmentFingerprint = stableStringify(
-          normalizeEnvironment(environmentTarget.content),
+          normalizedLocalEnvironment,
         );
         const remoteEnvironmentFingerprint = stableStringify(
-          normalizeEnvironment(remoteEnvironment),
+          normalizedRemoteEnvironment,
         );
 
         if (localEnvironmentFingerprint !== remoteEnvironmentFingerprint) {
+          const differencePath = firstDifferencePath(
+            normalizedLocalEnvironment,
+            normalizedRemoteEnvironment,
+            "environment",
+          );
           fail(
-            `Drift detected: ${environmentTarget.label} environment artifact differs from Postman Cloud target.`,
+            `Drift detected: ${environmentTarget.label} environment artifact differs from Postman Cloud target${
+              differencePath ? ` at ${differencePath}` : ""
+            }.`,
           );
         }
 
