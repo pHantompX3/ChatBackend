@@ -21,10 +21,23 @@ project intentionally performs a release under the current policy.
 - Added the implementation-ready Milestone 5 plan for durable message send, deterministic history
   retrieval, idempotency, editing, soft deletion, authorization, auditing, and concurrency tests.
 - Added repository-wide semantic-versioning and changelog-management guardrails.
+- Added durable authenticated text-message persistence with server-owned IDs, sender identity,
+  timestamps, and per-conversation sequence numbers.
+- Added sender-scoped client-message idempotency with concurrency-safe duplicate recovery and
+  bounded whole-transaction deadlock retries.
+- Added forward sequence-based history pagination, sender editing, sender/group-moderator
+  soft-deletion, and retained history tombstones.
+- Added message-specific safe problem responses and privileged audit metadata that records message
+  identifiers and bounded failure diagnostics without recording message bodies.
+- Added SQL Server schema, least-privilege, rollback, API authorization, pagination, moderation,
+  audit-redaction, and synchronized concurrency tests.
+- Added executable Postman send, retry, history, edit, delete, and tombstone workflows.
 
 ### Changed
 
 - Advanced the Maven development version to `0.5.0-SNAPSHOT` for Milestone 5 development.
+- Replaced the unsafe client-supplied sender message stub and standalone `/api/v1/messages` route
+  with authenticated conversation-scoped message APIs.
 
 ## [0.4.0] - 2026-08-13
 

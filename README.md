@@ -452,7 +452,10 @@ Milestone 3 status snapshot (2026-08-11): session schema, login/logout/filter be
 
 Milestone 4 status snapshot (2026-08-13): conversation persistence, authenticated user discovery, direct and group conversation APIs, membership authorization, SQL-backed tests, and Postman coverage are implemented and validated under ADR-0013.
 
-Milestone 5 planning snapshot (2026-08-13): the implementation-ready durable messaging, sequence allocation, idempotency, history, edit, soft-delete, audit, and concurrency plan is defined; implementation has not started.
+Milestone 5 status snapshot (2026-08-13): durable authenticated text messaging, sender-scoped
+idempotency, per-conversation sequence allocation, forward history pagination, editing, soft deletion,
+safe audit metadata, SQL Server rollback guarantees, and concurrency coverage are implemented and
+validated. Delivery/read acknowledgements and WebSockets remain assigned to later milestones.
 
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`

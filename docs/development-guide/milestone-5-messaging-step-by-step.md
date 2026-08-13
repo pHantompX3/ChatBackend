@@ -6,9 +6,14 @@
 **Milestone:** 5 - Messaging  
 **Database:** Microsoft SQL Server 2022  
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven  
-**Status:** Planned and implementation-ready
+**Status:** Implemented and validated
 
 **Last reviewed:** 2026-08-13
+
+**Implementation snapshot:** The message schema, least-privilege grants, domain and persistence
+modules, authenticated nested APIs, retry-safe send transaction, forward history, edit, soft-delete,
+audit metadata, SQL Server integration tests, and Postman journeys described by this guide are
+implemented. Delivery/read acknowledgements and WebSockets remain intentionally deferred.
 
 ---
 

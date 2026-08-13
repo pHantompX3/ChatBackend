@@ -1632,12 +1632,13 @@ Exit criteria:
 
 ## Milestone 5 — Messaging
 
-Planning status snapshot (2026-08-13):
+Implementation status snapshot (2026-08-13):
 
 - the implementation-ready guide is defined in
   `docs/development-guide/milestone-5-messaging-step-by-step.md`,
-- message persistence, sequence allocation, idempotency, history, edit, soft-delete, audit, and
-  concurrency behavior are planned but not yet implemented,
+- message persistence, sequence allocation, idempotency, history, edit, soft-delete, safe audit
+  metadata, SQL-backed rollback verification, and concurrent-send behavior are implemented and
+  validated,
 - delivery/read acknowledgements and WebSockets remain explicitly assigned to later milestones.
 
 Deliver:

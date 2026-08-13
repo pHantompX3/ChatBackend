@@ -237,7 +237,7 @@ final class SchemaVerificationTest {
       LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
       try (var user =
           connection.prepareStatement(
-              "INSERT INTO identity.user_account "
+              "INSERT INTO [identity].[user_account] "
                   + "(id, username, normalized_username, password_hash, system_role, status, "
                   + "created_at, updated_at) VALUES (?, ?, ?, ?, 'USER', 'ACTIVE', ?, ?)")) {
         String username = "schema-message-" + userId;
