@@ -226,6 +226,7 @@ final class JdbcRepositoriesIntegrationTest {
   private static void clearIdentityTables() {
     try (var connection = cleanupDataSource.getConnection();
         var statement = connection.createStatement()) {
+      statement.executeUpdate("DELETE FROM [messaging].[message]");
       statement.executeUpdate("DELETE FROM [messaging].[direct_conversation_pair]");
       statement.executeUpdate("DELETE FROM [messaging].[conversation_member]");
       statement.executeUpdate("DELETE FROM [messaging].[conversation]");

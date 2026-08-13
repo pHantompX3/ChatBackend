@@ -178,12 +178,18 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
       ContainerResponseContext responseContext,
       Map<String, Object> payload) {
     Map<String, String> metadata = new LinkedHashMap<>(requestAuditContext.getCustomAttributes());
+    String targetMessageId = metadata.get("targetMessageId");
     String targetInvitationId = metadata.get("targetInvitationId");
     String targetUserId = metadata.get("targetUserId");
 
     String targetType =
-        targetInvitationId != null ? "invitation" : targetUserId != null ? "user" : null;
-    String targetId = targetInvitationId != null ? targetInvitationId : targetUserId;
+        targetMessageId != null
+            ? "message"
+            : targetInvitationId != null ? "invitation" : targetUserId != null ? "user" : null;
+    String targetId =
+        targetMessageId != null
+            ? targetMessageId
+            : targetInvitationId != null ? targetInvitationId : targetUserId;
 
     long safeDurationMs =
         Math.max(0L, Optional.ofNullable(requestAuditContext.getDurationMs()).orElse(0L));
@@ -196,7 +202,11 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
             ? Optional.ofNullable(metadata.get("failureMessage")).orElse("HTTP " + status)
             : null;
     String eventType =
-        Optional.ofNullable(metadata.get("identityEvent")).orElse("http.request.completed");
+        Optional.ofNullable(metadata.get("eventType"))
+            .orElseGet(
+                () ->
+                    Optional.ofNullable(metadata.get("identityEvent"))
+                        .orElse("http.request.completed"));
 
     return new HttpAuditEvent(
         UUID.randomUUID(),

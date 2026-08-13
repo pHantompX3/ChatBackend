@@ -13,6 +13,7 @@ These are concise repository-wide rules. Keep them stable and avoid duplicating 
 - For database evolution, add new Flyway versions under [scripts/database/flyway](../scripts/database/flyway); do not alter already-applied migration history.
 - New application migrations under [scripts/database/flyway/wl_chat](../scripts/database/flyway/wl_chat) must use `VYYYYMMDDHHMMSS__description_in_snake_case.sql`; existing `V1`-`V3` files are grandfathered history and must not be renamed.
 - Treat [README.md](../README.md) and [docs/development-guide](../docs/development-guide) as operational references and keep them aligned with evidence-based behavior.
+- Update [CHANGELOG.md](../CHANGELOG.md) for every notable change in the same change set. Follow the canonical [versioning and changelog policy](../docs/development-guide/versioning-and-changelog-policy.md); changes requiring release notes are incomplete without them.
 
 ## Postman maintenance
 
@@ -38,4 +39,6 @@ An API implementation change is incomplete when corresponding Postman artifacts 
 - Project orientation and navigation: [AGENTS.md](../AGENTS.md)
 - Architecture overview: [docs/architecture/single-host-layered-container-architecture.md](../docs/architecture/single-host-layered-container-architecture.md)
 - Decision records: [docs/architecture/decision](../docs/architecture/decision)
+- Release ledger: [CHANGELOG.md](../CHANGELOG.md)
+- Versioning and changelog policy: [docs/development-guide/versioning-and-changelog-policy.md](../docs/development-guide/versioning-and-changelog-policy.md)
 - Context architecture skill: [skills/workspace-context-architecture/SKILL.md](skills/workspace-context-architecture/SKILL.md)

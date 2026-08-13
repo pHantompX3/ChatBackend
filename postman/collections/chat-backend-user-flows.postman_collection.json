@@ -421,8 +421,7 @@
                 "exec": [
                   "pm.environment.set('auth_username', pm.environment.get('auth_username') || pm.environment.get('member_username') || pm.environment.get('bootstrap_admin_username'));",
                   "pm.environment.set('auth_password', pm.environment.get('auth_password') || pm.environment.get('member_password') || pm.environment.get('bootstrap_admin_password'));",
-                  "pm.environment.set('flow_sender_user_id', pm.environment.get('flow_sender_user_id') || pm.environment.get('member_user_id') || pm.environment.get('admin_user_id'));",
-                  "pm.environment.set('flow_conversation_id', 'session-flow-' + Date.now());"
+                  "pm.environment.set('flow_sender_user_id', pm.environment.get('flow_sender_user_id') || pm.environment.get('member_user_id') || pm.environment.get('admin_user_id'));"
                 ]
               }
             },
@@ -463,17 +462,60 @@
           }
         },
         {
-          "name": "02 - Send authenticated message",
+          "name": "02 - Create session-flow conversation",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 501', function () {",
-                  "  pm.response.to.have.status(501);",
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.environment.set('flow_conversation_id', pm.response.json().conversationId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "{{auth_bearer_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Session flow {{session_id}}\",\n  \"initialMemberIds\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/groups",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "groups"]
+            }
+          }
+        },
+        {
+          "name": "03 - Send authenticated message",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('flow_client_message_id', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
                   "});",
                   "",
+                  "var jsonData = pm.response.json();",
                   "pm.environment.set('message_id', jsonData.id || jsonData.messageId || '');"
                 ]
               }
@@ -493,28 +535,27 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"conversationId\": \"{{flow_conversation_id}}\",\n  \"senderUserId\": \"{{flow_sender_user_id}}\",\n  \"content\": \"Session flow message {{session_id}}\"\n}"
+              "raw": "{\n  \"clientMessageId\": \"{{flow_client_message_id}}\",\n  \"body\": \"Synthetic session flow message\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/messages",
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "messages"]
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "messages"]
             }
           }
         },
         {
-          "name": "03 - List authenticated messages",
+          "name": "04 - List authenticated messages",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 501', function () {",
-                  "  pm.response.to.have.status(501);",
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
                   "});",
-                  "",
-                  "});"
+                  "pm.expect(pm.response.json().items.length).to.eql(1);"
                 ]
               }
             }
@@ -547,7 +588,7 @@
           }
         },
         {
-          "name": "04 - Logout",
+          "name": "05 - Logout",
           "event": [
             {
               "listen": "test",
@@ -577,7 +618,7 @@
           }
         },
         {
-          "name": "05 - Verify revoked session denied",
+          "name": "06 - Verify revoked session denied",
           "event": [
             {
               "listen": "test",
@@ -1105,13 +1146,26 @@
           "name": "RA12 - Send authenticated message",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('flow_client_message_id', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Expected: send message returns 501 until messaging API is implemented', function () {",
-                  "  pm.response.to.have.status(501);",
-                  "});"
+                  "pm.test('Expected: new message is durably accepted with 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('flow_message_id', jsonData.messageId);",
+                  "pm.environment.set('flow_message_sequence', String(jsonData.sequenceNumber));"
                 ]
               }
             }
@@ -1130,26 +1184,80 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"conversationId\": \"{{flow_conversation_id}}\",\n  \"senderUserId\": \"{{flow_sender_user_id}}\",\n  \"content\": \"Run-all smoke message {{member_session_id}}\"\n}"
+              "raw": "{\n  \"clientMessageId\": \"{{flow_client_message_id}}\",\n  \"body\": \"Synthetic run-all message\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/messages",
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "messages"]
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "messages"
+              ]
             }
           }
         },
         {
-          "name": "RA13 - List authenticated messages",
+          "name": "RA13 - Retry authenticated message",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Expected: list messages returns 501 until messaging API is implemented', function () {",
-                  "  pm.response.to.have.status(501);",
-                  "});"
+                  "pm.test('Expected: retry returns the accepted message with 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.expect(pm.response.json().messageId).to.eql(pm.environment.get('flow_message_id'));",
+                  "pm.expect(String(pm.response.json().sequenceNumber)).to.eql(pm.environment.get('flow_message_sequence'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{member_bearer_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientMessageId\": \"{{flow_client_message_id}}\",\n  \"body\": \"Ignored retry content\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "conversations",
+                "{{flow_conversation_id}}",
+                "messages"
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA14 - List durable message history",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: message history returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.expect(jsonData.items.some(function (item) { return item.messageId === pm.environment.get('flow_message_id'); })).to.eql(true);"
                 ]
               }
             }
@@ -1163,26 +1271,112 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?limit={{message_limit}}",
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?afterSequence=0&limit={{message_limit}}",
               "host": ["{{base_url}}"],
-              "path": [
-                "api",
-                "v1",
-                "conversations",
-                "{{flow_conversation_id}}",
-                "messages"
-              ],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "messages"],
               "query": [
-                {
-                  "key": "limit",
-                  "value": "{{message_limit}}"
-                }
+                {"key": "afterSequence", "value": "0"},
+                {"key": "limit", "value": "{{message_limit}}"}
               ]
             }
           }
         },
         {
-          "name": "RA14 - Create follow-up invitation",
+          "name": "RA15 - Edit durable message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: sender edit returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.expect(pm.response.json().editedAt).to.not.eql(null);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "{{member_bearer_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Synthetic run-all message, edited\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages/{{flow_message_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "messages", "{{flow_message_id}}"]
+            }
+          }
+        },
+        {
+          "name": "RA16 - Soft-delete durable message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: sender delete returns 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "{{member_bearer_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages/{{flow_message_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "messages", "{{flow_message_id}}"]
+            }
+          }
+        },
+        {
+          "name": "RA17 - Verify durable tombstone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: history retains a deleted tombstone', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var item = pm.response.json().items.find(function (candidate) { return candidate.messageId === pm.environment.get('flow_message_id'); });",
+                  "pm.expect(item.body).to.eql(null);",
+                  "pm.expect(item.deletedAt).to.not.eql(null);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "{{member_bearer_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?afterSequence=0&limit={{message_limit}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "messages"],
+              "query": [
+                {"key": "afterSequence", "value": "0"},
+                {"key": "limit", "value": "{{message_limit}}"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA18 - Create follow-up invitation",
           "event": [
             {
               "listen": "prerequest",
@@ -1233,7 +1427,7 @@
           }
         },
         {
-          "name": "RA15 - Revoke follow-up invitation",
+          "name": "RA19 - Revoke follow-up invitation",
           "event": [
             {
               "listen": "test",
@@ -1277,7 +1471,7 @@
           }
         },
         {
-          "name": "RA16 - Remove member from group",
+          "name": "RA20 - Remove member from group",
           "event": [
             {
               "listen": "test",
@@ -1314,7 +1508,7 @@
           }
         },
         {
-          "name": "RA17 - Verify removed member denied",
+          "name": "RA21 - Verify removed member denied",
           "event": [
             {
               "listen": "test",
@@ -1345,7 +1539,7 @@
           }
         },
         {
-          "name": "RA18 - Admin revokes all member sessions",
+          "name": "RA22 - Admin revokes all member sessions",
           "event": [
             {
               "listen": "test",
@@ -1382,7 +1576,7 @@
           }
         },
         {
-          "name": "RA19 - Verify revoked session denied",
+          "name": "RA23 - Verify revoked session denied",
           "event": [
             {
               "listen": "test",
@@ -1424,7 +1618,7 @@
           }
         },
         {
-          "name": "RA20 - Logout admin",
+          "name": "RA24 - Logout admin",
           "event": [
             {
               "listen": "test",

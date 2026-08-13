@@ -445,9 +445,14 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 ## Authoritative Documentation
 
+Current application development version: `0.5.0-SNAPSHOT`. Application releases follow Semantic
+Versioning; API generations and Flyway migration versions remain independent.
+
 Milestone 3 status snapshot (2026-08-11): session schema, login/logout/filter behavior, and the administrative revoke-all-sessions API are implemented and validated.
 
 Milestone 4 status snapshot (2026-08-13): conversation persistence, authenticated user discovery, direct and group conversation APIs, membership authorization, SQL-backed tests, and Postman coverage are implemented and validated under ADR-0013.
+
+Milestone 5 planning snapshot (2026-08-13): the implementation-ready durable messaging, sequence allocation, idempotency, history, edit, soft-delete, audit, and concurrency plan is defined; implementation has not started.
 
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
@@ -461,6 +466,12 @@ Milestone 4 status snapshot (2026-08-13): conversation persistence, authenticate
   - `docs/development-guide/milestone-4-conversations-step-by-step.md`
 - Milestone 4 conversation identity, membership, and discovery decision:
   - `docs/architecture/decision/ADR-0013-define-conversation-identity-membership-and-discovery.md`
+- Milestone 5 durable messaging, history, and mutation runbook:
+  - `docs/development-guide/milestone-5-messaging-step-by-step.md`
+- Release history:
+  - `CHANGELOG.md`
+- Versioning and changelog policy:
+  - `docs/development-guide/versioning-and-changelog-policy.md`
 - System specification and architecture baseline:
   - `docs/private-instant-messaging-platform-spec-v0.2-sql-server.md`
 - Environment lifecycle and rollout plan:

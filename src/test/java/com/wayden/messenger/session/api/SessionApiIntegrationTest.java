@@ -28,6 +28,7 @@ final class SessionApiIntegrationTest {
                 IdentitySqlServerTestResource.saPassword());
         var statement = connection.createStatement()) {
       statement.executeUpdate("DELETE FROM [audit].[http_audit_event]");
+      statement.executeUpdate("DELETE FROM [messaging].[message]");
       statement.executeUpdate("DELETE FROM [messaging].[direct_conversation_pair]");
       statement.executeUpdate("DELETE FROM [messaging].[conversation_member]");
       statement.executeUpdate("DELETE FROM [messaging].[conversation]");
