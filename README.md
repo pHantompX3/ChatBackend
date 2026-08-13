@@ -447,6 +447,8 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 Milestone 3 status snapshot (2026-08-11): session schema, login/logout/filter behavior, and the administrative revoke-all-sessions API are implemented and validated.
 
+Milestone 4 status snapshot (2026-08-13): the conversations and membership-authorization implementation guide and ADR-0013 are defined; implementation has not started.
+
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
 - Milestone 1 database foundation runbook:
@@ -455,6 +457,10 @@ Milestone 3 status snapshot (2026-08-11): session schema, login/logout/filter be
   - `docs/development-guide/milestone-2-identity-and-invitations-step-by-step.md`
 - Milestone 3 sessions and authentication runbook:
   - `docs/development-guide/milestone-3-sessions-step-by-step.md`
+- Milestone 4 conversations and membership authorization runbook:
+  - `docs/development-guide/milestone-4-conversations-step-by-step.md`
+- Milestone 4 conversation identity, membership, and discovery decision:
+  - `docs/architecture/decision/ADR-0013-define-conversation-identity-membership-and-discovery.md`
 - System specification and architecture baseline:
   - `docs/private-instant-messaging-platform-spec-v0.2-sql-server.md`
 - Environment lifecycle and rollout plan:

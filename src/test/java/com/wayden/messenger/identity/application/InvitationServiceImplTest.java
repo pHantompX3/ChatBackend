@@ -332,6 +332,16 @@ final class InvitationServiceImplTest {
     }
 
     @Override
+    public java.util.List<User> searchActiveByUsernamePrefix(
+        NormalizedUsername prefix,
+        NormalizedUsername afterUsername,
+        UserId afterUserId,
+        UserId excludedUserId,
+        int limit) {
+      return java.util.List.of();
+    }
+
+    @Override
     public User save(User user) {
       return user;
     }

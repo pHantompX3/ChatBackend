@@ -1600,6 +1600,12 @@ Exit criteria:
 
 ## Milestone 4 — Conversations
 
+Implementation planning status snapshot (2026-08-13):
+
+- the implementation guide is defined in `docs/development-guide/milestone-4-conversations-step-by-step.md`,
+- the governing decisions are recorded in `docs/architecture/decision/ADR-0013-define-conversation-identity-membership-and-discovery.md`,
+- conversation schema, domain, APIs, and tests are not yet implemented.
+
 Deliver:
 
 - direct conversation creation
@@ -2042,6 +2048,7 @@ ADR-0009 Keep WebSocket delivery non-authoritative
 ADR-0010 Defer end-to-end encryption
 ADR-0011 Require x86-64 for an all-in-one SQL Server deployment
 ADR-0012 Keep jOOQ optional because SQL Server support is commercial
+ADR-0013 Define conversation identity, membership, and user discovery
 ```
 
 ADR template:

@@ -345,6 +345,194 @@ const endpointExampleTemplates = new Map([
     },
   ],
   [
+    "GET /api/v1/users",
+    {
+      auth: "bearer",
+      query: [{ key: "query", value: "{{member_username}}" }],
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: '{\n  "items": [\n    {\n      "userId": "{{target_user_id}}",\n      "username": "member-user"\n    }\n  ],\n  "nextCursor": null\n}',
+        },
+        {
+          name: "400 Bad Request",
+          status: "Bad Request",
+          code: 400,
+          body: '{\n  "type": "about:blank",\n  "title": "Validation failed",\n  "status": 400,\n  "detail": "User search query must contain between 2 and 64 characters",\n  "code": "USER_SEARCH_VALIDATION_FAILED"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/conversations/direct",
+    {
+      auth: "bearer",
+      requestBody: '{\n  "targetUserId": "{{target_user_id}}"\n}',
+      responses: [
+        {
+          name: "201 Created",
+          status: "Created",
+          code: 201,
+          body: '{\n  "conversationId": "{{conversation_id}}",\n  "type": "DIRECT",\n  "title": null,\n  "createdBy": "{{admin_user_id}}",\n  "role": "MEMBER",\n  "createdAt": "2026-08-13T12:00:00Z",\n  "updatedAt": "2026-08-13T12:00:00Z"\n}',
+        },
+        {
+          name: "200 Existing",
+          status: "OK",
+          code: 200,
+          body: '{\n  "conversationId": "{{conversation_id}}",\n  "type": "DIRECT",\n  "title": null,\n  "createdBy": "{{admin_user_id}}",\n  "role": "MEMBER",\n  "createdAt": "2026-08-13T12:00:00Z",\n  "updatedAt": "2026-08-13T12:00:00Z"\n}',
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/conversations/groups",
+    {
+      auth: "bearer",
+      requestBody:
+        '{\n  "title": "Project room",\n  "initialMemberIds": [\n    "{{target_user_id}}"\n  ]\n}',
+      responses: [
+        {
+          name: "201 Created",
+          status: "Created",
+          code: 201,
+          body: '{\n  "conversationId": "{{conversation_id}}",\n  "type": "GROUP",\n  "title": "Project room",\n  "createdBy": "{{admin_user_id}}",\n  "role": "OWNER",\n  "createdAt": "2026-08-13T12:00:00Z",\n  "updatedAt": "2026-08-13T12:00:00Z"\n}',
+        },
+      ],
+    },
+  ],
+  [
+    "GET /api/v1/conversations",
+    {
+      auth: "bearer",
+      query: [{ key: "limit", value: "50" }],
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: '{\n  "items": [],\n  "nextCursor": null\n}',
+        },
+      ],
+    },
+  ],
+  [
+    "GET /api/v1/conversations/{conversationId}",
+    {
+      auth: "bearer",
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: '{\n  "conversationId": "{{conversation_id}}",\n  "type": "GROUP",\n  "title": "Project room",\n  "createdBy": "{{admin_user_id}}",\n  "role": "OWNER",\n  "createdAt": "2026-08-13T12:00:00Z",\n  "updatedAt": "2026-08-13T12:00:00Z"\n}',
+        },
+        {
+          name: "404 Not Found",
+          status: "Not Found",
+          code: 404,
+          body: '{\n  "type": "about:blank",\n  "title": "Conversation access denied",\n  "status": 404,\n  "detail": "The conversation does not exist or is not accessible",\n  "code": "CONVERSATION_ACCESS_DENIED"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
+    "GET /api/v1/conversations/{conversationId}/members",
+    {
+      auth: "bearer",
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: '[\n  {\n    "userId": "{{admin_user_id}}",\n    "username": "Admin Root",\n    "role": "OWNER",\n    "joinedAt": "2026-08-13T12:00:00Z"\n  }\n]',
+        },
+      ],
+    },
+  ],
+  [
+    "PUT /api/v1/conversations/{conversationId}/members/{userId}",
+    {
+      auth: "bearer",
+      requestBody: null,
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
+        },
+      ],
+    },
+  ],
+  [
+    "DELETE /api/v1/conversations/{conversationId}/members/{userId}",
+    {
+      auth: "bearer",
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/conversations/{conversationId}/leave",
+    {
+      auth: "bearer",
+      requestBody: null,
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
+        },
+      ],
+    },
+  ],
+  [
+    "PUT /api/v1/conversations/{conversationId}/members/{userId}/role",
+    {
+      auth: "bearer",
+      requestBody: '{\n  "role": "ADMIN"\n}',
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
+        },
+      ],
+    },
+  ],
+  [
+    "POST /api/v1/conversations/{conversationId}/members/{userId}/transfer-ownership",
+    {
+      auth: "bearer",
+      requestBody: null,
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
+        },
+      ],
+    },
+  ],
+  [
     "POST /api/v1/invitations",
     {
       requestBody:
@@ -647,6 +835,7 @@ function buildDiscoveredRequest(endpoint) {
   };
 
   const template = getEndpointTemplate(endpoint.method, endpoint.path);
+  applyTemplateQuery(request, template);
   const templateStatusCodes = Array.isArray(template?.responses)
     ? template.responses
         .map((response) => response.code)
@@ -697,6 +886,19 @@ function buildDiscoveredRequest(endpoint) {
   };
 }
 
+function applyTemplateQuery(request, template) {
+  if (!Array.isArray(template?.query) || template.query.length === 0) {
+    return false;
+  }
+  const baseRaw = String(request?.url?.raw || "").split("?")[0];
+  const queryText = template.query
+    .map((entry) => `${entry.key}=${entry.value}`)
+    .join("&");
+  request.url.raw = `${baseRaw}?${queryText}`;
+  request.url.query = cloneJson(template.query);
+  return true;
+}
+
 function applyEndpointTemplatesToExistingRequests(collection) {
   const allRequests = collectRequests(collection);
   let updatedCount = 0;
@@ -717,6 +919,10 @@ function applyEndpointTemplatesToExistingRequests(collection) {
     }
 
     let changed = false;
+
+    if (applyTemplateQuery(requestItem.request, template)) {
+      changed = true;
+    }
 
     if (requestItem?.request?.body?.mode === "raw") {
       const currentBody = String(requestItem.request.body.raw || "");
