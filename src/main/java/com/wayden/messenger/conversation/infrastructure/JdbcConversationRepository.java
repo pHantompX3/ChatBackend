@@ -17,6 +17,7 @@ import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -31,12 +32,16 @@ public class JdbcConversationRepository implements ConversationRepository {
 
   private static final int UNIQUE_INDEX = 2601;
   private static final int UNIQUE_CONSTRAINT = 2627;
+  private static final int DIRECT_PAIR_LOCK_TIMEOUT_MS = 10_000;
+  private static final String DIRECT_PAIR_LOCK_PREFIX = "conversation-direct:";
+  private static final String ACQUIRE_APPLICATION_LOCK_SQL =
+      "{? = call sys.sp_getapplock(?, 'Exclusive', 'Transaction', ?)}";
   private static final String CONVERSATION_COLUMNS =
       "c.id, c.conversation_type, c.title, c.created_by, c.next_message_sequence, c.created_at, c.updated_at";
   private static final String FIND_DIRECT_SQL =
       "SELECT "
           + CONVERSATION_COLUMNS
-          + " FROM [messaging].[direct_conversation_pair] p %s "
+          + " FROM [messaging].[direct_conversation_pair] p "
           + "JOIN [messaging].[conversation] c ON c.id = p.conversation_id "
           + "WHERE p.participant_low_id = ? AND p.participant_high_id = ?";
   private static final String INSERT_CONVERSATION_SQL =
@@ -103,9 +108,11 @@ public class JdbcConversationRepository implements ConversationRepository {
 
   @Override
   public Optional<Conversation> findDirect(DirectParticipantPair pair, boolean lockForCreate) {
-    String lockHint = lockForCreate ? "WITH (UPDLOCK, HOLDLOCK)" : "";
     try (var connection = dataSource.getConnection();
-        var statement = connection.prepareStatement(FIND_DIRECT_SQL.formatted(lockHint))) {
+        var statement = connection.prepareStatement(FIND_DIRECT_SQL)) {
+      if (lockForCreate) {
+        acquireDirectPairLock(connection, pair);
+      }
       statement.setObject(1, pair.low().value());
       statement.setObject(2, pair.high().value());
       try (var resultSet = statement.executeQuery()) {
@@ -339,6 +346,24 @@ public class JdbcConversationRepository implements ConversationRepository {
         return resultSet.next();
       }
     }
+  }
+
+  private static void acquireDirectPairLock(Connection connection, DirectParticipantPair pair)
+      throws SQLException {
+    try (var statement = connection.prepareCall(ACQUIRE_APPLICATION_LOCK_SQL)) {
+      statement.registerOutParameter(1, Types.INTEGER);
+      statement.setString(2, directPairLockResource(pair));
+      statement.setInt(3, DIRECT_PAIR_LOCK_TIMEOUT_MS);
+      statement.execute();
+      int result = statement.getInt(1);
+      if (result < 0) {
+        throw new SQLException("Could not acquire direct conversation pair lock; result=" + result);
+      }
+    }
+  }
+
+  private static String directPairLockResource(DirectParticipantPair pair) {
+    return DIRECT_PAIR_LOCK_PREFIX + pair.low().value() + ":" + pair.high().value();
   }
 
   private static void touch(Connection connection, ConversationId conversationId, Instant updatedAt)

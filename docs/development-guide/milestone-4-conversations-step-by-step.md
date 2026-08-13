@@ -125,7 +125,8 @@ Apply these decisions consistently in SQL, domain code, APIs, tests, audit metad
 There shall be at most one direct conversation for an unordered pair of distinct users.
 
 - Creating the same pair in either order returns the existing conversation.
-- Concurrent create requests may race, but the database uniqueness constraint is authoritative.
+- Concurrent create requests for the same canonical pair are serialized with a transaction-owned
+  SQL Server application lock; the database uniqueness constraint remains the final authority.
 - The application canonicalizes the pair before insertion and translates a known unique-constraint conflict into a read of the existing conversation.
 - A direct conversation is not deleted or duplicated when a participant leaves. Version 1 does not expose leave, add, remove, or role-management operations for direct conversations.
 
@@ -533,17 +534,20 @@ Do not expose `nextMessageSequence` as a promise of message availability.
 ```text
 1. Authenticate and validate both active users.
 2. Canonicalize the unordered participant pair using the lowercase UUID-string ordering from Section 4.1.
-3. Read an existing direct conversation by that pair.
-4. If present, return it.
-5. Begin a transaction.
+3. Begin a transaction and acquire an exclusive transaction-owned SQL Server application lock whose
+   resource name is derived from the canonical pair.
+4. Read an existing direct conversation by that pair.
+5. If present, return it.
 6. Insert the DIRECT conversation.
 7. Insert both MEMBER rows.
 8. Insert the canonical pair row.
-9. Commit and return the conversation.
-10. If the pair uniqueness constraint loses a race, roll back and read the winner.
+9. Commit and return the conversation, releasing the application lock.
+10. Treat the pair uniqueness constraint as the final defensive authority.
 ```
 
-The pre-read is an optimization; the unique constraint provides correctness.
+The application lock is scoped to one canonical pair, so unrelated direct conversations can still be
+created concurrently. It replaces range-lock hints for this workflow because two missing-row range
+locks can deadlock when both transactions attempt to convert their locks for insertion.
 
 ### 9.2 Group create algorithm
 

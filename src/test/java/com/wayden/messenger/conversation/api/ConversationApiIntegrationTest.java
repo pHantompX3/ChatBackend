@@ -14,8 +14,11 @@ import java.sql.DriverManager;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -102,16 +105,21 @@ final class ConversationApiIntegrationTest {
         .body("conversationId", equalTo(conversationId));
   }
 
-  @Test
+  @RepeatedTest(5)
   void concurrentDirectCreationShouldPersistOneConversation() throws Exception {
     Account admin = bootstrapAdmin("Concurrent Admin");
     Account member = inviteMember(admin, "Concurrent Member");
 
-    Callable<String> fromAdmin = () -> createDirect(admin, member.userId());
-    Callable<String> fromMember = () -> createDirect(member, admin.userId());
+    CountDownLatch ready = new CountDownLatch(2);
+    CountDownLatch start = new CountDownLatch(1);
+    Callable<String> fromAdmin = concurrentCreate(ready, start, admin, member.userId());
+    Callable<String> fromMember = concurrentCreate(ready, start, member, admin.userId());
     try (var executor = Executors.newFixedThreadPool(2)) {
-      var results = executor.invokeAll(List.of(fromAdmin, fromMember));
-      assertEqualConversationIds(results.get(0).get(), results.get(1).get());
+      var adminResult = executor.submit(fromAdmin);
+      var memberResult = executor.submit(fromMember);
+      org.junit.jupiter.api.Assertions.assertTrue(ready.await(2, TimeUnit.SECONDS));
+      start.countDown();
+      assertEqualConversationIds(adminResult.get(), memberResult.get());
     }
   }
 
@@ -316,6 +324,17 @@ final class ConversationApiIntegrationTest {
         .extract()
         .jsonPath()
         .getString("conversationId");
+  }
+
+  private static Callable<String> concurrentCreate(
+      CountDownLatch ready, CountDownLatch start, Account actor, String targetUserId) {
+    return () -> {
+      ready.countDown();
+      if (!start.await(2, TimeUnit.SECONDS)) {
+        throw new IllegalStateException("Timed out waiting to start direct conversation race");
+      }
+      return createDirect(actor, targetUserId);
+    };
   }
 
   private static String createGroup(Account owner, String title, List<String> initialMemberIds) {

@@ -32,6 +32,10 @@ Adopt the Milestone 4 policies defined in
   than offsets;
 - direct creation and membership mutations use the HTTP and idempotency
   outcomes specified in the Milestone 4 guide.
+- creation of one canonical direct pair is serialized by a transaction-owned
+  SQL Server application lock, with the unique pair constraint retained as the
+  final database invariant. This avoids missing-row range-lock conversion
+  deadlocks while preserving concurrency between different pairs.
 
 The implementation guide is the detailed contract for endpoint shapes,
 authorization transitions, cursor payloads, SQL constraints, and tests.
@@ -130,4 +134,3 @@ Revisit this decision if:
 - membership history receives a defined retention/deletion requirement;
 - cursor payloads need signing or server-side storage;
 - system administrators receive an explicit, audited support-access workflow.
-
