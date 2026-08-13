@@ -39,6 +39,11 @@ project intentionally performs a release under the current policy.
 - Replaced the unsafe client-supplied sender message stub and standalone `/api/v1/messages` route
   with authenticated conversation-scoped message APIs.
 
+### Fixed
+
+- Normalized Postman Cloud's omitted empty response arrays and implicit default environment-variable
+  types during drift checks, while reporting the first differing field for actionable failures.
+
 ## [0.4.0] - 2026-08-13
 
 ### Added

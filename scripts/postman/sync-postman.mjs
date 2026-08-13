@@ -352,7 +352,7 @@ function normalizeEnvironment(environment) {
         .map((entry) => ({
           key: entry?.key ?? "",
           value: entry?.value ?? "",
-          type: entry?.type ?? undefined,
+          type: entry?.type ?? "default",
           enabled: entry?.enabled ?? true,
         }))
         .sort((a, b) => a.key.localeCompare(b.key))
@@ -828,16 +828,28 @@ async function run() {
           );
         }
 
+        const normalizedLocalEnvironment = normalizeEnvironment(
+          environmentTarget.content,
+        );
+        const normalizedRemoteEnvironment =
+          normalizeEnvironment(remoteEnvironment);
         const localEnvironmentFingerprint = stableStringify(
-          normalizeEnvironment(environmentTarget.content),
+          normalizedLocalEnvironment,
         );
         const remoteEnvironmentFingerprint = stableStringify(
-          normalizeEnvironment(remoteEnvironment),
+          normalizedRemoteEnvironment,
         );
 
         if (localEnvironmentFingerprint !== remoteEnvironmentFingerprint) {
+          const differencePath = firstDifferencePath(
+            normalizedLocalEnvironment,
+            normalizedRemoteEnvironment,
+            "environment",
+          );
           fail(
-            `Drift detected: ${environmentTarget.label} environment artifact differs from Postman Cloud target.`,
+            `Drift detected: ${environmentTarget.label} environment artifact differs from Postman Cloud target${
+              differencePath ? ` at ${differencePath}` : ""
+            }.`,
           );
         }
 
