@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.Map;
@@ -113,6 +114,19 @@ final class HttpAuditQueueDispatcherTest {
     }
   }
 
+  @Test
+  void rabbitJsonRoundTripShouldPreserveFailureDiagnostics() throws Exception {
+    ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    HttpAuditEvent event = sampleFailureEvent();
+
+    HttpAuditEvent decoded =
+        objectMapper.readValue(objectMapper.writeValueAsBytes(event), HttpAuditEvent.class);
+
+    assertEquals(event.errorCode(), decoded.errorCode());
+    assertEquals(event.errorMessage(), decoded.errorMessage());
+    assertEquals(event.metadata(), decoded.metadata());
+  }
+
   private static boolean waitForRabbitActive(
       HttpAuditQueueDispatcher dispatcher, long timeout, TimeUnit unit) throws Exception {
     long deadline = System.nanoTime() + unit.toNanos(timeout);
@@ -169,6 +183,54 @@ final class HttpAuditQueueDispatcherTest {
         null,
         null,
         Map.of("identityEvent", "invitation.created"),
+        new byte[] {1, 2, 3});
+  }
+
+  private static HttpAuditEvent sampleFailureEvent() {
+    Instant now = Instant.parse("2026-08-08T14:00:00Z");
+    return new HttpAuditEvent(
+        UUID.randomUUID(),
+        "1.0",
+        "conversation.request.failed",
+        now,
+        UUID.randomUUID().toString(),
+        UUID.randomUUID().toString(),
+        "conversation.direct.create",
+        "POST",
+        "/api/v1/conversations/direct",
+        "/api/v1/conversations/direct",
+        "-",
+        500,
+        "CONVERSATION_INTERNAL_ERROR",
+        12,
+        now.minusMillis(12),
+        now,
+        null,
+        null,
+        "session",
+        null,
+        null,
+        "127.0.0.1",
+        "127.0.0.1",
+        "vertx-remote-address",
+        "PostmanRuntime/7.56.0",
+        "api-client",
+        "-",
+        "-",
+        "unknown",
+        "postman",
+        Map.of("accept", "*/*"),
+        Map.of("content-type", "application/problem+json"),
+        "CONVERSATION_INTERNAL_ERROR",
+        "Invalid object name 'messaging.conversation'",
+        Map.of(
+            "failureCode", "CONVERSATION_INTERNAL_ERROR",
+            "failureMessage", "Invalid object name 'messaging.conversation'",
+            "failureDetail", "Invalid object name 'messaging.conversation'",
+            "failureExceptionType", "ConversationExceptions$InternalException",
+            "failureRootCauseType", "com.microsoft.sqlserver.jdbc.SQLServerException",
+            "failureLocation", "JdbcConversationRepository.java:399",
+            "failureRootCauseLocation", "SQLServerStatement.java:289"),
         new byte[] {1, 2, 3});
   }
 }

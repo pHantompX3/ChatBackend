@@ -16,6 +16,8 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import javax.sql.DataSource;
@@ -30,6 +32,12 @@ public class JdbcUserRepository implements UserRepository {
   private static final String FIND_BY_NORMALIZED_SQL =
       "SELECT id, username, normalized_username, password_hash, system_role, status, created_at, updated_at "
           + "FROM [identity].[user_account] WHERE normalized_username = ?";
+  private static final String SEARCH_ACTIVE_BY_PREFIX_SQL =
+      "SELECT TOP (?) id, username, normalized_username, password_hash, system_role, status, created_at, updated_at "
+          + "FROM [identity].[user_account] "
+          + "WHERE status = 'ACTIVE' AND id <> ? AND normalized_username LIKE ? ESCAPE '\\' "
+          + "AND (? IS NULL OR normalized_username > ? OR (normalized_username = ? AND id > ?)) "
+          + "ORDER BY normalized_username ASC, id ASC";
   private static final String INSERT_SQL =
       "INSERT INTO [identity].[user_account] "
           + "(id, username, normalized_username, password_hash, system_role, status, created_at, updated_at) "
@@ -91,6 +99,35 @@ public class JdbcUserRepository implements UserRepository {
       }
     } catch (SQLException e) {
       throw new IllegalStateException("Failed to find user by normalized username", e);
+    }
+  }
+
+  @Override
+  public List<User> searchActiveByUsernamePrefix(
+      NormalizedUsername prefix,
+      NormalizedUsername afterUsername,
+      UserId afterUserId,
+      UserId excludedUserId,
+      int limit) {
+    try (var connection = dataSource.getConnection();
+        var statement = connection.prepareStatement(SEARCH_ACTIVE_BY_PREFIX_SQL)) {
+      String after = afterUsername == null ? null : afterUsername.value();
+      statement.setInt(1, limit);
+      statement.setObject(2, excludedUserId.value());
+      statement.setString(3, escapeLike(prefix.value()) + "%");
+      statement.setString(4, after);
+      statement.setString(5, after);
+      statement.setString(6, after);
+      statement.setObject(7, afterUserId == null ? null : afterUserId.value());
+      List<User> users = new ArrayList<>();
+      try (var resultSet = statement.executeQuery()) {
+        while (resultSet.next()) {
+          users.add(mapUser(resultSet));
+        }
+      }
+      return users;
+    } catch (SQLException e) {
+      throw new IllegalStateException("Failed to search active users", e);
     }
   }
 
@@ -174,5 +211,9 @@ public class JdbcUserRepository implements UserRepository {
 
   private static Instant fromUtcLocalDateTime(LocalDateTime localDateTime) {
     return localDateTime.toInstant(ZoneOffset.UTC);
+  }
+
+  private static String escapeLike(String value) {
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
   }
 }

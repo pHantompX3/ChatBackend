@@ -191,6 +191,10 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     Instant requestTimestamp = responseTimestamp.minusMillis(safeDurationMs);
     String responseCode = metadata.get("failureCode");
     int status = Optional.ofNullable(requestAuditContext.getResponseStatus()).orElse(500);
+    String errorMessage =
+        status >= 400
+            ? Optional.ofNullable(metadata.get("failureMessage")).orElse("HTTP " + status)
+            : null;
     String eventType =
         Optional.ofNullable(metadata.get("identityEvent")).orElse("http.request.completed");
 
@@ -228,7 +232,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
         toRequestHeadersSnapshot(requestContext.getHeaders()),
         toResponseHeadersSnapshot(responseContext.getHeaders()),
         status >= 400 ? responseCode : null,
-        status >= 400 ? "HTTP " + status : null,
+        errorMessage,
         metadata,
         computeRecordHash(payload));
   }

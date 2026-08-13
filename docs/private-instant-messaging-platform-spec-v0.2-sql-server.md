@@ -1261,6 +1261,13 @@ metadata
 
 Private message bodies, raw passwords, raw session tokens, and raw invitation tokens shall not be written to audit records.
 
+Unexpected server failures shall keep client-facing problem details generic while retaining bounded
+diagnostic context in the privileged audit record. That diagnostic context may include the stable
+application error code, root-cause message, wrapper/root exception types, and selected application
+and root-cause source locations. Full stack traces, credentials, tokens, private message bodies, and
+complete database-driver payloads shall not be persisted in the audit record. The same diagnostic
+fields shall survive asynchronous audit transport and database persistence.
+
 ## 21. Observability
 
 ### 21.1 Logs
@@ -1599,6 +1606,12 @@ Exit criteria:
 - no raw token appears in logs or database
 
 ## Milestone 4 — Conversations
+
+Implementation status snapshot (2026-08-13):
+
+- the implementation guide is defined in `docs/development-guide/milestone-4-conversations-step-by-step.md`,
+- the governing decisions are recorded in `docs/architecture/decision/ADR-0013-define-conversation-identity-membership-and-discovery.md`,
+- conversation schema, domain services, authenticated user discovery, APIs, authorization rules, SQL-backed tests, and Postman coverage are implemented and validated.
 
 Deliver:
 
@@ -2042,6 +2055,7 @@ ADR-0009 Keep WebSocket delivery non-authoritative
 ADR-0010 Defer end-to-end encryption
 ADR-0011 Require x86-64 for an all-in-one SQL Server deployment
 ADR-0012 Keep jOOQ optional because SQL Server support is commercial
+ADR-0013 Define conversation identity, membership, and user discovery
 ```
 
 ADR template:
