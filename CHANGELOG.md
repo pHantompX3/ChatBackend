@@ -43,6 +43,14 @@ project intentionally performs a release under the current policy.
 
 - Normalized Postman Cloud's omitted empty response arrays and implicit default environment-variable
   types during drift checks, while reporting the first differing field for actionable failures.
+- Corrected generated and curated Postman message contracts to use bearer authentication, valid
+  request bodies, accurate response examples, and executable status assertions.
+- Raised the HTTP request-body cap so the maximum valid message remains accepted when JSON uses
+  six-byte Unicode escape sequences.
+- Corrected exhausted deadlock telemetry to report two performed retries and distinguish exhaustion
+  from an active retry.
+- Added deterministic coverage for duplicate-winner recovery, bounded deadlock retries, membership
+  removal ordering, and role-demotion ordering during administrative deletion.
 
 ## [0.4.0] - 2026-08-13
 

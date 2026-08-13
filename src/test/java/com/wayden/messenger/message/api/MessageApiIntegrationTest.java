@@ -6,14 +6,23 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.wayden.messenger.bootstrap.IdentitySqlServerTestResource;
+import com.wayden.messenger.conversation.domain.ConversationId;
+import com.wayden.messenger.conversation.domain.ConversationRole;
+import com.wayden.messenger.identity.domain.UserId;
+import com.wayden.messenger.message.application.MessageRepository;
+import com.wayden.messenger.message.domain.MessageId;
+import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
+import jakarta.inject.Inject;
 import java.sql.DriverManager;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,6 +31,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +42,8 @@ final class MessageApiIntegrationTest {
 
   private static final String ADMIN_PASSWORD = "AdminPassw0rd!";
   private static final String MEMBER_PASSWORD = "MemberPassw0rd!";
+
+  @Inject MessageRepository messageRepository;
 
   @BeforeEach
   void resetTables() throws Exception {
@@ -262,6 +274,161 @@ final class MessageApiIntegrationTest {
   }
 
   @Test
+  void transportLimitShouldAcceptTheLargestValidEscapedMessageBody() {
+    Account owner = bootstrapAdmin("Escaped Body Owner");
+    String conversationId = createGroup(owner, "Escaped Body Group", List.of());
+    String clientMessageId = UUID.randomUUID().toString();
+    String request =
+        "{\"clientMessageId\":\""
+            + clientMessageId
+            + "\",\"body\":\""
+            + "\\u0061".repeat(4000)
+            + "\"}";
+
+    given()
+        .contentType(ContentType.JSON)
+        .header("Authorization", bearer(owner.token()))
+        .body(request)
+        .when()
+        .post("/api/v1/conversations/{conversationId}/messages", conversationId)
+        .then()
+        .statusCode(201)
+        .body("body", equalTo("a".repeat(4000)));
+  }
+
+  @Test
+  void membershipRemovalShouldWaitForAnExistingMessageAuthorizationLock() throws Exception {
+    Account owner = bootstrapAdmin("Removal Lock Owner");
+    Account member = inviteMember(owner, "Removal Lock Member");
+    String conversationId = createGroup(owner, "Removal Lock Group", List.of(member.userId()));
+    CountDownLatch locked = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      var lockFuture =
+          executor.submit(
+              () -> {
+                QuarkusTransaction.requiringNew()
+                    .run(
+                        () -> {
+                          assertTrue(
+                              messageRepository
+                                  .findActiveAccess(
+                                      conversationId(conversationId), userId(member.userId()), true)
+                                  .isPresent());
+                          locked.countDown();
+                          await(release, "release membership authorization lock");
+                        });
+                return null;
+              });
+      assertTrue(locked.await(3, TimeUnit.SECONDS));
+
+      var removalFuture =
+          executor.submit(
+              () ->
+                  given()
+                      .header("Authorization", bearer(owner.token()))
+                      .when()
+                      .delete(
+                          "/api/v1/conversations/{conversationId}/members/{userId}",
+                          conversationId,
+                          member.userId())
+                      .statusCode());
+      try {
+        assertThrows(TimeoutException.class, () -> removalFuture.get(250, TimeUnit.MILLISECONDS));
+      } finally {
+        release.countDown();
+      }
+
+      lockFuture.get(3, TimeUnit.SECONDS);
+      assertEquals(204, removalFuture.get(3, TimeUnit.SECONDS));
+    }
+
+    send(member, conversationId, UUID.randomUUID().toString(), "post-removal", 404)
+        .body("code", equalTo("MESSAGE_ACCESS_DENIED"));
+  }
+
+  @Test
+  void roleDemotionShouldWaitForAnAdministrativeDeleteThatAlreadyHoldsItsLocks() throws Exception {
+    Account owner = bootstrapAdmin("Demotion Lock Owner");
+    Account administrator = inviteMember(owner, "Demotion Lock Administrator");
+    Account sender = inviteMember(owner, "Demotion Lock Sender");
+    String conversationId =
+        createGroup(owner, "Demotion Lock Group", List.of(administrator.userId(), sender.userId()));
+    changeRole(owner, conversationId, administrator.userId(), "ADMIN", 204);
+    String messageId =
+        send(sender, conversationId, UUID.randomUUID().toString(), "moderated body", 201)
+            .extract()
+            .jsonPath()
+            .getString("messageId");
+    CountDownLatch locked = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      var deleteFuture =
+          executor.submit(
+              () -> {
+                QuarkusTransaction.requiringNew()
+                    .run(
+                        () -> {
+                          var access =
+                              messageRepository
+                                  .findActiveAccess(
+                                      conversationId(conversationId),
+                                      userId(administrator.userId()),
+                                      true)
+                                  .orElseThrow();
+                          assertEquals(ConversationRole.ADMIN, access.role());
+                          assertTrue(
+                              messageRepository
+                                  .findById(
+                                      conversationId(conversationId), messageId(messageId), true)
+                                  .isPresent());
+                          locked.countDown();
+                          await(release, "release administrative delete locks");
+                          assertTrue(
+                              messageRepository.softDelete(messageId(messageId), Instant.now()));
+                        });
+                return null;
+              });
+      assertTrue(locked.await(3, TimeUnit.SECONDS));
+
+      var demotionFuture =
+          executor.submit(
+              () ->
+                  changeRole(owner, conversationId, administrator.userId(), "MEMBER", 204)
+                      .extract()
+                      .statusCode());
+      try {
+        assertThrows(TimeoutException.class, () -> demotionFuture.get(250, TimeUnit.MILLISECONDS));
+      } finally {
+        release.countDown();
+      }
+
+      deleteFuture.get(3, TimeUnit.SECONDS);
+      assertEquals(204, demotionFuture.get(3, TimeUnit.SECONDS));
+    }
+
+    given()
+        .header("Authorization", bearer(owner.token()))
+        .when()
+        .get("/api/v1/conversations/{conversationId}/messages", conversationId)
+        .then()
+        .statusCode(200)
+        .body("items[0].messageId", equalTo(messageId))
+        .body("items[0].body", equalTo(null))
+        .body("items[0].deletedAt", notNullValue());
+
+    String laterMessageId =
+        send(sender, conversationId, UUID.randomUUID().toString(), "later body", 201)
+            .extract()
+            .jsonPath()
+            .getString("messageId");
+    delete(administrator, conversationId, laterMessageId, 403)
+        .body("code", equalTo("MESSAGE_DELETE_FORBIDDEN"));
+  }
+
+  @Test
   void concurrentDistinctAndDuplicateSendsShouldKeepOneContiguousSequenceSpace() throws Exception {
     Account owner = bootstrapAdmin("Concurrent Message Owner");
     String conversationId = createGroup(owner, "Concurrent Message Group", List.of());
@@ -381,6 +548,21 @@ final class MessageApiIntegrationTest {
             "/api/v1/conversations/{conversationId}/messages/{messageId}",
             conversationId,
             messageId)
+        .then()
+        .statusCode(expectedStatus);
+  }
+
+  private static ValidatableResponse changeRole(
+      Account actor, String conversationId, String targetUserId, String role, int expectedStatus) {
+    return given()
+        .contentType(ContentType.JSON)
+        .header("Authorization", bearer(actor.token()))
+        .body(Map.of("role", role))
+        .when()
+        .put(
+            "/api/v1/conversations/{conversationId}/members/{userId}/role",
+            conversationId,
+            targetUserId)
         .then()
         .statusCode(expectedStatus);
   }
@@ -508,6 +690,29 @@ final class MessageApiIntegrationTest {
 
   private static String bearer(String token) {
     return "Bearer " + token;
+  }
+
+  private static ConversationId conversationId(String value) {
+    return new ConversationId(UUID.fromString(value));
+  }
+
+  private static UserId userId(String value) {
+    return new UserId(UUID.fromString(value));
+  }
+
+  private static MessageId messageId(String value) {
+    return new MessageId(UUID.fromString(value));
+  }
+
+  private static void await(CountDownLatch latch, String description) {
+    try {
+      if (!latch.await(3, TimeUnit.SECONDS)) {
+        throw new IllegalStateException("Timed out waiting to " + description);
+      }
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Interrupted while waiting to " + description, exception);
+    }
   }
 
   private record Account(String userId, String username, String token) {}

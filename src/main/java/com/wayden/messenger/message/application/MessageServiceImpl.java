@@ -75,13 +75,20 @@ public class MessageServiceImpl implements MessageService {
         lastDeadlock = deadlock;
       }
 
-      int retryCount = attemptNumber;
-      auditContext.putCustomAttribute("messageDeadlockRetryCount", Integer.toString(retryCount));
-      LOG.warnf(
-          "Message send deadlock requestId=%s conversationId=%s attempt=%d outcome=retry",
-          auditContext.getRequestId(), conversationId.value(), attemptNumber);
       if (attemptNumber < MAX_SEND_ATTEMPTS) {
+        auditContext.putCustomAttribute(
+            "messageDeadlockRetryCount", Integer.toString(attemptNumber));
+        LOG.warnf(
+            "Message send deadlock requestId=%s conversationId=%s attempt=%d outcome=retry",
+            auditContext.getRequestId(), conversationId.value(), attemptNumber);
         backoff();
+      } else {
+        auditContext.putCustomAttribute(
+            "messageDeadlockRetryCount", Integer.toString(MAX_SEND_ATTEMPTS - 1));
+        auditContext.putCustomAttribute("messageDeadlockRetryExhausted", "true");
+        LOG.warnf(
+            "Message send deadlock requestId=%s conversationId=%s attempt=%d outcome=exhausted",
+            auditContext.getRequestId(), conversationId.value(), attemptNumber);
       }
     }
 

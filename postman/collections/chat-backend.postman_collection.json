@@ -75,7 +75,7 @@
           },
           "response": [
             {
-              "name": "201 Created",
+              "name": "200 OK",
               "originalRequest": {
                 "method": "GET",
                 "header": [
@@ -375,10 +375,21 @@
           "name": "Send Message",
           "request": {
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{session_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{session_token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -414,7 +425,7 @@
           },
           "response": [
             {
-              "name": "200 OK",
+              "name": "201 Created",
               "originalRequest": {
                 "method": "POST",
                 "header": [
@@ -482,10 +493,21 @@
           "name": "List Conversation Messages",
           "request": {
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{session_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "GET",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{session_token}}"
+              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -594,10 +616,21 @@
           "name": "POST /api/v1/conversations/{conversationId}/messages",
           "request": {
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{session_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{session_token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -623,7 +656,7 @@
             "description": "Auto-discovered from src/main/java/com/wayden/messenger/message/api/ConversationMessageResource.java.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"exampleField\": \"replace_me\"\n}",
+              "raw": "{\n  \"clientMessageId\": \"{{client_message_id}}\",\n  \"body\": \"{{message_content}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -633,10 +666,14 @@
           },
           "response": [
             {
-              "name": "200 Example",
+              "name": "201 Created",
               "originalRequest": {
                 "method": "POST",
                 "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
                   {
                     "key": "Content-Type",
                     "value": "application/json"
@@ -648,7 +685,59 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"exampleField\": \"replace_me\"\n}",
+                  "raw": "{\n  \"clientMessageId\": \"{{client_message_id}}\",\n  \"body\": \"{{message_content}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "messages"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"messageId\": \"{{message_id}}\",\n  \"conversationId\": \"{{conversation_id}}\",\n  \"senderId\": \"{{sender_user_id}}\",\n  \"clientMessageId\": \"{{client_message_id}}\",\n  \"sequenceNumber\": 1,\n  \"type\": \"TEXT\",\n  \"body\": \"{{message_content}}\",\n  \"createdAt\": \"2026-08-13T18:00:00Z\",\n  \"editedAt\": null,\n  \"deletedAt\": null\n}"
+            },
+            {
+              "name": "200 Accepted Retry",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientMessageId\": \"{{client_message_id}}\",\n  \"body\": \"{{message_content}}\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -678,7 +767,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\"\n}"
+              "body": "{\n  \"messageId\": \"{{message_id}}\",\n  \"conversationId\": \"{{conversation_id}}\",\n  \"senderId\": \"{{sender_user_id}}\",\n  \"clientMessageId\": \"{{client_message_id}}\",\n  \"sequenceNumber\": 1,\n  \"type\": \"TEXT\",\n  \"body\": \"{{message_content}}\",\n  \"createdAt\": \"2026-08-13T18:00:00Z\",\n  \"editedAt\": null,\n  \"deletedAt\": null\n}"
             }
           ],
           "event": [
@@ -687,8 +776,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is one of ', function () {",
-                  "  pm.expect([]).to.include(pm.response.code);",
+                  "pm.test('Status code is one of 200, 201', function () {",
+                  "  pm.expect([200, 201]).to.include(pm.response.code);",
                   "});",
                   "",
                   "pm.test('Response is JSON when body is present', function () {",
@@ -3120,10 +3209,21 @@
           "name": "DELETE /api/v1/conversations/{conversationId}/messages/{messageId}",
           "request": {
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{session_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "DELETE",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{session_token}}"
+              },
               {
                 "key": "Accept",
                 "value": "application/json"
@@ -3147,10 +3247,14 @@
           },
           "response": [
             {
-              "name": "200 Example",
+              "name": "204 No Content",
               "originalRequest": {
                 "method": "DELETE",
                 "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
                   {
                     "key": "Accept",
                     "value": "application/json"
@@ -3171,16 +3275,10 @@
                   ]
                 }
               },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"status\": \"ok\"\n}"
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "body": ""
             }
           ],
           "event": [
@@ -3189,8 +3287,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is one of ', function () {",
-                  "  pm.expect([]).to.include(pm.response.code);",
+                  "pm.test('Status code is 204', function () {",
+                  "  pm.response.to.have.status(204);",
                   "});",
                   "",
                   "pm.test('Response is JSON when body is present', function () {",
@@ -3207,10 +3305,21 @@
           "name": "PUT /api/v1/conversations/{conversationId}/messages/{messageId}",
           "request": {
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{session_token}}",
+                  "type": "string"
+                }
+              ]
             },
             "method": "PUT",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{session_token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -3237,7 +3346,7 @@
             "description": "Auto-discovered from src/main/java/com/wayden/messenger/message/api/ConversationMessageResource.java.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"exampleField\": \"replace_me\"\n}",
+              "raw": "{\n  \"body\": \"{{message_content}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3247,10 +3356,14 @@
           },
           "response": [
             {
-              "name": "200 Example",
+              "name": "200 OK",
               "originalRequest": {
                 "method": "PUT",
                 "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
                   {
                     "key": "Content-Type",
                     "value": "application/json"
@@ -3262,7 +3375,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"exampleField\": \"replace_me\"\n}",
+                  "raw": "{\n  \"body\": \"{{message_content}}\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3293,7 +3406,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"status\": \"ok\"\n}"
+              "body": "{\n  \"messageId\": \"{{message_id}}\",\n  \"conversationId\": \"{{conversation_id}}\",\n  \"senderId\": \"{{sender_user_id}}\",\n  \"clientMessageId\": \"{{client_message_id}}\",\n  \"sequenceNumber\": 1,\n  \"type\": \"TEXT\",\n  \"body\": \"{{message_content}}\",\n  \"createdAt\": \"2026-08-13T18:00:00Z\",\n  \"editedAt\": null,\n  \"deletedAt\": null\n}"
             }
           ],
           "event": [
@@ -3302,8 +3415,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is one of ', function () {",
-                  "  pm.expect([]).to.include(pm.response.code);",
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
                   "});",
                   "",
                   "pm.test('Response is JSON when body is present', function () {",
