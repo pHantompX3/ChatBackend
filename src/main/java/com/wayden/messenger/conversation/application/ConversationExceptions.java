@@ -64,4 +64,10 @@ public final class ConversationExceptions {
       super("Direct conversation pair already exists", cause);
     }
   }
+
+  public static final class InternalException extends ConversationException {
+    public InternalException(String operation, Throwable cause) {
+      super("Failed to " + operation, cause);
+    }
+  }
 }

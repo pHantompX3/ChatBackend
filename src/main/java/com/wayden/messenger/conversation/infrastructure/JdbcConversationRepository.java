@@ -395,7 +395,8 @@ public class JdbcConversationRepository implements ConversationRepository {
         || exception.getErrorCode() == UNIQUE_CONSTRAINT;
   }
 
-  private static IllegalStateException failure(String operation, SQLException exception) {
-    return new IllegalStateException("Failed to " + operation, exception);
+  private static ConversationExceptions.InternalException failure(
+      String operation, SQLException exception) {
+    return new ConversationExceptions.InternalException(operation, exception);
   }
 }
