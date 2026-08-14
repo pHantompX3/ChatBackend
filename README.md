@@ -445,7 +445,7 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 ## Authoritative Documentation
 
-Current application development version: `0.5.0-SNAPSHOT`. Application releases follow Semantic
+Current application development version: `0.6.0-SNAPSHOT`. Application releases follow Semantic
 Versioning; API generations and Flyway migration versions remain independent.
 
 Milestone 3 status snapshot (2026-08-11): session schema, login/logout/filter behavior, and the administrative revoke-all-sessions API are implemented and validated.
@@ -456,6 +456,12 @@ Milestone 5 status snapshot (2026-08-13): durable authenticated text messaging, 
 idempotency, per-conversation sequence allocation, forward history pagination, editing, soft deletion,
 safe audit metadata, SQL Server rollback guarantees, and concurrency coverage are implemented and
 validated. Delivery/read acknowledgements and WebSockets remain assigned to later milestones.
+
+Milestone 6 status snapshot (2026-08-13): explicit per-user monotonic delivery/read
+acknowledgements, derived unread counts, own-position queries, sender-only aggregate status, safe
+auditing, SQL Server concurrency coverage, and the executable reconnect-reconciliation journey are
+implemented under ADR-0014. Transport publication remains only a signal; WebSockets and per-device
+receipts remain deferred.
 
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
@@ -471,6 +477,10 @@ validated. Delivery/read acknowledgements and WebSockets remain assigned to late
   - `docs/architecture/decision/ADR-0013-define-conversation-identity-membership-and-discovery.md`
 - Milestone 5 durable messaging, history, and mutation runbook:
   - `docs/development-guide/milestone-5-messaging-step-by-step.md`
+- Milestone 6 delivery/read state and reconciliation runbook:
+  - `docs/development-guide/milestone-6-delivery-and-read-state-step-by-step.md`
+- Milestone 6 per-user cursor and status-visibility decision:
+  - `docs/architecture/decision/ADR-0014-use-per-user-delivery-and-read-cursors.md`
 - Release history:
   - `CHANGELOG.md`
 - Versioning and changelog policy:

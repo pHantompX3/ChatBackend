@@ -181,15 +181,22 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     String targetMessageId = metadata.get("targetMessageId");
     String targetInvitationId = metadata.get("targetInvitationId");
     String targetUserId = metadata.get("targetUserId");
+    String targetConversationId = metadata.get("targetConversationId");
 
     String targetType =
         targetMessageId != null
             ? "message"
-            : targetInvitationId != null ? "invitation" : targetUserId != null ? "user" : null;
+            : targetInvitationId != null
+                ? "invitation"
+                : targetUserId != null
+                    ? "user"
+                    : targetConversationId != null ? "conversation" : null;
     String targetId =
         targetMessageId != null
             ? targetMessageId
-            : targetInvitationId != null ? targetInvitationId : targetUserId;
+            : targetInvitationId != null
+                ? targetInvitationId
+                : targetUserId != null ? targetUserId : targetConversationId;
 
     long safeDurationMs =
         Math.max(0L, Optional.ofNullable(requestAuditContext.getDurationMs()).orElse(0L));

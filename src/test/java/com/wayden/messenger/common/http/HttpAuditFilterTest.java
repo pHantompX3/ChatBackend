@@ -43,6 +43,29 @@ final class HttpAuditFilterTest {
     assertNotNull(event.metadata().get("failureRootCauseLocation"));
   }
 
+  @Test
+  void responseAuditShouldUseConversationTargetWhenNoMessageTargetExists() throws Exception {
+    RequestAuditContext auditContext = new RequestAuditContext();
+    auditContext.setRequestId("request-position");
+    auditContext.setOperation("delivery.position.get");
+    auditContext.setMethod("GET");
+    auditContext.setPath("/api/v1/conversations/id/position");
+    auditContext.setQuery("-");
+    auditContext.setResponseStatus(200);
+    String conversationId = java.util.UUID.randomUUID().toString();
+    auditContext.putCustomAttribute("targetConversationId", conversationId);
+
+    AtomicReference<HttpAuditEvent> captured = new AtomicReference<>();
+    HttpAuditQueueDispatcher dispatcher =
+        new HttpAuditQueueDispatcher(captured::set, (event, exception) -> {}, false, 8);
+    HttpAuditFilter filter = new HttpAuditFilter(auditContext, new ObjectMapper(), dispatcher);
+
+    filter.filter(requestContext(), successfulResponseContext());
+
+    assertEquals("conversation", captured.get().targetType());
+    assertEquals(conversationId, captured.get().targetId());
+  }
+
   private static ContainerRequestContext requestContext() {
     return (ContainerRequestContext)
         Proxy.newProxyInstance(
@@ -64,6 +87,20 @@ final class HttpAuditFilterTest {
             (proxy, method, arguments) ->
                 switch (method.getName()) {
                   case "getStatus" -> 500;
+                  case "getLength" -> -1;
+                  case "getHeaders" -> new MultivaluedHashMap<String, Object>();
+                  default -> defaultValue(method.getReturnType());
+                });
+  }
+
+  private static ContainerResponseContext successfulResponseContext() {
+    return (ContainerResponseContext)
+        Proxy.newProxyInstance(
+            HttpAuditFilterTest.class.getClassLoader(),
+            new Class<?>[] {ContainerResponseContext.class},
+            (proxy, method, arguments) ->
+                switch (method.getName()) {
+                  case "getStatus" -> 200;
                   case "getLength" -> -1;
                   case "getHeaders" -> new MultivaluedHashMap<String, Object>();
                   default -> defaultValue(method.getReturnType());

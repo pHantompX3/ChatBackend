@@ -880,6 +880,8 @@ application/problem+json
 /api/v1/conversations/{conversationId}/messages
 /api/v1/conversations/{conversationId}/delivery-position
 /api/v1/conversations/{conversationId}/read-position
+/api/v1/conversations/{conversationId}/position
+/api/v1/conversations/{conversationId}/messages/{messageId}/status
 ```
 
 ### 13.4 Request rules
@@ -1116,6 +1118,11 @@ The server shall reject a delivered or read sequence beyond the latest committed
 The authenticated user identity shall determine which membership row is updated; clients shall not
 supply another user's identity.
 
+The server shall authorize active membership before exposing or validating the committed high-water
+mark. Inaccessible users must not be able to infer conversation activity by comparing sequence-ahead
+and missing-resource outcomes. Membership and conversation rows shall be locked in the same order used
+by message send before the monotonic update executes in a fresh transaction attempt.
+
 The baseline HTTP contracts are:
 
 ```http
@@ -1136,6 +1143,26 @@ Both endpoints require authentication, derive the member from the authenticated 
 return `204 No Content` after an idempotent monotonic update. A request with a sequence gap is valid
 only when the client has actually recovered and accepted every preceding sequence through that value.
 
+The authenticated member may query their own durable positions and derived unread count:
+
+```http
+GET /api/v1/conversations/{conversationId}/position
+```
+
+Unread count excludes messages sent by the authenticated member and deleted tombstones. It is derived
+from committed messages after `last_read_sequence` rather than persisted as a separate counter. The
+query binds the count to the same returned committed high-water mark so a concurrent later send cannot
+make the count describe messages beyond `latestSequence`.
+
+The original sender may query aggregate status for a message:
+
+```http
+GET /api/v1/conversations/{conversationId}/messages/{messageId}/status
+```
+
+The Version 1 response reports current active recipient, delivered, and read counts plus all-delivered
+and all-read flags. It does not expose recipient identities or another member's raw cursors.
+
 An explicit client acknowledgement is authoritative for delivery state. Sending or publishing a
 WebSocket event, writing to a broker, or observing an open connection is not sufficient. A recipient
 client should acknowledge delivery only after it has accepted the message for local presentation or
@@ -1152,13 +1179,17 @@ double tick  recipient last_delivered_sequence >= message sequence
 read         recipient last_read_sequence >= message sequence
 ```
 
-For a group conversation, delivery and read positions remain per member. API responses may expose
-per-member status or aggregate counts; the UI must not describe a group message as delivered to all
-members unless every applicable active recipient has acknowledged that sequence.
+For a group conversation, delivery and read positions remain per member. Version 1 exposes only
+sender-visible aggregate counts; the UI must not describe a group message as delivered to all members
+unless every applicable current active recipient other than the sender has acknowledged that sequence.
+When there are no applicable recipients, all-delivered and all-read are both false.
 
 Version 1 uses per-user cursors: acknowledgement by any authenticated session advances the user's
-position. Before implementation, an ADR shall confirm this behavior or replace it with per-device
-cursors if product requirements demand distinct delivery state for every registered device.
+position. ADR-0014 confirms this behavior. If product requirements later demand distinct delivery
+state for every registered device, a superseding ADR and durable device-identity model are required.
+Enabling the Version 1 APIs does not backfill existing membership cursors or infer receipts for
+previously accepted messages; clients reconcile and explicitly acknowledge from the existing zero
+positions.
 
 ## 18. Message Editing and Deletion
 
@@ -1661,16 +1692,30 @@ Exit criteria:
 
 ## Milestone 6 — Delivery and read state
 
+Implementation status snapshot (2026-08-13):
+
+- the implementation-ready guide is defined in
+  `docs/development-guide/milestone-6-delivery-and-read-state-step-by-step.md`,
+- per-user cursor, explicit acknowledgement, unread-count, aggregate status, and privacy decisions
+  are accepted in `docs/architecture/decision/ADR-0014-use-per-user-delivery-and-read-cursors.md`,
+- explicit monotonic delivery/read acknowledgement, own-position and derived unread queries,
+  sender-only aggregate status, stable delivery problems, safe audit metadata, SQL Server tests, and
+  the Postman reconciliation journey are implemented,
+- the existing Milestone 4 cursor schema and permissions were sufficient, so no duplicate migration
+  or inferred receipt backfill was added,
+- WebSockets and per-device receipt state remain deferred.
+
 Deliver:
 
-- migration adding non-negative `last_delivered_sequence` and enforcing
-  `last_read_sequence <= last_delivered_sequence`
+- verify and use the non-negative `last_delivered_sequence` and
+  `last_read_sequence <= last_delivered_sequence` schema contract introduced in Milestone 4; add a
+  forward migration only if implementation requires a new index or constraint
 - authenticated delivery-position acknowledgement
 - advance read position
 - persisted per-member `lastDeliveredSequence`
 - unread-count query
-- sender-visible delivery/read status or aggregate status query
-- member read positions where permitted
+- sender-only aggregate delivery/read status query
+- authenticated member query for only their own delivery/read positions and unread count
 - monotonic delivery and read update enforcement
 - reconciliation behavior for clients reconnecting with sequence gaps
 - repository, API, concurrency, and authorization tests for both cursors
@@ -2065,6 +2110,7 @@ ADR-0010 Defer end-to-end encryption
 ADR-0011 Require x86-64 for an all-in-one SQL Server deployment
 ADR-0012 Keep jOOQ optional because SQL Server support is commercial
 ADR-0013 Define conversation identity, membership, and user discovery
+ADR-0014 Use per-user delivery and read cursors
 ```
 
 ADR template:

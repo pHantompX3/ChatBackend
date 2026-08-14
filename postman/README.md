@@ -201,6 +201,11 @@ Recommended shared defaults by environment namespace:
 - `WLConversationId_<Env>`
 - `WLSenderUserId_<Env>`
 - `WLMessageLimit_<Env>`
+- `message_sequence` (a concrete non-negative example value for generated delivery/read requests)
+
+The run-all journey also maintains its own synthetic `flow_message_sequence`,
+`flow_second_message_sequence`, and `flow_ahead_sequence` values from server responses. Those values
+are generated during a run and must not be populated with production message metadata.
 
 ## Security Rules
 

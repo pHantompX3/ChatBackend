@@ -18,6 +18,19 @@ project intentionally performs a release under the current policy.
 
 ### Added
 
+- Added authenticated per-user delivery and read acknowledgements with monotonic SQL Server cursor
+  updates, committed-history bounds, stale-retry idempotency, and atomic read-implies-delivery
+  behavior.
+- Added own-position and derived unread-count queries plus sender-only aggregate delivery/read status
+  for direct and group conversations.
+- Added delivery-specific problem responses, post-commit safe audit metadata, bounded fresh-
+  transaction deadlock retries, schema/permission checks, concurrency/privacy coverage, and an
+  executable Postman reconnect-reconciliation journey.
+- Added the implementation-ready Milestone 6 plan for explicit per-user delivery/read
+  acknowledgements, derived unread counts, sender-only aggregate status, reconnect reconciliation,
+  authorization, auditing, and SQL Server concurrency coverage.
+- Added ADR-0014 to establish per-user rather than per-device cursors, explicit acknowledgement as
+  the only proof of delivery/read state, and aggregate-only group receipt visibility.
 - Added the implementation-ready Milestone 5 plan for durable message send, deterministic history
   retrieval, idempotency, editing, soft deletion, authorization, auditing, and concurrency tests.
 - Added repository-wide semantic-versioning and changelog-management guardrails.
@@ -35,6 +48,7 @@ project intentionally performs a release under the current policy.
 
 ### Changed
 
+- Advanced the Maven development version to `0.6.0-SNAPSHOT` for Milestone 6 development.
 - Advanced the Maven development version to `0.5.0-SNAPSHOT` for Milestone 5 development.
 - Replaced the unsafe client-supplied sender message stub and standalone `/api/v1/messages` route
   with authenticated conversation-scoped message APIs.
