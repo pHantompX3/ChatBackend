@@ -40,6 +40,13 @@ components:
         password:
           type: string
           pattern: \S
+    BootstrapAdminResponse:
+      type: object
+      properties:
+        userId:
+          $ref: "#/components/schemas/UUID"
+        username:
+          type: string
     ChangeConversationRoleRequest:
       type: object
       properties:
@@ -98,6 +105,13 @@ components:
           pattern: \S
         expiresAt:
           $ref: "#/components/schemas/Instant"
+    CreateInvitationResponse:
+      type: object
+      properties:
+        invitationId:
+          $ref: "#/components/schemas/UUID"
+        invitationToken:
+          type: string
     EditMessageRequest:
       type: object
       properties:
@@ -289,6 +303,13 @@ components:
         password:
           type: string
           pattern: \S
+    RedeemInvitationResponse:
+      type: object
+      properties:
+        userId:
+          $ref: "#/components/schemas/UUID"
+        username:
+          type: string
     RevokeInvitationRequest:
       type: object
       required:
@@ -340,9 +361,9 @@ components:
       scheme: bearer
       bearerFormat: opaque
 info:
-  description: Private messaging backend API
   title: ChatBackend API
   version: 0.7.0-SNAPSHOT
+  description: Private messaging backend API
 security:
 - bearerAuth: []
 paths:
@@ -359,7 +380,8 @@ paths:
           description: OK
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/BootstrapAdminResponse"
         "400":
           description: Bad Request
       security: []
@@ -398,10 +420,17 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: Existing direct conversation
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/ConversationResponse"
+        "201":
+          description: Direct conversation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationResponse"
         "400":
           description: Bad Request
       summary: Create Direct
@@ -416,11 +445,12 @@ paths:
               $ref: "#/components/schemas/CreateGroupConversationRequest"
         required: true
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Group conversation created
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/ConversationResponse"
         "400":
           description: Bad Request
       summary: Create Group
@@ -459,11 +489,8 @@ paths:
               $ref: "#/components/schemas/AcknowledgePositionRequest"
         required: true
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: {}
+        "204":
+          description: Delivery position acknowledged
         "400":
           description: Bad Request
       summary: Acknowledge Delivery
@@ -478,11 +505,8 @@ paths:
         schema:
           type: string
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: {}
+        "204":
+          description: Conversation left
       summary: Leave
       tags:
       - Conversation Resource
@@ -527,11 +551,8 @@ paths:
         schema:
           type: string
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: {}
+        "204":
+          description: Conversation member removed
       summary: Remove Member
       tags:
       - Conversation Resource
@@ -548,11 +569,8 @@ paths:
         schema:
           type: string
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: {}
+        "204":
+          description: Conversation member added
       summary: Add Member
       tags:
       - Conversation Resource
@@ -576,11 +594,8 @@ paths:
               $ref: "#/components/schemas/ChangeConversationRoleRequest"
         required: true
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: {}
+        "204":
+          description: Conversation member role changed
         "400":
           description: Bad Request
       summary: Change Role
@@ -600,11 +615,8 @@ paths:
         schema:
           type: string
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: {}
+        "204":
+          description: Conversation ownership transferred
       summary: Transfer Ownership
       tags:
       - Conversation Resource
@@ -624,10 +636,17 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: Existing idempotent message submission
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "201":
+          description: Message durably accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
         "400":
           description: Bad Request
       summary: Send
@@ -702,11 +721,8 @@ paths:
         schema:
           type: string
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: {}
+        "204":
+          description: Message soft-deleted
       summary: Delete
       tags:
       - Conversation Message Resource
@@ -766,11 +782,8 @@ paths:
               $ref: "#/components/schemas/AcknowledgePositionRequest"
         required: true
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: {}
+        "204":
+          description: Read position acknowledged
         "400":
           description: Bad Request
       summary: Acknowledge Read
@@ -789,7 +802,8 @@ paths:
           description: OK
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/CreateInvitationResponse"
         "400":
           description: Bad Request
       summary: Create Invitation
@@ -808,7 +822,8 @@ paths:
           description: OK
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/RedeemInvitationResponse"
         "400":
           description: Bad Request
       security: []
@@ -830,11 +845,8 @@ paths:
               $ref: "#/components/schemas/RevokeInvitationRequest"
         required: true
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: {}
+        "204":
+          description: Invitation revoked
         "400":
           description: Bad Request
       summary: Revoke Invitation
@@ -902,11 +914,8 @@ paths:
   /api/v1/sessions/logout:
     post:
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: {}
+        "204":
+          description: Session revoked
       summary: Logout
       tags:
       - Session Resource
@@ -919,11 +928,8 @@ paths:
         schema:
           type: string
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: {}
+        "204":
+          description: All target-user sessions revoked
       summary: Revoke All Sessions
       tags:
       - Session Resource

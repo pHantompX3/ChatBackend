@@ -25,6 +25,10 @@ import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 
 @Path(ApiRoutes.API_V1 + "/conversations/{conversationId}/messages")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -35,6 +39,22 @@ public class ConversationMessageResource {
   private final MessageService messageService;
 
   @POST
+  @APIResponses({
+    @APIResponse(
+        responseCode = "200",
+        description = "Existing idempotent message submission",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = @Schema(implementation = MessageResponse.class))),
+    @APIResponse(
+        responseCode = "201",
+        description = "Message durably accepted",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = @Schema(implementation = MessageResponse.class)))
+  })
   @AuditOperation("message.send")
   public Response send(
       @PathParam("conversationId") String rawConversationId,
@@ -99,6 +119,7 @@ public class ConversationMessageResource {
   @DELETE
   @Path("/{messageId}")
   @Consumes(MediaType.WILDCARD)
+  @APIResponse(responseCode = "204", description = "Message soft-deleted")
   @AuditOperation("message.delete")
   public Response delete(
       @PathParam("conversationId") String rawConversationId,

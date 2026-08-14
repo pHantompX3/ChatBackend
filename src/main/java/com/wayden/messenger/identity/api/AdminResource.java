@@ -28,12 +28,10 @@ public class AdminResource {
   @POST
   @Path("/admin")
   @AuditOperation("identity.bootstrap.admin")
-  public jakarta.ws.rs.core.Response bootstrapAdmin(@Valid BootstrapAdminRequest request) {
+  public BootstrapAdminResponse bootstrapAdmin(@Valid BootstrapAdminRequest request) {
     var result =
         adminService.bootstrapFirstAdmin(
             new BootstrapAdminCommand(request.username(), request.password()));
-    return jakarta.ws.rs.core.Response.ok(
-            new BootstrapAdminResponse(result.userId().value(), result.username()))
-        .build();
+    return new BootstrapAdminResponse(result.userId().value(), result.username());
   }
 }

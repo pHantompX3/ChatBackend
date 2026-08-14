@@ -29,6 +29,20 @@ final class NetworkSourceResolverTest {
     assertEquals("x-forwarded-for", resolution.source());
   }
 
+  @Test
+  void trustedProxyMaySupplyAStandardMultiEntryForwardedHeader() {
+    var resolution =
+        new NetworkSourceResolver("203.0.113.0/24")
+            .resolve(
+                null,
+                null,
+                "for=198.51.100.7, for=203.0.113.10;proto=https",
+                requestFrom("203.0.113.10"));
+
+    assertEquals("198.51.100.7", resolution.value());
+    assertEquals("forwarded", resolution.source());
+  }
+
   private static HttpServerRequest requestFrom(String address) {
     return (HttpServerRequest)
         Proxy.newProxyInstance(

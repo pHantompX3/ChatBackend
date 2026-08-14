@@ -25,6 +25,10 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 
 @Path(ApiRoutes.API_V1 + "/conversations")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -36,6 +40,22 @@ public class ConversationResource {
 
   @POST
   @Path("/direct")
+  @APIResponses({
+    @APIResponse(
+        responseCode = "200",
+        description = "Existing direct conversation",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = @Schema(implementation = ConversationResponse.class))),
+    @APIResponse(
+        responseCode = "201",
+        description = "Direct conversation created",
+        content =
+            @Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = @Schema(implementation = ConversationResponse.class)))
+  })
   @AuditOperation("conversation.direct.create")
   public Response createDirect(
       CreateDirectConversationRequest request, @Context ContainerRequestContext context) {
@@ -54,6 +74,13 @@ public class ConversationResource {
 
   @POST
   @Path("/groups")
+  @APIResponse(
+      responseCode = "201",
+      description = "Group conversation created",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON,
+              schema = @Schema(implementation = ConversationResponse.class)))
   @AuditOperation("conversation.group.create")
   public Response createGroup(
       CreateGroupConversationRequest request, @Context ContainerRequestContext context) {
@@ -110,6 +137,7 @@ public class ConversationResource {
   @PUT
   @Path("/{conversationId}/members/{userId}")
   @Consumes(MediaType.WILDCARD)
+  @APIResponse(responseCode = "204", description = "Conversation member added")
   @AuditOperation("conversation.member.add")
   public Response addMember(
       @PathParam("conversationId") String conversationId,
@@ -123,6 +151,7 @@ public class ConversationResource {
   @DELETE
   @Path("/{conversationId}/members/{userId}")
   @Consumes(MediaType.WILDCARD)
+  @APIResponse(responseCode = "204", description = "Conversation member removed")
   @AuditOperation("conversation.member.remove")
   public Response removeMember(
       @PathParam("conversationId") String conversationId,
@@ -136,6 +165,7 @@ public class ConversationResource {
   @POST
   @Path("/{conversationId}/leave")
   @Consumes(MediaType.WILDCARD)
+  @APIResponse(responseCode = "204", description = "Conversation left")
   @AuditOperation("conversation.member.leave")
   public Response leave(
       @PathParam("conversationId") String conversationId,
@@ -146,6 +176,7 @@ public class ConversationResource {
 
   @PUT
   @Path("/{conversationId}/members/{userId}/role")
+  @APIResponse(responseCode = "204", description = "Conversation member role changed")
   @AuditOperation("conversation.member.role.change")
   public Response changeRole(
       @PathParam("conversationId") String conversationId,
@@ -169,6 +200,7 @@ public class ConversationResource {
   @POST
   @Path("/{conversationId}/members/{userId}/transfer-ownership")
   @Consumes(MediaType.WILDCARD)
+  @APIResponse(responseCode = "204", description = "Conversation ownership transferred")
   @AuditOperation("conversation.ownership.transfer")
   public Response transferOwnership(
       @PathParam("conversationId") String conversationId,

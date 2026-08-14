@@ -20,6 +20,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 @Path(ApiRoutes.API_V1 + "/conversations/{conversationId}")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -31,6 +32,7 @@ public class DeliveryResource {
 
   @PUT
   @Path("/delivery-position")
+  @APIResponse(responseCode = "204", description = "Delivery position acknowledged")
   @AuditOperation("delivery.position.acknowledge")
   public Response acknowledgeDelivery(
       @PathParam("conversationId") String rawConversationId,
@@ -44,6 +46,7 @@ public class DeliveryResource {
 
   @PUT
   @Path("/read-position")
+  @APIResponse(responseCode = "204", description = "Read position acknowledged")
   @AuditOperation("read.position.acknowledge")
   public Response acknowledgeRead(
       @PathParam("conversationId") String rawConversationId,

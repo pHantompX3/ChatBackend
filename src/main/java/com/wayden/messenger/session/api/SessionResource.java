@@ -89,6 +89,7 @@ public class SessionResource {
 
   @POST
   @Path("/logout")
+  @APIResponse(responseCode = "204", description = "Session revoked")
   @AuditOperation("identity.session.revoke")
   public Response logout(@HeaderParam("Authorization") String authorizationHeader) {
     if (authorizationHeader == null || authorizationHeader.isBlank()) {
@@ -103,6 +104,7 @@ public class SessionResource {
   @Path("/users/{userId}/revoke-all")
   @Consumes(MediaType.WILDCARD)
   @RequiresRole(SystemRole.ADMIN)
+  @APIResponse(responseCode = "204", description = "All target-user sessions revoked")
   @AuditOperation("identity.session.revoke-all")
   public Response revokeAllSessions(@PathParam("userId") String userId) {
     sessionService.revokeAllSessionsForUser(

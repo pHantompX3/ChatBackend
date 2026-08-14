@@ -54,6 +54,17 @@
           }
         }
       },
+      "BootstrapAdminResponse" : {
+        "type" : "object",
+        "properties" : {
+          "userId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "username" : {
+            "type" : "string"
+          }
+        }
+      },
       "ChangeConversationRoleRequest" : {
         "type" : "object",
         "properties" : {
@@ -137,6 +148,17 @@
           },
           "expiresAt" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "CreateInvitationResponse" : {
+        "type" : "object",
+        "properties" : {
+          "invitationId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "invitationToken" : {
+            "type" : "string"
           }
         }
       },
@@ -404,6 +426,17 @@
           }
         }
       },
+      "RedeemInvitationResponse" : {
+        "type" : "object",
+        "properties" : {
+          "userId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "username" : {
+            "type" : "string"
+          }
+        }
+      },
       "RevokeInvitationRequest" : {
         "type" : "object",
         "required" : [ "actorUserId" ],
@@ -476,9 +509,9 @@
     }
   },
   "info" : {
-    "description" : "Private messaging backend API",
     "title" : "ChatBackend API",
-    "version" : "0.7.0-SNAPSHOT"
+    "version" : "0.7.0-SNAPSHOT",
+    "description" : "Private messaging backend API"
   },
   "security" : [ {
     "bearerAuth" : [ ]
@@ -501,7 +534,9 @@
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/BootstrapAdminResponse"
+                }
               }
             }
           },
@@ -560,10 +595,22 @@
         },
         "responses" : {
           "200" : {
-            "description" : "OK",
+            "description" : "Existing direct conversation",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationResponse"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Direct conversation created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationResponse"
+                }
               }
             }
           },
@@ -588,11 +635,13 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
-            "description" : "OK",
+          "201" : {
+            "description" : "Group conversation created",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationResponse"
+                }
               }
             }
           },
@@ -651,13 +700,8 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
+          "204" : {
+            "description" : "Delivery position acknowledged"
           },
           "400" : {
             "description" : "Bad Request"
@@ -678,13 +722,8 @@
           }
         } ],
         "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
+          "204" : {
+            "description" : "Conversation left"
           }
         },
         "summary" : "Leave",
@@ -748,13 +787,8 @@
           }
         } ],
         "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
+          "204" : {
+            "description" : "Conversation member removed"
           }
         },
         "summary" : "Remove Member",
@@ -777,13 +811,8 @@
           }
         } ],
         "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
+          "204" : {
+            "description" : "Conversation member added"
           }
         },
         "summary" : "Add Member",
@@ -818,13 +847,8 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
+          "204" : {
+            "description" : "Conversation member role changed"
           },
           "400" : {
             "description" : "Bad Request"
@@ -852,13 +876,8 @@
           }
         } ],
         "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
+          "204" : {
+            "description" : "Conversation ownership transferred"
           }
         },
         "summary" : "Transfer Ownership",
@@ -887,10 +906,22 @@
         },
         "responses" : {
           "200" : {
-            "description" : "OK",
+            "description" : "Existing idempotent message submission",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Message durably accepted",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageResponse"
+                }
               }
             }
           },
@@ -1000,13 +1031,8 @@
           }
         } ],
         "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
+          "204" : {
+            "description" : "Message soft-deleted"
           }
         },
         "summary" : "Delete",
@@ -1093,13 +1119,8 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
+          "204" : {
+            "description" : "Read position acknowledged"
           },
           "400" : {
             "description" : "Bad Request"
@@ -1126,7 +1147,9 @@
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreateInvitationResponse"
+                }
               }
             }
           },
@@ -1155,7 +1178,9 @@
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/RedeemInvitationResponse"
+                }
               }
             }
           },
@@ -1189,13 +1214,8 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
+          "204" : {
+            "description" : "Invitation revoked"
           },
           "400" : {
             "description" : "Bad Request"
@@ -1301,13 +1321,8 @@
     "/api/v1/sessions/logout" : {
       "post" : {
         "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
+          "204" : {
+            "description" : "Session revoked"
           }
         },
         "summary" : "Logout",
@@ -1325,13 +1340,8 @@
           }
         } ],
         "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
+          "204" : {
+            "description" : "All target-user sessions revoked"
           }
         },
         "summary" : "Revoke All Sessions",

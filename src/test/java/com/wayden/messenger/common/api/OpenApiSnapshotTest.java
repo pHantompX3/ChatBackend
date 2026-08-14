@@ -1,6 +1,7 @@
 package com.wayden.messenger.common.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,5 +27,54 @@ class OpenApiSnapshotTest {
         document.path("paths").path("/api/v1/sessions").path("post").path("responses").get("429"));
     assertEquals(
         0, document.path("paths").path("/api/v1/sessions").path("post").path("security").size());
+
+    assertEquals(
+        "#/components/schemas/BootstrapAdminResponse",
+        responseSchema(document, "/api/v1/bootstrap/admin", "post", "200").path("$ref").asText());
+    assertEquals(
+        "#/components/schemas/ConversationResponse",
+        responseSchema(document, "/api/v1/conversations/direct", "post", "201")
+            .path("$ref")
+            .asText());
+    assertNotNull(
+        document
+            .path("paths")
+            .path("/api/v1/invitations/{invitationId}/revoke")
+            .path("post")
+            .path("responses")
+            .get("204"));
+
+    document
+        .path("paths")
+        .forEach(
+            path ->
+                path.forEach(
+                    operation ->
+                        operation
+                            .path("responses")
+                            .forEach(
+                                response -> {
+                                  JsonNode schema =
+                                      response
+                                          .path("content")
+                                          .path("application/json")
+                                          .path("schema");
+                                  assertFalse(
+                                      schema.isObject() && schema.isEmpty(),
+                                      "JSON success responses must declare their schema");
+                                })));
+  }
+
+  private static JsonNode responseSchema(
+      JsonNode document, String path, String method, String status) {
+    return document
+        .path("paths")
+        .path(path)
+        .path(method)
+        .path("responses")
+        .path(status)
+        .path("content")
+        .path("application/json")
+        .path("schema");
   }
 }

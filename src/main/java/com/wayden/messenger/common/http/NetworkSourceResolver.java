@@ -73,10 +73,15 @@ public class NetworkSourceResolver {
     if (value == null || value.isBlank() || "-".equals(value)) {
       return null;
     }
-    for (String part : value.split(";")) {
-      String trimmed = part.trim();
-      if (trimmed.toLowerCase(Locale.ROOT).startsWith("for=")) {
-        return canonical(trimmed.substring(4).replace("\"", "").trim());
+    for (String element : value.split(",")) {
+      for (String part : element.split(";")) {
+        String trimmed = part.trim();
+        if (trimmed.toLowerCase(Locale.ROOT).startsWith("for=")) {
+          String candidate = canonical(trimmed.substring(4).replace("\"", "").trim());
+          if (candidate != null) {
+            return candidate;
+          }
+        }
       }
     }
     return null;

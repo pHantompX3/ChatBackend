@@ -20,9 +20,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirements;
 
 @Path(ApiRoutes.API_V1 + "/invitations")
@@ -35,7 +37,7 @@ public class InvitationResource {
 
   @POST
   @AuditOperation("identity.invitation.create")
-  public jakarta.ws.rs.core.Response createInvitation(
+  public CreateInvitationResponse createInvitation(
       @Valid CreateInvitationRequest request, @Context ContainerRequestContext requestContext) {
     validateCreateInvitationRequest(request);
     var result =
@@ -43,15 +45,14 @@ public class InvitationResource {
             new CreateInvitationCommand(
                 resolveActorUserId(request, requestContext), request.expiresAt()));
 
-    return jakarta.ws.rs.core.Response.ok(
-            new CreateInvitationResponse(result.invitationId().value(), result.rawToken()))
-        .build();
+    return new CreateInvitationResponse(result.invitationId().value(), result.rawToken());
   }
 
   @POST
   @Path("/{invitationId}/revoke")
+  @APIResponse(responseCode = "204", description = "Invitation revoked")
   @AuditOperation("identity.invitation.revoke")
-  public jakarta.ws.rs.core.Response revokeInvitation(
+  public Response revokeInvitation(
       @PathParam("invitationId") String invitationId,
       @Valid RevokeInvitationRequest request,
       @Context ContainerRequestContext requestContext) {
@@ -59,7 +60,7 @@ public class InvitationResource {
     invitationService.revokeInvitation(
         new RevokeInvitationCommand(
             parseInvitationId(invitationId), resolveActorUserId(request, requestContext)));
-    return jakarta.ws.rs.core.Response.noContent().build();
+    return Response.noContent().build();
   }
 
   @POST
@@ -67,16 +68,14 @@ public class InvitationResource {
   @PublicEndpoint
   @SecurityRequirements
   @AuditOperation("identity.invitation.redeem")
-  public jakarta.ws.rs.core.Response redeemInvitation(@Valid RedeemInvitationRequest request) {
+  public RedeemInvitationResponse redeemInvitation(@Valid RedeemInvitationRequest request) {
     validateRedeemInvitationRequest(request);
     var result =
         invitationService.redeemInvitation(
             new RedeemInvitationCommand(
                 request.invitationToken(), request.username(), request.password()));
 
-    return jakarta.ws.rs.core.Response.ok(
-            new RedeemInvitationResponse(result.userId().value(), result.username()))
-        .build();
+    return new RedeemInvitationResponse(result.userId().value(), result.username());
   }
 
   private static void validateCreateInvitationRequest(CreateInvitationRequest request) {

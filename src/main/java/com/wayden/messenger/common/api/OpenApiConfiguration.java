@@ -10,12 +10,7 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 
 @ApplicationPath("/")
 @OpenAPIDefinition(
-    info =
-        @Info(
-            title = "WL Chat Backend API",
-            version = "0.7.0",
-            description =
-                "Client-independent HTTP API for identity, conversations, durable messages, and delivery state."),
+    info = @Info(title = "", version = ""),
     security = @SecurityRequirement(name = "bearerAuth"))
 @SecurityScheme(
     securitySchemeName = "bearerAuth",
