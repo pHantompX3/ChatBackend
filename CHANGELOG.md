@@ -18,6 +18,11 @@ project intentionally performs a release under the current policy.
 
 ### Added
 
+- Added the implementation-ready Milestone 7 plan for a common RFC 9457 problem contract,
+  generated OpenAPI, strict request/pagination limits, bounded member traversal, shared login
+  throttling, structured JSON logs, correlation, and complete Postman operation coverage.
+- Added ADR-0015 to establish Java-to-OpenAPI-to-Postman contract direction, replica-safe SQL-backed
+  login throttling, explicit limit behavior, and structured request correlation.
 - Added authenticated per-user delivery and read acknowledgements with monotonic SQL Server cursor
   updates, committed-history bounds, stale-retry idempotency, and atomic read-implies-delivery
   behavior.
@@ -48,6 +53,7 @@ project intentionally performs a release under the current policy.
 
 ### Changed
 
+- Advanced the Maven development version to `0.7.0-SNAPSHOT` for Milestone 7 development.
 - Advanced the Maven development version to `0.6.0-SNAPSHOT` for Milestone 6 development.
 - Advanced the Maven development version to `0.5.0-SNAPSHOT` for Milestone 5 development.
 - Replaced the unsafe client-supplied sender message stub and standalone `/api/v1/messages` route
