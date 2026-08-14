@@ -31,7 +31,7 @@ final class HttpAuditFilterTest {
         new HttpAuditQueueDispatcher(captured::set, (event, exception) -> {}, false, 8);
     HttpAuditFilter filter = new HttpAuditFilter(auditContext, new ObjectMapper(), dispatcher);
 
-    filter.filter(requestContext(), responseContext());
+    filter.filter(requestContext(), responseContext(500));
 
     HttpAuditEvent event = captured.get();
     assertNotNull(event);
@@ -60,7 +60,7 @@ final class HttpAuditFilterTest {
         new HttpAuditQueueDispatcher(captured::set, (event, exception) -> {}, false, 8);
     HttpAuditFilter filter = new HttpAuditFilter(auditContext, new ObjectMapper(), dispatcher);
 
-    filter.filter(requestContext(), successfulResponseContext());
+    filter.filter(requestContext(), responseContext(200));
 
     assertEquals("conversation", captured.get().targetType());
     assertEquals(conversationId, captured.get().targetId());
@@ -79,28 +79,14 @@ final class HttpAuditFilterTest {
                 });
   }
 
-  private static ContainerResponseContext responseContext() {
+  private static ContainerResponseContext responseContext(int status) {
     return (ContainerResponseContext)
         Proxy.newProxyInstance(
             HttpAuditFilterTest.class.getClassLoader(),
             new Class<?>[] {ContainerResponseContext.class},
             (proxy, method, arguments) ->
                 switch (method.getName()) {
-                  case "getStatus" -> 500;
-                  case "getLength" -> -1;
-                  case "getHeaders" -> new MultivaluedHashMap<String, Object>();
-                  default -> defaultValue(method.getReturnType());
-                });
-  }
-
-  private static ContainerResponseContext successfulResponseContext() {
-    return (ContainerResponseContext)
-        Proxy.newProxyInstance(
-            HttpAuditFilterTest.class.getClassLoader(),
-            new Class<?>[] {ContainerResponseContext.class},
-            (proxy, method, arguments) ->
-                switch (method.getName()) {
-                  case "getStatus" -> 200;
+                  case "getStatus" -> status;
                   case "getLength" -> -1;
                   case "getHeaders" -> new MultivaluedHashMap<String, Object>();
                   default -> defaultValue(method.getReturnType());

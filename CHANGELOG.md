@@ -55,6 +55,10 @@ project intentionally performs a release under the current policy.
 
 ### Fixed
 
+- Rejected fractional, string, and out-of-range delivery acknowledgement sequences instead of
+  allowing Jackson to coerce them into signed integers; retained delivery targets and committed
+  high-water context in failure audits, and avoided exclusive-style locks for read-only status
+  queries.
 - Normalized Postman Cloud's omitted empty response arrays and implicit default environment-variable
   types during drift checks, while reporting the first differing field for actionable failures.
 - Corrected generated and curated Postman message contracts to use bearer authentication, valid

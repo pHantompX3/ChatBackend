@@ -617,17 +617,23 @@ member can already see the persisted message and sender through authorized histo
 query and embedding status into every history row are deferred until measured client usage justifies
 the additional contract and query complexity.
 
+Hold the actor membership row with a transaction-scoped shared read lock while aggregating so a
+concurrent removal cannot invalidate authorization between the two statements. Use SQL Server's
+`REPEATABLEREAD` table hint for that row; `UPDLOCK` is unnecessary for this read-only use case and
+would serialize otherwise compatible status queries from the same sender.
+
 ---
 
 ## 10. Step 6 - Expose Authenticated APIs
 
 ### 10.1 Acknowledgement request
 
-Use one strict nullable-wrapper request DTO for both PUT routes so missing/null can be distinguished
-from sequence zero:
+Use one strict request DTO for both PUT routes. Preserve the raw JSON node at the HTTP boundary so
+Jackson cannot silently coerce decimal or string values into an integer; convert it to `long` only
+after verifying that it is an integral JSON number in the signed 64-bit range:
 
 ```java
-public record AcknowledgePositionRequest(Long sequence) {}
+public record AcknowledgePositionRequest(JsonNode sequence) {}
 ```
 
 JSON:

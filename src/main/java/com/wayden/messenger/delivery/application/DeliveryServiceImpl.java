@@ -3,7 +3,6 @@ package com.wayden.messenger.delivery.application;
 import com.wayden.messenger.common.http.RequestAuditContext;
 import com.wayden.messenger.conversation.domain.ConversationId;
 import com.wayden.messenger.delivery.application.DeliveryRepository.AcknowledgementAttempt;
-import com.wayden.messenger.delivery.application.DeliveryRepository.PositionLookup;
 import com.wayden.messenger.delivery.application.DeliveryRepository.StatusLookup;
 import com.wayden.messenger.delivery.domain.AcknowledgementResult;
 import com.wayden.messenger.delivery.domain.MessageDeliveryStatus;
@@ -42,24 +41,25 @@ public class DeliveryServiceImpl implements DeliveryService {
 
   @Override
   public void acknowledgeDelivery(UserId actorId, ConversationId conversationId, Long rawSequence) {
+    auditConversation(conversationId);
     acknowledge(actorId, conversationId, sequence(rawSequence), false);
   }
 
   @Override
   public void acknowledgeRead(UserId actorId, ConversationId conversationId, Long rawSequence) {
+    auditConversation(conversationId);
     acknowledge(actorId, conversationId, sequence(rawSequence), true);
   }
 
   @Override
   @Transactional
   public MessagePosition getPosition(UserId actorId, ConversationId conversationId) {
-    PositionLookup lookup = repository.findPosition(conversationId, actorId);
-    if (lookup instanceof PositionLookup.ResourceNotFound) {
-      throw new DeliveryExceptions.ResourceNotFoundException();
-    }
-    MessagePosition position = ((PositionLookup.Found) lookup).position();
+    auditConversation(conversationId);
+    MessagePosition position =
+        repository
+            .findPosition(conversationId, actorId)
+            .orElseThrow(DeliveryExceptions.ResourceNotFoundException::new);
     auditContext.putCustomAttribute("eventType", "delivery.position.queried");
-    auditContext.putCustomAttribute("targetConversationId", conversationId.value().toString());
     auditContext.putCustomAttribute("latestSequence", Long.toString(position.latestSequence()));
     auditContext.putCustomAttribute(
         "currentDeliveredSequence", Long.toString(position.lastDeliveredSequence()));
@@ -73,6 +73,8 @@ public class DeliveryServiceImpl implements DeliveryService {
   @Transactional
   public MessageDeliveryStatus getStatus(
       UserId actorId, ConversationId conversationId, MessageId messageId) {
+    auditConversation(conversationId);
+    auditContext.putCustomAttribute("targetMessageId", messageId.value().toString());
     StatusLookup lookup = repository.findSenderStatus(conversationId, messageId, actorId);
     if (lookup instanceof StatusLookup.ResourceNotFound) {
       throw new DeliveryExceptions.ResourceNotFoundException();
@@ -82,8 +84,6 @@ public class DeliveryServiceImpl implements DeliveryService {
     }
     MessageDeliveryStatus status = ((StatusLookup.Found) lookup).status();
     auditContext.putCustomAttribute("eventType", "message.delivery-status.queried");
-    auditContext.putCustomAttribute("targetConversationId", conversationId.value().toString());
-    auditContext.putCustomAttribute("targetMessageId", messageId.value().toString());
     auditContext.putCustomAttribute("recipientCount", Long.toString(status.recipientCount()));
     auditContext.putCustomAttribute("deliveredCount", Long.toString(status.deliveredCount()));
     auditContext.putCustomAttribute("readCount", Long.toString(status.readCount()));
@@ -92,6 +92,7 @@ public class DeliveryServiceImpl implements DeliveryService {
 
   private void acknowledge(
       UserId actorId, ConversationId conversationId, long requestedSequence, boolean read) {
+    auditContext.putCustomAttribute("requestedSequence", Long.toString(requestedSequence));
     DeliveryExceptions.DeadlockException lastDeadlock = null;
     for (int attemptNumber = 1; attemptNumber <= MAX_ACKNOWLEDGEMENT_ATTEMPTS; attemptNumber++) {
       try {
@@ -133,14 +134,14 @@ public class DeliveryServiceImpl implements DeliveryService {
     if (attempt instanceof AcknowledgementAttempt.ResourceNotFound) {
       throw new DeliveryExceptions.ResourceNotFoundException();
     }
-    if (attempt instanceof AcknowledgementAttempt.SequenceAhead) {
+    if (attempt instanceof AcknowledgementAttempt.SequenceAhead sequenceAhead) {
+      auditContext.putCustomAttribute(
+          "latestSequence", Long.toString(sequenceAhead.latestSequence()));
       throw new DeliveryExceptions.SequenceAheadException();
     }
     AcknowledgementResult result = ((AcknowledgementAttempt.Acknowledged) attempt).result();
     auditContext.putCustomAttribute(
         "eventType", read ? "read.position.acknowledged" : "delivery.position.acknowledged");
-    auditContext.putCustomAttribute("targetConversationId", conversationId.value().toString());
-    auditContext.putCustomAttribute("requestedSequence", Long.toString(requestedSequence));
     auditContext.putCustomAttribute("latestSequence", Long.toString(result.latestSequence()));
     auditContext.putCustomAttribute(
         "previousDeliveredSequence", Long.toString(result.previousDeliveredSequence()));
@@ -162,6 +163,10 @@ public class DeliveryServiceImpl implements DeliveryService {
       throw new DeliveryExceptions.ValidationException("sequence must not be negative");
     }
     return rawSequence;
+  }
+
+  private void auditConversation(ConversationId conversationId) {
+    auditContext.putCustomAttribute("targetConversationId", conversationId.value().toString());
   }
 
   private static void backoff() {

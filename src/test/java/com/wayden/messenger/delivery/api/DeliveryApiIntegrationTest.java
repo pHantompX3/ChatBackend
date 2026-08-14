@@ -148,6 +148,15 @@ final class DeliveryApiIntegrationTest {
         .body("code", equalTo("DELIVERY_RESOURCE_NOT_FOUND"));
     acknowledge(member, conversationId, "delivery-position", -1, 400)
         .body("code", equalTo("DELIVERY_VALIDATION_FAILED"));
+    acknowledgeRaw(member, conversationId, "delivery-position", "{\"sequence\":0.5}", 400)
+        .body("code", equalTo("DELIVERY_VALIDATION_FAILED"));
+    acknowledgeRaw(member, conversationId, "delivery-position", "{\"sequence\":\"0\"}", 400)
+        .body("code", equalTo("DELIVERY_VALIDATION_FAILED"));
+    acknowledgeRaw(member, conversationId, "delivery-position", "{}", 400)
+        .body("code", equalTo("DELIVERY_VALIDATION_FAILED"));
+    acknowledgeRaw(
+            member, conversationId, "delivery-position", "{\"sequence\":9223372036854775808}", 400)
+        .body("code", equalTo("DELIVERY_VALIDATION_FAILED"));
 
     given()
         .contentType(ContentType.JSON)
@@ -288,6 +297,18 @@ final class DeliveryApiIntegrationTest {
         .contentType(ContentType.JSON)
         .header("Authorization", bearer(actor.token()))
         .body(Map.of("sequence", sequence))
+        .when()
+        .put("/api/v1/conversations/{conversationId}/{route}", conversationId, route)
+        .then()
+        .statusCode(expectedStatus);
+  }
+
+  private static ValidatableResponse acknowledgeRaw(
+      Account actor, String conversationId, String route, String body, int expectedStatus) {
+    return given()
+        .contentType(ContentType.JSON)
+        .header("Authorization", bearer(actor.token()))
+        .body(body)
         .when()
         .put("/api/v1/conversations/{conversationId}/{route}", conversationId, route)
         .then()

@@ -17,10 +17,6 @@ public final class DeliveryExceptions {
     public ValidationException(String message) {
       super(message);
     }
-
-    public ValidationException(String message, Throwable cause) {
-      super(message, cause);
-    }
   }
 
   public static final class SequenceAheadException extends DeliveryException {

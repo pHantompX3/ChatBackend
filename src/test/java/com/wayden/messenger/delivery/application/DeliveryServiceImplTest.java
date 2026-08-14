@@ -42,17 +42,25 @@ final class DeliveryServiceImplTest {
   void acknowledgementShouldExposeNormalTypedOutcomes() {
     var notFound = new ScriptedAttempt(List.of(new AcknowledgementAttempt.ResourceNotFound()));
     var ahead = new ScriptedAttempt(List.of(new AcknowledgementAttempt.SequenceAhead(2)));
+    var notFoundAudit = new RequestAuditContext();
+    var aheadAudit = new RequestAuditContext();
 
     assertThrows(
         DeliveryExceptions.ResourceNotFoundException.class,
         () ->
-            new DeliveryServiceImpl(null, notFound, new RequestAuditContext())
+            new DeliveryServiceImpl(null, notFound, notFoundAudit)
                 .acknowledgeRead(ACTOR_ID, CONVERSATION_ID, 1L));
     assertThrows(
         DeliveryExceptions.SequenceAheadException.class,
         () ->
-            new DeliveryServiceImpl(null, ahead, new RequestAuditContext())
+            new DeliveryServiceImpl(null, ahead, aheadAudit)
                 .acknowledgeRead(ACTOR_ID, CONVERSATION_ID, 3L));
+
+    assertEquals(
+        CONVERSATION_ID.value().toString(),
+        notFoundAudit.getCustomAttributes().get("targetConversationId"));
+    assertEquals("3", aheadAudit.getCustomAttributes().get("requestedSequence"));
+    assertEquals("2", aheadAudit.getCustomAttributes().get("latestSequence"));
   }
 
   @Test

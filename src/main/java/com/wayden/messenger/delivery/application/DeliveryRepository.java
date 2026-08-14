@@ -6,6 +6,7 @@ import com.wayden.messenger.delivery.domain.MessageDeliveryStatus;
 import com.wayden.messenger.delivery.domain.MessagePosition;
 import com.wayden.messenger.identity.domain.UserId;
 import com.wayden.messenger.message.domain.MessageId;
+import java.util.Optional;
 
 public interface DeliveryRepository {
 
@@ -15,7 +16,7 @@ public interface DeliveryRepository {
   AcknowledgementAttempt acknowledgeRead(
       ConversationId conversationId, UserId actorId, long sequence);
 
-  PositionLookup findPosition(ConversationId conversationId, UserId actorId);
+  Optional<MessagePosition> findPosition(ConversationId conversationId, UserId actorId);
 
   StatusLookup findSenderStatus(ConversationId conversationId, MessageId messageId, UserId actorId);
 
@@ -25,12 +26,6 @@ public interface DeliveryRepository {
     record ResourceNotFound() implements AcknowledgementAttempt {}
 
     record SequenceAhead(long latestSequence) implements AcknowledgementAttempt {}
-  }
-
-  sealed interface PositionLookup {
-    record Found(MessagePosition position) implements PositionLookup {}
-
-    record ResourceNotFound() implements PositionLookup {}
   }
 
   sealed interface StatusLookup {

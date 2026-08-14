@@ -38,7 +38,7 @@ public class DeliveryResource {
       @Context ContainerRequestContext context) {
     requireBody(request);
     deliveryService.acknowledgeDelivery(
-        actor(context), conversationId(rawConversationId), request.sequence());
+        actor(context), conversationId(rawConversationId), sequence(request));
     return Response.noContent().build();
   }
 
@@ -51,7 +51,7 @@ public class DeliveryResource {
       @Context ContainerRequestContext context) {
     requireBody(request);
     deliveryService.acknowledgeRead(
-        actor(context), conversationId(rawConversationId), request.sequence());
+        actor(context), conversationId(rawConversationId), sequence(request));
     return Response.noContent().build();
   }
 
@@ -84,6 +84,17 @@ public class DeliveryResource {
     if (request == null) {
       throw validation("Request body must not be empty");
     }
+  }
+
+  private static Long sequence(AcknowledgePositionRequest request) {
+    var sequence = request.sequence();
+    if (sequence == null || sequence.isNull()) {
+      return null;
+    }
+    if (!sequence.isIntegralNumber() || !sequence.canConvertToLong()) {
+      throw validation("sequence must be an integer within the signed 64-bit range");
+    }
+    return sequence.longValue();
   }
 
   private static UserId actor(ContainerRequestContext context) {

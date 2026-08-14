@@ -14,6 +14,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 import java.util.UUID;
 import javax.sql.DataSource;
 
@@ -22,7 +23,7 @@ public class JdbcDeliveryRepository implements DeliveryRepository {
 
   private static final int DEADLOCK_VICTIM = 1205;
   private static final String LOCK_MEMBERSHIP_SQL =
-      "SELECT last_delivered_sequence, last_read_sequence "
+      "SELECT 1 "
           + "FROM [messaging].[conversation_member] WITH (UPDLOCK) "
           + "WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL";
   private static final String LOCK_HIGH_WATER_SQL =
@@ -57,7 +58,7 @@ public class JdbcDeliveryRepository implements DeliveryRepository {
           + "WHERE actor.conversation_id = ? AND actor.user_id = ? AND actor.left_at IS NULL";
   private static final String RESOLVE_STATUS_ACCESS_SQL =
       "SELECT m.sender_id, m.sequence_number "
-          + "FROM [messaging].[conversation_member] actor WITH (UPDLOCK) "
+          + "FROM [messaging].[conversation_member] actor WITH (REPEATABLEREAD) "
           + "LEFT JOIN [messaging].[message] m "
           + "ON m.conversation_id = actor.conversation_id AND m.id = ? "
           + "WHERE actor.conversation_id = ? AND actor.user_id = ? AND actor.left_at IS NULL";
@@ -93,17 +94,17 @@ public class JdbcDeliveryRepository implements DeliveryRepository {
   }
 
   @Override
-  public PositionLookup findPosition(ConversationId conversationId, UserId actorId) {
+  public Optional<MessagePosition> findPosition(ConversationId conversationId, UserId actorId) {
     try (var connection = dataSource.getConnection();
         var statement = connection.prepareStatement(FIND_POSITION_SQL)) {
       statement.setObject(1, conversationId.value());
       statement.setObject(2, actorId.value());
       try (var resultSet = statement.executeQuery()) {
         if (!resultSet.next()) {
-          return new PositionLookup.ResourceNotFound();
+          return Optional.empty();
         }
         try {
-          return new PositionLookup.Found(
+          return Optional.of(
               new MessagePosition(
                   resultSet.getLong("latest_sequence"),
                   resultSet.getLong("last_delivered_sequence"),
