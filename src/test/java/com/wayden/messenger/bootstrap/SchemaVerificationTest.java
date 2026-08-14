@@ -83,6 +83,10 @@ final class SchemaVerificationTest {
       assertEquals(1, permission(connection, "messaging.message", "INSERT"));
       assertEquals(1, permission(connection, "messaging.message", "UPDATE"));
       assertEquals(0, permission(connection, "messaging.message", "DELETE"));
+      assertEquals(1, permission(connection, "identity.authentication_rate_limit", "SELECT"));
+      assertEquals(1, permission(connection, "identity.authentication_rate_limit", "INSERT"));
+      assertEquals(1, permission(connection, "identity.authentication_rate_limit", "UPDATE"));
+      assertEquals(1, permission(connection, "identity.authentication_rate_limit", "DELETE"));
 
       final SQLException deleteDenied =
           org.junit.jupiter.api.Assertions.assertThrows(

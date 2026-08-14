@@ -1,7 +1,9 @@
 package com.wayden.messenger.conversation.application;
 
+import com.wayden.messenger.common.api.PaginationPolicy;
 import com.wayden.messenger.common.http.RequestAuditContext;
 import com.wayden.messenger.conversation.application.ConversationCursorCodec.ConversationCursor;
+import com.wayden.messenger.conversation.application.ConversationCursorCodec.MemberCursor;
 import com.wayden.messenger.conversation.application.ConversationRepository.ConversationView;
 import com.wayden.messenger.conversation.domain.Conversation;
 import com.wayden.messenger.conversation.domain.ConversationId;
@@ -114,8 +116,15 @@ public class ConversationServiceImpl implements ConversationService {
 
   @Override
   public ConversationPage list(UserId actorUserId, String rawCursor, Integer rawLimit) {
-    ConversationCursor cursor = cursorCodec.decodeConversation(rawCursor);
-    int limit = rawLimit == null ? 50 : Math.max(1, Math.min(rawLimit, 100));
+    ConversationCursor cursor;
+    int limit;
+    try {
+      PaginationPolicy.requireValidCursorLength(rawCursor);
+      cursor = cursorCodec.decodeConversation(rawCursor);
+      limit = PaginationPolicy.resolveLimit(rawLimit, 50, 100);
+    } catch (IllegalArgumentException exception) {
+      throw new ConversationExceptions.ValidationException(exception.getMessage());
+    }
     List<ConversationView> rows =
         conversationRepository.listAccessible(actorUserId, cursor, limit + 1);
     boolean hasNext = rows.size() > limit;
@@ -135,9 +144,30 @@ public class ConversationServiceImpl implements ConversationService {
   }
 
   @Override
-  public List<ConversationMember> listMembers(UserId actorUserId, ConversationId conversationId) {
+  public MemberPage listMembers(
+      UserId actorUserId, ConversationId conversationId, String rawCursor, Integer rawLimit) {
     requireAccessible(actorUserId, conversationId);
-    return conversationRepository.listActiveMembers(conversationId);
+    MemberCursor cursor;
+    int limit;
+    try {
+      PaginationPolicy.requireValidCursorLength(rawCursor);
+      cursor = cursorCodec.decodeMember(rawCursor, conversationId);
+      limit = PaginationPolicy.resolveLimit(rawLimit, 50, 100);
+    } catch (IllegalArgumentException exception) {
+      throw new ConversationExceptions.ValidationException(exception.getMessage());
+    }
+    List<ConversationMember> rows =
+        conversationRepository.listActiveMembers(conversationId, cursor, limit + 1);
+    boolean hasNext = rows.size() > limit;
+    List<ConversationMember> items = hasNext ? rows.subList(0, limit) : rows;
+    String nextCursor = null;
+    if (hasNext) {
+      ConversationMember last = items.get(items.size() - 1);
+      nextCursor =
+          cursorCodec.encodeMember(
+              new MemberCursor(conversationId, last.joinedAt(), last.userId()));
+    }
+    return new MemberPage(items, nextCursor);
   }
 
   @Override

@@ -1,5 +1,6 @@
 package com.wayden.messenger.conversation.application;
 
+import com.wayden.messenger.common.api.PaginationPolicy;
 import com.wayden.messenger.conversation.application.ConversationCursorCodec.UserCursor;
 import com.wayden.messenger.identity.application.UserRepository;
 import com.wayden.messenger.identity.domain.NormalizedUsername;
@@ -30,8 +31,15 @@ public class UserDirectoryService {
     }
 
     NormalizedUsername query = NormalizedUsername.fromRaw(rawQuery);
-    UserCursor cursor = cursorCodec.decodeUser(rawCursor, query);
-    int limit = rawLimit == null ? 20 : Math.max(1, Math.min(rawLimit, 50));
+    UserCursor cursor;
+    int limit;
+    try {
+      PaginationPolicy.requireValidCursorLength(rawCursor);
+      cursor = cursorCodec.decodeUser(rawCursor, query);
+      limit = PaginationPolicy.resolveLimit(rawLimit, 20, 50);
+    } catch (IllegalArgumentException exception) {
+      throw new ConversationExceptions.UserSearchValidationException(exception.getMessage());
+    }
     List<UserSummary> items =
         userRepository
             .searchActiveByUsernamePrefix(

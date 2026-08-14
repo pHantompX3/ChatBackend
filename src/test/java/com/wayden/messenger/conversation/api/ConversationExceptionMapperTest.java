@@ -3,6 +3,7 @@ package com.wayden.messenger.conversation.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.wayden.messenger.common.api.ApiProblem;
 import com.wayden.messenger.common.http.RequestAuditContext;
 import com.wayden.messenger.conversation.application.ConversationExceptions;
 import java.sql.SQLException;
@@ -23,7 +24,7 @@ final class ConversationExceptionMapperTest {
             new ConversationExceptions.InternalException("create direct conversation", rootCause));
 
     assertEquals(500, response.getStatus());
-    var problem = (ConversationExceptionMapper.ConversationProblem) response.getEntity();
+    var problem = (ApiProblem) response.getEntity();
     assertEquals("CONVERSATION_INTERNAL_ERROR", problem.code());
     assertEquals("Unexpected conversation error", problem.detail());
 

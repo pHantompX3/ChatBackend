@@ -1,5 +1,6 @@
 package com.wayden.messenger.conversation.api;
 
+import com.wayden.messenger.common.api.ApiProblemFactory;
 import com.wayden.messenger.common.http.RequestAuditContext;
 import com.wayden.messenger.conversation.application.ConversationExceptions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -7,7 +8,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import java.net.URI;
 import org.jboss.logging.Logger;
 
 @Provider
@@ -17,6 +17,7 @@ public class ConversationExceptionMapper
   private static final Logger LOG = Logger.getLogger(ConversationExceptionMapper.class);
 
   private final RequestAuditContext auditContext;
+  private final ApiProblemFactory problems;
 
   @Inject
   @SuppressFBWarnings(
@@ -25,6 +26,7 @@ public class ConversationExceptionMapper
           "RequestAuditContext is CDI-managed request-scoped state intentionally shared within request handling.")
   public ConversationExceptionMapper(RequestAuditContext auditContext) {
     this.auditContext = auditContext;
+    this.problems = new ApiProblemFactory(auditContext);
   }
 
   @Override
@@ -82,15 +84,9 @@ public class ConversationExceptionMapper
         500, "Conversation error", "CONVERSATION_INTERNAL_ERROR", "Unexpected conversation error");
   }
 
-  private static Response problem(int status, String title, String code, String detail) {
-    return Response.status(status)
-        .type("application/problem+json")
-        .entity(new ConversationProblem(URI.create("about:blank"), title, status, detail, code))
-        .build();
+  private Response problem(int status, String title, String code, String detail) {
+    return problems.response(status, title, code, detail);
   }
-
-  public record ConversationProblem(
-      URI type, String title, int status, String detail, String code) {}
 
   private record ProblemMapping(int status, String title, String code, String detail) {}
 }

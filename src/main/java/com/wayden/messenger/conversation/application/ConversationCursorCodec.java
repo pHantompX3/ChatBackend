@@ -20,6 +20,8 @@ public class ConversationCursorCodec {
   private static final Set<String> CONVERSATION_FIELDS = Set.of("v", "updatedAt", "conversationId");
   private static final Set<String> USER_FIELDS =
       Set.of("v", "query", "normalizedUsername", "userId");
+  private static final Set<String> MEMBER_FIELDS =
+      Set.of("v", "conversationId", "joinedAt", "userId");
 
   private final ObjectMapper objectMapper;
 
@@ -89,6 +91,38 @@ public class ConversationCursorCodec {
     }
   }
 
+  public String encodeMember(MemberCursor cursor) {
+    return encode(
+        new MemberCursorPayload(
+            1,
+            cursor.conversationId().value().toString(),
+            cursor.joinedAt().toString(),
+            cursor.userId().value().toString()));
+  }
+
+  public MemberCursor decodeMember(String rawCursor, ConversationId conversationId) {
+    if (rawCursor == null || rawCursor.isBlank()) {
+      return null;
+    }
+    try {
+      byte[] decoded = Base64.getUrlDecoder().decode(rawCursor);
+      JsonNode node = objectMapper.readTree(decoded);
+      requireFields(node, MEMBER_FIELDS);
+      if (node.get("v").asInt() != 1
+          || !conversationId.value().toString().equals(node.get("conversationId").asText())) {
+        throw new ConversationExceptions.InvalidCursorException();
+      }
+      return new MemberCursor(
+          conversationId,
+          Instant.parse(node.get("joinedAt").asText()),
+          new UserId(UUID.fromString(node.get("userId").asText())));
+    } catch (ConversationExceptions.InvalidCursorException exception) {
+      throw exception;
+    } catch (RuntimeException | java.io.IOException exception) {
+      throw new ConversationExceptions.InvalidCursorException(exception);
+    }
+  }
+
   private String encode(Object payload) {
     try {
       return Base64.getUrlEncoder()
@@ -116,7 +150,12 @@ public class ConversationCursorCodec {
   public record UserCursor(
       NormalizedUsername query, NormalizedUsername normalizedUsername, UserId userId) {}
 
+  public record MemberCursor(ConversationId conversationId, Instant joinedAt, UserId userId) {}
+
   private record ConversationCursorPayload(int v, String updatedAt, String conversationId) {}
 
   private record UserCursorPayload(int v, String query, String normalizedUsername, String userId) {}
+
+  private record MemberCursorPayload(
+      int v, String conversationId, String joinedAt, String userId) {}
 }

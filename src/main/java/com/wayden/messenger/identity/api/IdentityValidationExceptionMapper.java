@@ -1,24 +1,33 @@
 package com.wayden.messenger.identity.api;
 
+import com.wayden.messenger.common.api.ApiProblemFactory;
+import com.wayden.messenger.common.http.RequestAuditContext;
 import jakarta.annotation.Priority;
+import jakarta.inject.Inject;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import java.net.URI;
 
 @Provider
 @Priority(Priorities.USER)
 public class IdentityValidationExceptionMapper implements ExceptionMapper<ValidationException> {
+
+  private final ApiProblemFactory problems;
+
+  @Inject
+  public IdentityValidationExceptionMapper(RequestAuditContext auditContext) {
+    this.problems = new ApiProblemFactory(auditContext);
+  }
 
   @Override
   public Response toResponse(ValidationException exception) {
     return problem(exception);
   }
 
-  private static Response problem(ValidationException exception) {
+  private Response problem(ValidationException exception) {
     String detail =
         exception instanceof ConstraintViolationException violationException
             ? violationException.getConstraintViolations().stream()
@@ -29,9 +38,6 @@ public class IdentityValidationExceptionMapper implements ExceptionMapper<Valida
                 ? "Validation failed"
                 : exception.getMessage();
 
-    IdentityExceptionMapper.IdentityProblem payload =
-        new IdentityExceptionMapper.IdentityProblem(
-            URI.create("about:blank"), "Validation failed", 400, detail, "VALIDATION_ERROR");
-    return Response.status(400).type("application/problem+json").entity(payload).build();
+    return problems.response(400, "Validation failed", "VALIDATION_ERROR", detail);
   }
 }

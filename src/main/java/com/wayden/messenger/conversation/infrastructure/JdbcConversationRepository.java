@@ -1,6 +1,7 @@
 package com.wayden.messenger.conversation.infrastructure;
 
 import com.wayden.messenger.conversation.application.ConversationCursorCodec.ConversationCursor;
+import com.wayden.messenger.conversation.application.ConversationCursorCodec.MemberCursor;
 import com.wayden.messenger.conversation.application.ConversationExceptions;
 import com.wayden.messenger.conversation.application.ConversationRepository;
 import com.wayden.messenger.conversation.domain.Conversation;
@@ -70,11 +71,12 @@ public class JdbcConversationRepository implements ConversationRepository {
           + "AND (? IS NULL OR c.updated_at < ? OR (c.updated_at = ? AND c.id < ?)) "
           + "ORDER BY c.updated_at DESC, c.id DESC";
   private static final String LIST_ACTIVE_MEMBERS_SQL =
-      "SELECT m.conversation_id, m.user_id, u.username, m.conversation_role, m.joined_at, m.left_at, "
+      "SELECT TOP (?) m.conversation_id, m.user_id, u.username, m.conversation_role, m.joined_at, m.left_at, "
           + "m.last_delivered_sequence, m.last_read_sequence "
           + "FROM [messaging].[conversation_member] m "
           + "JOIN [identity].[user_account] u ON u.id = m.user_id "
           + "WHERE m.conversation_id = ? AND m.left_at IS NULL "
+          + "AND (? IS NULL OR m.joined_at > ? OR (m.joined_at = ? AND m.user_id > ?)) "
           + "ORDER BY m.joined_at ASC, m.user_id ASC";
   private static final String FIND_MEMBERSHIP_SQL =
       "SELECT m.conversation_id, m.user_id, u.username, m.conversation_role, m.joined_at, m.left_at, "
@@ -198,10 +200,17 @@ public class JdbcConversationRepository implements ConversationRepository {
   }
 
   @Override
-  public List<ConversationMember> listActiveMembers(ConversationId conversationId) {
+  public List<ConversationMember> listActiveMembers(
+      ConversationId conversationId, MemberCursor after, int limit) {
     try (var connection = dataSource.getConnection();
         var statement = connection.prepareStatement(LIST_ACTIVE_MEMBERS_SQL)) {
-      statement.setObject(1, conversationId.value());
+      LocalDateTime afterTime = after == null ? null : toUtc(after.joinedAt());
+      statement.setInt(1, limit);
+      statement.setObject(2, conversationId.value());
+      statement.setObject(3, afterTime);
+      statement.setObject(4, afterTime);
+      statement.setObject(5, afterTime);
+      statement.setObject(6, after == null ? null : after.userId().value());
       List<ConversationMember> members = new ArrayList<>();
       try (var resultSet = statement.executeQuery()) {
         while (resultSet.next()) {

@@ -18,9 +18,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 @ApplicationScoped
@@ -35,6 +37,12 @@ public class SessionServiceImpl implements SessionService {
   private final PasswordHasher passwordHasher;
   private final Clock clock;
   private final RequestAuditContext requestAuditContext;
+  private final AuthenticationRateLimitRepository rateLimitRepository;
+  private final boolean rateLimitEnabled;
+  private final int accountAttemptLimit;
+  private final Duration accountWindow;
+  private final int sourceAttemptLimit;
+  private final Duration sourceWindow;
   private final SecureRandom random = new SecureRandom();
 
   @Inject
@@ -47,12 +55,29 @@ public class SessionServiceImpl implements SessionService {
       UserRepository userRepository,
       PasswordHasher passwordHasher,
       Clock clock,
-      RequestAuditContext requestAuditContext) {
+      RequestAuditContext requestAuditContext,
+      AuthenticationRateLimitRepository rateLimitRepository,
+      @ConfigProperty(name = "chat.auth.rate-limit.enabled", defaultValue = "true")
+          boolean rateLimitEnabled,
+      @ConfigProperty(name = "chat.auth.rate-limit.account-limit", defaultValue = "10")
+          int accountAttemptLimit,
+      @ConfigProperty(name = "chat.auth.rate-limit.account-window", defaultValue = "PT5M")
+          Duration accountWindow,
+      @ConfigProperty(name = "chat.auth.rate-limit.source-limit", defaultValue = "30")
+          int sourceAttemptLimit,
+      @ConfigProperty(name = "chat.auth.rate-limit.source-window", defaultValue = "PT1M")
+          Duration sourceWindow) {
     this.sessionRepository = sessionRepository;
     this.userRepository = userRepository;
     this.passwordHasher = passwordHasher;
     this.clock = clock;
     this.requestAuditContext = requestAuditContext;
+    this.rateLimitRepository = rateLimitRepository;
+    this.rateLimitEnabled = rateLimitEnabled;
+    this.accountAttemptLimit = accountAttemptLimit;
+    this.accountWindow = accountWindow;
+    this.sourceAttemptLimit = sourceAttemptLimit;
+    this.sourceWindow = sourceWindow;
   }
 
   @Override
@@ -62,6 +87,7 @@ public class SessionServiceImpl implements SessionService {
     }
 
     var normalizedUsername = NormalizedUsername.fromRaw(command.username());
+    reserveAuthenticationCapacity(normalizedUsername, command.sourceAddress());
     Optional<User> user = userRepository.findByNormalizedUsername(normalizedUsername);
     if (user.isEmpty() || !passwordHasher.verify(command.password(), user.get().passwordHash())) {
       throw new SessionExceptions.InvalidCredentialsException();
@@ -95,6 +121,31 @@ public class SessionServiceImpl implements SessionService {
     requestAuditContext.putCustomAttribute("sessionId", session.id().value().toString());
 
     return new LoginResult(session.id().value().toString(), rawToken, user.get());
+  }
+
+  private void reserveAuthenticationCapacity(
+      NormalizedUsername normalizedUsername, String sourceAddress) {
+    if (!rateLimitEnabled) {
+      return;
+    }
+    String source = sourceAddress == null || sourceAddress.isBlank() ? "unknown" : sourceAddress;
+    AuthenticationRateLimitRepository.Decision decision =
+        rateLimitRepository.reserve(
+            hash(normalizedUsername.value()),
+            hash(source),
+            accountAttemptLimit,
+            accountWindow,
+            sourceAttemptLimit,
+            sourceWindow);
+    requestAuditContext.putCustomAttribute(
+        "authenticationThrottleOutcome", decision.allowed() ? "allowed" : "rejected");
+    if (!decision.allowed()) {
+      requestAuditContext.putCustomAttribute(
+          "authenticationThrottleScope", decision.exhaustedScope());
+      requestAuditContext.putCustomAttribute(
+          "authenticationThrottleRetryAfter", Long.toString(decision.retryAfterSeconds()));
+      throw new SessionExceptions.RateLimitedException(decision.retryAfterSeconds());
+    }
   }
 
   @Override
@@ -185,9 +236,13 @@ public class SessionServiceImpl implements SessionService {
   }
 
   private byte[] hashToken(String rawToken) {
+    return hash(rawToken);
+  }
+
+  private byte[] hash(String value) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      return digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
+      return digest.digest(value.getBytes(StandardCharsets.UTF_8));
     } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException("SHA-256 algorithm is not available", e);
     }

@@ -286,6 +286,45 @@ final class ConversationApiIntegrationTest {
   }
 
   @Test
+  void memberListShouldUseBoundedConversationScopedCursorPagination() {
+    Account owner = bootstrapAdmin("Member Paging Owner");
+    Account member = inviteMember(owner, "Member Paging User");
+    String conversationId = createGroup(owner, "Member Paging Group", List.of(member.userId()));
+
+    var firstPage =
+        given()
+            .header("Authorization", bearer(owner.token()))
+            .queryParam("limit", 1)
+            .when()
+            .get("/api/v1/conversations/{conversationId}/members", conversationId)
+            .then()
+            .statusCode(200)
+            .body("items", hasSize(1))
+            .body("nextCursor", notNullValue())
+            .extract()
+            .jsonPath();
+
+    given()
+        .header("Authorization", bearer(owner.token()))
+        .queryParam("limit", 1)
+        .queryParam("cursor", firstPage.getString("nextCursor"))
+        .when()
+        .get("/api/v1/conversations/{conversationId}/members", conversationId)
+        .then()
+        .statusCode(200)
+        .body("items", hasSize(1));
+
+    given()
+        .header("Authorization", bearer(owner.token()))
+        .queryParam("limit", 101)
+        .when()
+        .get("/api/v1/conversations/{conversationId}/members", conversationId)
+        .then()
+        .statusCode(400)
+        .body("code", equalTo("CONVERSATION_VALIDATION_FAILED"));
+  }
+
+  @Test
   void conversationMessageRouteShouldRequireAuthentication() {
     Account owner = bootstrapAdmin("Message Route Owner");
     String conversationId = createGroup(owner, "Message Route Group", List.of());

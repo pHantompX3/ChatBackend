@@ -1,5 +1,6 @@
 package com.wayden.messenger.message.api;
 
+import com.wayden.messenger.common.api.ApiProblemFactory;
 import com.wayden.messenger.common.http.RequestAuditContext;
 import com.wayden.messenger.message.application.MessageExceptions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -7,7 +8,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import java.net.URI;
 import org.jboss.logging.Logger;
 
 @Provider
@@ -15,6 +15,7 @@ public class MessageExceptionMapper implements ExceptionMapper<MessageExceptions
 
   private static final Logger LOG = Logger.getLogger(MessageExceptionMapper.class);
   private final RequestAuditContext auditContext;
+  private final ApiProblemFactory problems;
 
   @Inject
   @SuppressFBWarnings(
@@ -23,6 +24,7 @@ public class MessageExceptionMapper implements ExceptionMapper<MessageExceptions
           "RequestAuditContext is CDI-managed request-scoped state shared during request handling.")
   public MessageExceptionMapper(RequestAuditContext auditContext) {
     this.auditContext = auditContext;
+    this.problems = new ApiProblemFactory(auditContext);
   }
 
   @Override
@@ -38,16 +40,7 @@ public class MessageExceptionMapper implements ExceptionMapper<MessageExceptions
           auditContext.getOperation(),
           mapping.code());
     }
-    return Response.status(mapping.status())
-        .type("application/problem+json")
-        .entity(
-            new MessageProblem(
-                URI.create("about:blank"),
-                mapping.title(),
-                mapping.status(),
-                mapping.detail(),
-                mapping.code()))
-        .build();
+    return problems.response(mapping.status(), mapping.title(), mapping.code(), mapping.detail());
   }
 
   private static ProblemMapping mapping(MessageExceptions.MessageException exception) {
@@ -77,8 +70,6 @@ public class MessageExceptionMapper implements ExceptionMapper<MessageExceptions
     return new ProblemMapping(
         500, "Message error", "MESSAGE_INTERNAL_ERROR", "Unexpected message error");
   }
-
-  public record MessageProblem(URI type, String title, int status, String detail, String code) {}
 
   private record ProblemMapping(int status, String title, String code, String detail) {}
 }

@@ -445,7 +445,7 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 ## Authoritative Documentation
 
-Current application development version: `0.6.0-SNAPSHOT`. Application releases follow Semantic
+Current application development version: `0.7.0-SNAPSHOT`. Application releases follow Semantic
 Versioning; API generations and Flyway migration versions remain independent.
 
 Milestone 3 status snapshot (2026-08-11): session schema, login/logout/filter behavior, and the administrative revoke-all-sessions API are implemented and validated.
@@ -462,6 +462,11 @@ acknowledgements, derived unread counts, own-position queries, sender-only aggre
 auditing, SQL Server concurrency coverage, and the executable reconnect-reconciliation journey are
 implemented under ADR-0014. Transport publication remains only a signal; WebSockets and per-device
 receipts remain deferred.
+
+Milestone 7 status snapshot (2026-08-14): unified RFC 9457 problems, generated and committed
+OpenAPI, OpenAPI-to-Postman operation checks, strict request and pagination limits, cursor-paginated
+member traversal, replica-safe SQL-backed login throttling, trusted proxy resolution, structured
+JSON logs, and validated request/trace correlation are implemented under ADR-0015.
 
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
@@ -481,6 +486,10 @@ receipts remain deferred.
   - `docs/development-guide/milestone-6-delivery-and-read-state-step-by-step.md`
 - Milestone 6 per-user cursor and status-visibility decision:
   - `docs/architecture/decision/ADR-0014-use-per-user-delivery-and-read-cursors.md`
+- Milestone 7 API hardening runbook:
+  - `docs/development-guide/milestone-7-api-hardening-step-by-step.md`
+- Milestone 7 HTTP contract and authentication-throttling decision:
+  - `docs/architecture/decision/ADR-0015-harden-http-contracts-and-authentication-throttling.md`
 - Release history:
   - `CHANGELOG.md`
 - Versioning and changelog policy:
@@ -498,9 +507,10 @@ receipts remain deferred.
 
 Postman artifacts are version-controlled and should be updated whenever API contracts change.
 
-Authoritative source currently used for Postman maintenance:
+Authoritative contract direction used for Postman maintenance:
 
-- implemented routes and DTOs under `src/main/java` (no repository OpenAPI file is currently present)
+- Java resources and DTOs under `src/main/java` generate `docs/api/openapi.json` and
+  `docs/api/openapi.yaml`; Postman discovery and validation consume that operation inventory
 
 Committed artifacts:
 

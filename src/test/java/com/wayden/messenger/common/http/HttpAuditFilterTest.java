@@ -29,7 +29,9 @@ final class HttpAuditFilterTest {
     AtomicReference<HttpAuditEvent> captured = new AtomicReference<>();
     HttpAuditQueueDispatcher dispatcher =
         new HttpAuditQueueDispatcher(captured::set, (event, exception) -> {}, false, 8);
-    HttpAuditFilter filter = new HttpAuditFilter(auditContext, new ObjectMapper(), dispatcher);
+    HttpAuditFilter filter =
+        new HttpAuditFilter(
+            auditContext, new ObjectMapper(), dispatcher, new NetworkSourceResolver(""));
 
     filter.filter(requestContext(), responseContext(500));
 
@@ -58,7 +60,9 @@ final class HttpAuditFilterTest {
     AtomicReference<HttpAuditEvent> captured = new AtomicReference<>();
     HttpAuditQueueDispatcher dispatcher =
         new HttpAuditQueueDispatcher(captured::set, (event, exception) -> {}, false, 8);
-    HttpAuditFilter filter = new HttpAuditFilter(auditContext, new ObjectMapper(), dispatcher);
+    HttpAuditFilter filter =
+        new HttpAuditFilter(
+            auditContext, new ObjectMapper(), dispatcher, new NetworkSourceResolver(""));
 
     filter.filter(requestContext(), responseContext(200));
 

@@ -1,6 +1,7 @@
 package com.wayden.messenger.conversation.application;
 
 import com.wayden.messenger.conversation.application.ConversationCursorCodec.ConversationCursor;
+import com.wayden.messenger.conversation.application.ConversationCursorCodec.MemberCursor;
 import com.wayden.messenger.conversation.domain.Conversation;
 import com.wayden.messenger.conversation.domain.ConversationId;
 import com.wayden.messenger.conversation.domain.ConversationMember;
@@ -24,7 +25,8 @@ public interface ConversationRepository {
 
   List<ConversationView> listAccessible(UserId actorUserId, ConversationCursor after, int limit);
 
-  List<ConversationMember> listActiveMembers(ConversationId conversationId);
+  List<ConversationMember> listActiveMembers(
+      ConversationId conversationId, MemberCursor after, int limit);
 
   Optional<ConversationMember> findMembership(ConversationId conversationId, UserId userId);
 

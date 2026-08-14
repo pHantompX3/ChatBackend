@@ -4,14 +4,12 @@ This folder contains the version-controlled Postman artifacts for ChatBackend.
 
 ## Source of Truth
 
-There is currently no OpenAPI document in this repository.
+The contract direction is Java resources and DTOs to generated OpenAPI to Postman:
 
-Current contract flow:
-
-- Application routes and DTOs in src/main/java are the API contract source.
-- The committed collection in postman/collections mirrors those implemented routes.
-
-When OpenAPI is introduced later, document and enforce one direction only (OpenAPI to Postman, or Postman from routes).
+- application routes and DTOs in `src/main/java` generate the API description,
+- normalized snapshots are committed under `docs/api`,
+- discovery and validation compare the main collection with the OpenAPI operation inventory,
+- curated stateful flow scripts remain owned by the Postman collection.
 
 ## Repository Layout
 

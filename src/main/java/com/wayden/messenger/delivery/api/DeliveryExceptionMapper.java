@@ -1,5 +1,6 @@
 package com.wayden.messenger.delivery.api;
 
+import com.wayden.messenger.common.api.ApiProblemFactory;
 import com.wayden.messenger.common.http.RequestAuditContext;
 import com.wayden.messenger.delivery.application.DeliveryExceptions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -7,7 +8,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import java.net.URI;
 import org.jboss.logging.Logger;
 
 @Provider
@@ -16,6 +16,7 @@ public class DeliveryExceptionMapper
 
   private static final Logger LOG = Logger.getLogger(DeliveryExceptionMapper.class);
   private final RequestAuditContext auditContext;
+  private final ApiProblemFactory problems;
 
   @Inject
   @SuppressFBWarnings(
@@ -23,6 +24,7 @@ public class DeliveryExceptionMapper
       justification = "RequestAuditContext is CDI-managed request-scoped state.")
   public DeliveryExceptionMapper(RequestAuditContext auditContext) {
     this.auditContext = auditContext;
+    this.problems = new ApiProblemFactory(auditContext);
   }
 
   @Override
@@ -38,16 +40,7 @@ public class DeliveryExceptionMapper
           auditContext.getOperation(),
           mapping.code());
     }
-    return Response.status(mapping.status())
-        .type("application/problem+json")
-        .entity(
-            new DeliveryProblem(
-                URI.create("about:blank"),
-                mapping.title(),
-                mapping.status(),
-                mapping.detail(),
-                mapping.code()))
-        .build();
+    return problems.response(mapping.status(), mapping.title(), mapping.code(), mapping.detail());
   }
 
   private static ProblemMapping mapping(DeliveryExceptions.DeliveryException exception) {
@@ -73,8 +66,6 @@ public class DeliveryExceptionMapper
     return new ProblemMapping(
         500, "Delivery error", "DELIVERY_INTERNAL_ERROR", "Unexpected delivery error");
   }
-
-  public record DeliveryProblem(URI type, String title, int status, String detail, String code) {}
 
   private record ProblemMapping(int status, String title, String code, String detail) {}
 }

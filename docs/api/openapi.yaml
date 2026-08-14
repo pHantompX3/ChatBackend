@@ -1,0 +1,964 @@
+---
+openapi: 3.1.0
+components:
+  schemas:
+    AcknowledgePositionRequest:
+      type: object
+      properties:
+        sequence:
+          $ref: "#/components/schemas/JsonNode"
+    ApiProblem:
+      description: RFC 9457 problem detail with stable application code
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        code:
+          type: string
+        requestId:
+          type: string
+    BootstrapAdminRequest:
+      type: object
+      required:
+      - username
+      - password
+      properties:
+        username:
+          type: string
+          pattern: \S
+        password:
+          type: string
+          pattern: \S
+    BootstrapAdminResponse:
+      type: object
+      properties:
+        userId:
+          $ref: "#/components/schemas/UUID"
+        username:
+          type: string
+    ChangeConversationRoleRequest:
+      type: object
+      properties:
+        role:
+          type: string
+    ConversationMemberResponse:
+      type: object
+      properties:
+        userId:
+          $ref: "#/components/schemas/UUID"
+        username:
+          type: string
+        role:
+          type: string
+        joinedAt:
+          $ref: "#/components/schemas/Instant"
+    ConversationResponse:
+      type: object
+      properties:
+        conversationId:
+          $ref: "#/components/schemas/UUID"
+        type:
+          type: string
+        title:
+          type: string
+        createdBy:
+          $ref: "#/components/schemas/UUID"
+        role:
+          type: string
+        createdAt:
+          $ref: "#/components/schemas/Instant"
+        updatedAt:
+          $ref: "#/components/schemas/Instant"
+    CreateDirectConversationRequest:
+      type: object
+      properties:
+        targetUserId:
+          type: string
+    CreateGroupConversationRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        initialMemberIds:
+          type: array
+          items:
+            type: string
+    CreateInvitationRequest:
+      type: object
+      required:
+      - actorUserId
+      - expiresAt
+      properties:
+        actorUserId:
+          type: string
+          pattern: \S
+        expiresAt:
+          $ref: "#/components/schemas/Instant"
+    CreateInvitationResponse:
+      type: object
+      properties:
+        invitationId:
+          $ref: "#/components/schemas/UUID"
+        invitationToken:
+          type: string
+    EditMessageRequest:
+      type: object
+      properties:
+        body:
+          type: string
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - 2022-03-10T16:15:50Z
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: "#/components/schemas/JsonNodeType"
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        "null":
+          type: boolean
+        binary:
+          type: boolean
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - "NULL"
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    MessageDeliveryStatusResponse:
+      type: object
+      properties:
+        messageId:
+          $ref: "#/components/schemas/UUID"
+        sequence:
+          type: integer
+          format: int64
+        serverAccepted:
+          type: boolean
+        recipientCount:
+          type: integer
+          format: int64
+        deliveredCount:
+          type: integer
+          format: int64
+        readCount:
+          type: integer
+          format: int64
+        allDelivered:
+          type: boolean
+        allRead:
+          type: boolean
+    MessagePageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageResponse"
+        nextAfterSequence:
+          type: integer
+          format: int64
+    MessagePositionResponse:
+      type: object
+      properties:
+        conversationId:
+          $ref: "#/components/schemas/UUID"
+        latestSequence:
+          type: integer
+          format: int64
+        lastDeliveredSequence:
+          type: integer
+          format: int64
+        lastReadSequence:
+          type: integer
+          format: int64
+        unreadCount:
+          type: integer
+          format: int64
+    MessageResponse:
+      type: object
+      properties:
+        messageId:
+          $ref: "#/components/schemas/UUID"
+        conversationId:
+          $ref: "#/components/schemas/UUID"
+        senderId:
+          $ref: "#/components/schemas/UUID"
+        clientMessageId:
+          $ref: "#/components/schemas/UUID"
+        sequenceNumber:
+          type: integer
+          format: int64
+        type:
+          type: string
+        body:
+          type: string
+        createdAt:
+          $ref: "#/components/schemas/Instant"
+        editedAt:
+          $ref: "#/components/schemas/Instant"
+        deletedAt:
+          $ref: "#/components/schemas/Instant"
+    PageResponseConversationMemberResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConversationMemberResponse"
+        nextCursor:
+          type: string
+    PageResponseConversationResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConversationResponse"
+        nextCursor:
+          type: string
+    PageResponseUserSummaryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserSummaryResponse"
+        nextCursor:
+          type: string
+    PingResponse:
+      type: object
+      properties:
+        status:
+          type: string
+    RedeemInvitationRequest:
+      type: object
+      required:
+      - invitationToken
+      - username
+      - password
+      properties:
+        invitationToken:
+          type: string
+          pattern: \S
+        username:
+          type: string
+          pattern: \S
+        password:
+          type: string
+          pattern: \S
+    RedeemInvitationResponse:
+      type: object
+      properties:
+        userId:
+          $ref: "#/components/schemas/UUID"
+        username:
+          type: string
+    RevokeInvitationRequest:
+      type: object
+      required:
+      - actorUserId
+      properties:
+        actorUserId:
+          type: string
+          pattern: \S
+    SendMessageRequest:
+      type: object
+      properties:
+        clientMessageId:
+          type: string
+        body:
+          type: string
+    SessionLoginRequest:
+      type: object
+      required:
+      - username
+      - password
+      properties:
+        username:
+          type: string
+          pattern: \S
+        password:
+          type: string
+          pattern: \S
+    SessionLoginResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        token:
+          type: string
+    UUID:
+      type: string
+      format: uuid
+      pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    UserSummaryResponse:
+      type: object
+      properties:
+        userId:
+          $ref: "#/components/schemas/UUID"
+        username:
+          type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+info:
+  title: ChatBackend API
+  version: 0.7.0-SNAPSHOT
+  description: Private messaging backend API
+security:
+- bearerAuth: []
+paths:
+  /api/v1/bootstrap/admin:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BootstrapAdminRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BootstrapAdminResponse"
+        "400":
+          description: Bad Request
+      security: []
+      summary: Bootstrap Admin
+      tags:
+      - Admin Resource
+  /api/v1/conversations:
+    get:
+      parameters:
+      - name: cursor
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResponseConversationResponse"
+      summary: List
+      tags:
+      - Conversation Resource
+  /api/v1/conversations/direct:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDirectConversationRequest"
+        required: true
+      responses:
+        "200":
+          description: Existing direct conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationResponse"
+        "201":
+          description: Direct conversation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationResponse"
+        "400":
+          description: Bad Request
+      summary: Create Direct
+      tags:
+      - Conversation Resource
+  /api/v1/conversations/groups:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGroupConversationRequest"
+        required: true
+      responses:
+        "201":
+          description: Group conversation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationResponse"
+        "400":
+          description: Bad Request
+      summary: Create Group
+      tags:
+      - Conversation Resource
+  /api/v1/conversations/{conversationId}:
+    get:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationResponse"
+      summary: Get
+      tags:
+      - Conversation Resource
+  /api/v1/conversations/{conversationId}/delivery-position:
+    put:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcknowledgePositionRequest"
+        required: true
+      responses:
+        "204":
+          description: Delivery position acknowledged
+        "400":
+          description: Bad Request
+      summary: Acknowledge Delivery
+      tags:
+      - Delivery Resource
+  /api/v1/conversations/{conversationId}/leave:
+    post:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Conversation left
+      summary: Leave
+      tags:
+      - Conversation Resource
+  /api/v1/conversations/{conversationId}/members:
+    get:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResponseConversationMemberResponse"
+      summary: List Members
+      tags:
+      - Conversation Resource
+  /api/v1/conversations/{conversationId}/members/{userId}:
+    delete:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Conversation member removed
+      summary: Remove Member
+      tags:
+      - Conversation Resource
+    put:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Conversation member added
+      summary: Add Member
+      tags:
+      - Conversation Resource
+  /api/v1/conversations/{conversationId}/members/{userId}/role:
+    put:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeConversationRoleRequest"
+        required: true
+      responses:
+        "204":
+          description: Conversation member role changed
+        "400":
+          description: Bad Request
+      summary: Change Role
+      tags:
+      - Conversation Resource
+  /api/v1/conversations/{conversationId}/members/{userId}/transfer-ownership:
+    post:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Conversation ownership transferred
+      summary: Transfer Ownership
+      tags:
+      - Conversation Resource
+  /api/v1/conversations/{conversationId}/messages:
+    post:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageRequest"
+        required: true
+      responses:
+        "200":
+          description: Existing idempotent message submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "201":
+          description: Message durably accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Bad Request
+      summary: Send
+      tags:
+      - Conversation Message Resource
+    get:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: afterSequence
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessagePageResponse"
+      summary: List
+      tags:
+      - Conversation Message Resource
+  /api/v1/conversations/{conversationId}/messages/{messageId}:
+    put:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: messageId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditMessageRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Bad Request
+      summary: Edit
+      tags:
+      - Conversation Message Resource
+    delete:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: messageId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Message soft-deleted
+      summary: Delete
+      tags:
+      - Conversation Message Resource
+  /api/v1/conversations/{conversationId}/messages/{messageId}/status:
+    get:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: messageId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageDeliveryStatusResponse"
+      summary: Get Status
+      tags:
+      - Delivery Resource
+  /api/v1/conversations/{conversationId}/position:
+    get:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessagePositionResponse"
+      summary: Get Position
+      tags:
+      - Delivery Resource
+  /api/v1/conversations/{conversationId}/read-position:
+    put:
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcknowledgePositionRequest"
+        required: true
+      responses:
+        "204":
+          description: Read position acknowledged
+        "400":
+          description: Bad Request
+      summary: Acknowledge Read
+      tags:
+      - Delivery Resource
+  /api/v1/invitations:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvitationRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateInvitationResponse"
+        "400":
+          description: Bad Request
+      summary: Create Invitation
+      tags:
+      - Invitation Resource
+  /api/v1/invitations/redeem:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RedeemInvitationRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RedeemInvitationResponse"
+        "400":
+          description: Bad Request
+      security: []
+      summary: Redeem Invitation
+      tags:
+      - Invitation Resource
+  /api/v1/invitations/{invitationId}/revoke:
+    post:
+      parameters:
+      - name: invitationId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RevokeInvitationRequest"
+        required: true
+      responses:
+        "204":
+          description: Invitation revoked
+        "400":
+          description: Bad Request
+      summary: Revoke Invitation
+      tags:
+      - Invitation Resource
+  /api/v1/ping:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PingResponse"
+      security: []
+      summary: Ping
+      tags:
+      - Ping Resource
+  /api/v1/sessions:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionLoginRequest"
+        required: true
+      responses:
+        "200":
+          description: Authenticated session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionLoginResponse"
+        "400":
+          description: Malformed or invalid request
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ApiProblem"
+        "401":
+          description: Invalid credentials
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ApiProblem"
+        "429":
+          description: Authentication attempt limit exhausted
+          headers:
+            Retry-After:
+              description: Seconds until another attempt is permitted
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ApiProblem"
+        "500":
+          description: Authentication service unavailable
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ApiProblem"
+      security: []
+      summary: Login
+      tags:
+      - Session Resource
+  /api/v1/sessions/logout:
+    post:
+      responses:
+        "204":
+          description: Session revoked
+      summary: Logout
+      tags:
+      - Session Resource
+  /api/v1/sessions/users/{userId}/revoke-all:
+    post:
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: All target-user sessions revoked
+      summary: Revoke All Sessions
+      tags:
+      - Session Resource
+  /api/v1/users:
+    get:
+      parameters:
+      - name: cursor
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: query
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResponseUserSummaryResponse"
+      summary: Search
+      tags:
+      - User Directory Resource
+servers:
+- url: http://127.0.0.1:8080
+  description: Auto generated value

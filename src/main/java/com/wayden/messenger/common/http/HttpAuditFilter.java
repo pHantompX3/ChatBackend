@@ -60,6 +60,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
   private final RequestAuditContext requestAuditContext;
   private final ObjectMapper objectMapper;
   private final HttpAuditQueueDispatcher auditQueueDispatcher;
+  private final NetworkSourceResolver networkSourceResolver;
 
   @Context ResourceInfo resourceInfo;
 
@@ -80,8 +81,8 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     String platformHint = normalizeHint(requestContext.getHeaderString("Sec-CH-UA-Platform"));
     String mobileHint = normalizeHint(requestContext.getHeaderString("Sec-CH-UA-Mobile"));
     String modelHint = normalizeHint(requestContext.getHeaderString("Sec-CH-UA-Model"));
-    ClientIpResolution clientIpResolution =
-        resolveClientIp(forwardedFor, xRealIp, forwarded, httpServerRequest);
+    NetworkSourceResolver.Resolution clientIpResolution =
+        networkSourceResolver.resolve(forwardedFor, xRealIp, forwarded, httpServerRequest);
     DeviceDetection deviceDetection = detectDeviceType(userAgent, mobileHint, modelHint);
 
     requestAuditContext.setRequestId(requestId);
@@ -163,7 +164,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
             "responseLength", requestAuditContext.getResponseLength()));
     payload.put("metadata", requestAuditContext.getCustomAttributes());
 
-    LOG.debugf("=== AUDIT FILTER: Request Audit Snapshot ===%n%s", toPrettyJson(payload));
+    LOG.info(toJson(payload));
 
     try {
       auditQueueDispatcher.submit(toAuditEvent(requestContext, responseContext, payload));
@@ -314,32 +315,6 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     }
     String trimmed = value.trim();
     return trimmed.startsWith("/") ? trimmed : "/" + trimmed;
-  }
-
-  private ClientIpResolution resolveClientIp(
-      String forwardedFor, String xRealIp, String forwarded, HttpServerRequest serverRequest) {
-    if (forwardedFor != null && !forwardedFor.isBlank() && !"-".equals(forwardedFor)) {
-      return new ClientIpResolution(forwardedFor.split(",")[0].trim(), "x-forwarded-for");
-    }
-    if (xRealIp != null && !xRealIp.isBlank() && !"-".equals(xRealIp)) {
-      return new ClientIpResolution(xRealIp.trim(), "x-real-ip");
-    }
-    if (forwarded != null && !forwarded.isBlank() && !"-".equals(forwarded)) {
-      String[] parts = forwarded.split(";");
-      for (String part : parts) {
-        String trimmed = part.trim();
-        if (trimmed.toLowerCase(Locale.ROOT).startsWith("for=")) {
-          return new ClientIpResolution(trimmed.substring(4).replace("\"", "").trim(), "forwarded");
-        }
-      }
-    }
-    if (serverRequest != null && serverRequest.remoteAddress() != null) {
-      String remoteAddress = serverRequest.remoteAddress().hostAddress();
-      if (remoteAddress != null && !remoteAddress.isBlank()) {
-        return new ClientIpResolution(remoteAddress, "vertx-remote-address");
-      }
-    }
-    return new ClientIpResolution("-", "missing");
   }
 
   private DeviceDetection detectDeviceType(String userAgent, String mobileHint, String modelHint) {
@@ -509,15 +484,13 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     }
   }
 
-  private String toPrettyJson(Map<String, Object> payload) {
+  private String toJson(Map<String, Object> payload) {
     try {
-      return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
+      return objectMapper.writeValueAsString(payload);
     } catch (JsonProcessingException ignored) {
-      return payload.toString();
+      return "{\"event\":\"audit.serialization-failed\"}";
     }
   }
-
-  private record ClientIpResolution(String value, String source) {}
 
   private record DeviceDetection(String type, String source) {}
 }

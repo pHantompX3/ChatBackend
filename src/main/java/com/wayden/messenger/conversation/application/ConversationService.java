@@ -17,7 +17,8 @@ public interface ConversationService {
 
   ConversationView get(UserId actorUserId, ConversationId conversationId);
 
-  List<ConversationMember> listMembers(UserId actorUserId, ConversationId conversationId);
+  MemberPage listMembers(
+      UserId actorUserId, ConversationId conversationId, String cursor, Integer limit);
 
   void addMember(UserId actorUserId, ConversationId conversationId, UserId targetUserId);
 
@@ -38,6 +39,13 @@ public interface ConversationService {
   record ConversationPage(List<ConversationView> items, String nextCursor) {
 
     public ConversationPage {
+      items = List.copyOf(items);
+    }
+  }
+
+  record MemberPage(List<ConversationMember> items, String nextCursor) {
+
+    public MemberPage {
       items = List.copyOf(items);
     }
   }

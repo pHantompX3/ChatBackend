@@ -25,6 +25,7 @@ const collectionPath = path.join(
   "collections",
   "chat-backend.postman_collection.json",
 );
+const openApiPath = path.join(repoRoot, "docs", "api", "openapi.json");
 
 function fail(message) {
   console.error(`ERROR: ${message}`);
@@ -163,6 +164,32 @@ export function extractDiscoveredEndpoints(apiV1, javaRootPath = javaRoot) {
     const right = `${b.path} ${b.method}`;
     return left.localeCompare(right);
   });
+}
+
+export function extractOpenApiEndpoints(documentPath = openApiPath) {
+  if (!fs.existsSync(documentPath)) {
+    fail(`OpenAPI snapshot not found: ${documentPath}`);
+  }
+  const document = readJson(documentPath);
+  const endpoints = [];
+  for (const [endpointPath, pathItem] of Object.entries(document.paths ?? {})) {
+    for (const method of ["get", "post", "put", "delete", "patch"]) {
+      const operation = pathItem?.[method];
+      if (!operation) {
+        continue;
+      }
+      const sourceGroup = String(operation.tags?.[0] || "API").replace(/\s+/g, "");
+      endpoints.push({
+        method: method.toUpperCase(),
+        path: endpointPath,
+        source: "docs/api/openapi.json",
+        sourceGroup,
+      });
+    }
+  }
+  return endpoints.sort((left, right) =>
+    `${left.path} ${left.method}`.localeCompare(`${right.path} ${right.method}`),
+  );
 }
 
 function findFolder(collection, folderName) {
@@ -1072,6 +1099,9 @@ function applyEndpointTemplatesToExistingRequests(collection) {
     ).includes("Auto-discovered from ");
 
     if (!isDiscovered) {
+      if (requestPath.startsWith("/api/v1/") && ensureNegativeExample(requestItem)) {
+        updatedCount += 1;
+      }
       continue;
     }
 
@@ -1167,6 +1197,10 @@ function applyEndpointTemplatesToExistingRequests(collection) {
       changed = true;
     }
 
+    if (requestPath.startsWith("/api/v1/") && ensureNegativeExample(requestItem)) {
+      changed = true;
+    }
+
     if (changed) {
       requestItem.response = cloneJson(requestItem.response);
       updatedCount += 1;
@@ -1174,6 +1208,51 @@ function applyEndpointTemplatesToExistingRequests(collection) {
   }
 
   return updatedCount;
+}
+
+function ensureNegativeExample(requestItem) {
+  const responses = Array.isArray(requestItem.response) ? requestItem.response : [];
+  if (responses.some((response) => Number(response?.code) >= 400)) {
+    return false;
+  }
+  const headers = Array.isArray(requestItem?.request?.header)
+    ? requestItem.request.header
+    : [];
+  const protectedOperation =
+    requestItem?.request?.auth?.type === "bearer" ||
+    headers.some(
+      (header) => String(header?.key || "").toLowerCase() === "authorization",
+    );
+  const code = protectedOperation ? "MISSING_TOKEN" : "VALIDATION_ERROR";
+  const status = protectedOperation ? 401 : 400;
+  const title = protectedOperation ? "Authentication failed" : "Validation failed";
+  const requestId = "00000000-0000-0000-0000-000000000000";
+  const body = JSON.stringify(
+    {
+      type: `urn:wl-chat:problem:${code.toLowerCase().replaceAll("_", "-")}`,
+      title,
+      status,
+      detail: protectedOperation
+        ? "Authentication failed"
+        : "Request validation failed",
+      instance: `urn:wl-chat:request:${requestId}`,
+      code,
+      requestId,
+    },
+    null,
+    2,
+  );
+  responses.push({
+    name: `${status} ${title}`,
+    originalRequest: cloneJson(requestItem.request),
+    status: protectedOperation ? "Unauthorized" : "Bad Request",
+    code: status,
+    _postman_previewlanguage: "json",
+    header: [{ key: "Content-Type", value: "application/problem+json" }],
+    body,
+  });
+  requestItem.response = responses;
+  return true;
 }
 
 function buildHealthTemplate(name, rawPath, description, testName) {
@@ -1427,8 +1506,7 @@ export function run() {
   }
 
   const collection = readJson(collectionPath);
-  const apiV1 = parseApiV1Constant();
-  const discoveredEndpoints = extractDiscoveredEndpoints(apiV1);
+  const discoveredEndpoints = extractOpenApiEndpoints();
 
   const healthAdded = ensureProtectedHealthRequests(collection);
   const { addedCount, movedCount, cleanedCount } = mergeDiscoveredEndpoints(
