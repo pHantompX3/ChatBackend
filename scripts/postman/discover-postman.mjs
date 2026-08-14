@@ -530,6 +530,80 @@ const endpointExampleTemplates = new Map([
     },
   ],
   [
+    "PUT /api/v1/conversations/{conversationId}/delivery-position",
+    {
+      auth: "bearer",
+      requestBody: '{\n  "sequence": {{message_sequence}}\n}',
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
+        },
+        {
+          name: "409 Sequence Ahead",
+          status: "Conflict",
+          code: 409,
+          body: '{\n  "type": "about:blank",\n  "title": "Delivery sequence ahead",\n  "status": 409,\n  "detail": "The requested sequence exceeds committed conversation history",\n  "code": "DELIVERY_SEQUENCE_AHEAD"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
+    "PUT /api/v1/conversations/{conversationId}/read-position",
+    {
+      auth: "bearer",
+      requestBody: '{\n  "sequence": {{message_sequence}}\n}',
+      responses: [
+        {
+          name: "204 No Content",
+          status: "No Content",
+          code: 204,
+          body: "",
+          contentType: null,
+        },
+      ],
+    },
+  ],
+  [
+    "GET /api/v1/conversations/{conversationId}/position",
+    {
+      auth: "bearer",
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: '{\n  "conversationId": "{{conversation_id}}",\n  "latestSequence": 1,\n  "lastDeliveredSequence": 1,\n  "lastReadSequence": 0,\n  "unreadCount": 1\n}',
+        },
+      ],
+    },
+  ],
+  [
+    "GET /api/v1/conversations/{conversationId}/messages/{messageId}/status",
+    {
+      auth: "bearer",
+      responses: [
+        {
+          name: "200 OK",
+          status: "OK",
+          code: 200,
+          body: '{\n  "messageId": "{{message_id}}",\n  "sequence": 1,\n  "serverAccepted": true,\n  "recipientCount": 1,\n  "deliveredCount": 1,\n  "readCount": 0,\n  "allDelivered": true,\n  "allRead": false\n}',
+        },
+        {
+          name: "403 Sender Only",
+          status: "Forbidden",
+          code: 403,
+          body: '{\n  "type": "about:blank",\n  "title": "Delivery status forbidden",\n  "status": 403,\n  "detail": "Only the message sender may inspect delivery status",\n  "code": "DELIVERY_STATUS_FORBIDDEN"\n}',
+          contentType: "application/problem+json",
+        },
+      ],
+    },
+  ],
+  [
     "PUT /api/v1/conversations/{conversationId}/members/{userId}",
     {
       auth: "bearer",
@@ -843,7 +917,12 @@ function inferDomainFolderByPath(pathValue) {
   }
   if (
     normalized.startsWith("/api/v1/messages") ||
-    /\/api\/v1\/conversations\/[^/]+\/messages$/.test(normalized)
+    /\/api\/v1\/conversations\/[^/]+\/messages(?:\/[^/]+(?:\/status)?)?$/.test(
+      normalized,
+    ) ||
+    /\/api\/v1\/conversations\/[^/]+\/(?:delivery-position|read-position|position)$/.test(
+      normalized,
+    )
   ) {
     return "Messaging";
   }

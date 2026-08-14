@@ -1282,7 +1282,286 @@
           }
         },
         {
-          "name": "RA15 - Edit durable message",
+          "name": "RA15 - Send second authenticated message",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.environment.set('flow_second_client_message_id', pm.variables.replaceIn('{{$guid}}'));"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: second message is durably accepted with 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('flow_second_message_id', jsonData.messageId);",
+                  "pm.environment.set('flow_second_message_sequence', String(jsonData.sequenceNumber));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "{{member_bearer_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientMessageId\": \"{{flow_second_client_message_id}}\",\n  \"body\": \"Synthetic run-all second message\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "messages"]
+            }
+          }
+        },
+        {
+          "name": "RA16 - Query recipient initial position",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: recipient initial position returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.expect(jsonData.lastDeliveredSequence).to.eql(0);",
+                  "pm.expect(jsonData.lastReadSequence).to.eql(0);",
+                  "pm.expect(jsonData.unreadCount).to.eql(2);",
+                  "pm.environment.set('flow_ahead_sequence', String(Number(jsonData.latestSequence) + 1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "{{admin_bearer_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/position",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "position"]
+            }
+          }
+        },
+        {
+          "name": "RA17 - Acknowledge recipient delivery",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('Expected: recipient delivery acknowledgement returns 204', function () {",
+            "  pm.response.to.have.status(204);",
+            "});"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "{{admin_bearer_token}}"}
+            ],
+            "body": {"mode": "raw", "raw": "{\n  \"sequence\": {{flow_message_sequence}}\n}"},
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/delivery-position",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "delivery-position"]
+            }
+          }
+        },
+        {
+          "name": "RA18 - Verify sender delivered status",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('Expected: sender status shows delivered but unread with 200', function () {",
+            "  pm.response.to.have.status(200);",
+            "});",
+            "var jsonData = pm.response.json();",
+            "pm.expect(jsonData.deliveredCount).to.eql(1);",
+            "pm.expect(jsonData.readCount).to.eql(0);",
+            "pm.expect(jsonData.allDelivered).to.eql(true);",
+            "pm.expect(jsonData.allRead).to.eql(false);"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "{{member_bearer_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages/{{flow_message_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "messages", "{{flow_message_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "RA19 - Acknowledge recipient read",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('Expected: recipient read acknowledgement returns 204', function () {",
+            "  pm.response.to.have.status(204);",
+            "});"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "{{admin_bearer_token}}"}
+            ],
+            "body": {"mode": "raw", "raw": "{\n  \"sequence\": {{flow_message_sequence}}\n}"},
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/read-position",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "read-position"]
+            }
+          }
+        },
+        {
+          "name": "RA20 - Verify sender read status",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('Expected: sender status shows read with 200', function () {",
+            "  pm.response.to.have.status(200);",
+            "});",
+            "pm.expect(pm.response.json().allRead).to.eql(true);"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "{{member_bearer_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages/{{flow_message_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "messages", "{{flow_message_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "RA21 - Retry stale acknowledgements",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('Expected: stale delivery acknowledgement remains an idempotent 204', function () {",
+            "  pm.response.to.have.status(204);",
+            "});"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "{{admin_bearer_token}}"}
+            ],
+            "body": {"mode": "raw", "raw": "{\n  \"sequence\": 0\n}"},
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/delivery-position",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "delivery-position"]
+            }
+          }
+        },
+        {
+          "name": "RA22 - Recover recipient history",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('Expected: recipient recovers remaining history with 200', function () {",
+            "  pm.response.to.have.status(200);",
+            "});",
+            "pm.expect(pm.response.json().items.length).to.eql(1);",
+            "pm.expect(String(pm.response.json().items[0].sequenceNumber)).to.eql(pm.environment.get('flow_second_message_sequence'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "{{admin_bearer_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages?afterSequence={{flow_message_sequence}}&limit={{message_limit}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "messages"],
+              "query": [
+                {"key": "afterSequence", "value": "{{flow_message_sequence}}"},
+                {"key": "limit", "value": "{{message_limit}}"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "RA23 - Acknowledge recovered high-water mark",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('Expected: recovered read acknowledgement returns 204', function () {",
+            "  pm.response.to.have.status(204);",
+            "});"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "{{admin_bearer_token}}"}
+            ],
+            "body": {"mode": "raw", "raw": "{\n  \"sequence\": {{flow_second_message_sequence}}\n}"},
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/read-position",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "read-position"]
+            }
+          }
+        },
+        {
+          "name": "RA24 - Verify recipient reconciliation",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('Expected: reconciled recipient position returns 200', function () {",
+            "  pm.response.to.have.status(200);",
+            "});",
+            "var jsonData = pm.response.json();",
+            "pm.expect(jsonData.unreadCount).to.eql(0);",
+            "pm.expect(String(jsonData.lastReadSequence)).to.eql(pm.environment.get('flow_second_message_sequence'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "{{admin_bearer_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/position",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "position"]
+            }
+          }
+        },
+        {
+          "name": "RA25 - Reject acknowledgement beyond history",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('Expected: ahead-of-history acknowledgement returns 409', function () {",
+            "  pm.response.to.have.status(409);",
+            "});",
+            "pm.expect(pm.response.json().code).to.eql('DELIVERY_SEQUENCE_AHEAD');"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "{{admin_bearer_token}}"}
+            ],
+            "body": {"mode": "raw", "raw": "{\n  \"sequence\": {{flow_ahead_sequence}}\n}"},
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/delivery-position",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "delivery-position"]
+            }
+          }
+        },
+        {
+          "name": "RA26 - Verify non-sender status denied",
+          "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+            "pm.test('Expected: non-sender status inspection returns 403', function () {",
+            "  pm.response.to.have.status(403);",
+            "});",
+            "pm.expect(pm.response.json().code).to.eql('DELIVERY_STATUS_FORBIDDEN');"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "{{admin_bearer_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{flow_conversation_id}}/messages/{{flow_message_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{flow_conversation_id}}", "messages", "{{flow_message_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "RA27 - Edit durable message",
           "event": [
             {
               "listen": "test",
@@ -1315,7 +1594,7 @@
           }
         },
         {
-          "name": "RA16 - Soft-delete durable message",
+          "name": "RA28 - Soft-delete durable message",
           "event": [
             {
               "listen": "test",
@@ -1342,7 +1621,7 @@
           }
         },
         {
-          "name": "RA17 - Verify durable tombstone",
+          "name": "RA29 - Verify durable tombstone",
           "event": [
             {
               "listen": "test",
@@ -1376,7 +1655,7 @@
           }
         },
         {
-          "name": "RA18 - Create follow-up invitation",
+          "name": "RA30 - Create follow-up invitation",
           "event": [
             {
               "listen": "prerequest",
@@ -1427,7 +1706,7 @@
           }
         },
         {
-          "name": "RA19 - Revoke follow-up invitation",
+          "name": "RA31 - Revoke follow-up invitation",
           "event": [
             {
               "listen": "test",
@@ -1471,7 +1750,7 @@
           }
         },
         {
-          "name": "RA20 - Remove member from group",
+          "name": "RA32 - Remove member from group",
           "event": [
             {
               "listen": "test",
@@ -1508,7 +1787,7 @@
           }
         },
         {
-          "name": "RA21 - Verify removed member denied",
+          "name": "RA33 - Verify removed member denied",
           "event": [
             {
               "listen": "test",
@@ -1539,7 +1818,7 @@
           }
         },
         {
-          "name": "RA22 - Admin revokes all member sessions",
+          "name": "RA34 - Admin revokes all member sessions",
           "event": [
             {
               "listen": "test",
@@ -1576,7 +1855,7 @@
           }
         },
         {
-          "name": "RA23 - Verify revoked session denied",
+          "name": "RA35 - Verify revoked session denied",
           "event": [
             {
               "listen": "test",
@@ -1618,7 +1897,7 @@
           }
         },
         {
-          "name": "RA24 - Logout admin",
+          "name": "RA36 - Logout admin",
           "event": [
             {
               "listen": "test",

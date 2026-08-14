@@ -79,10 +79,10 @@ final class SchemaVerificationTest {
 
       assertTrue(updateDenied.getMessage().toLowerCase().contains("permission"));
 
-      assertEquals(1, permission(connection, "SELECT"));
-      assertEquals(1, permission(connection, "INSERT"));
-      assertEquals(1, permission(connection, "UPDATE"));
-      assertEquals(0, permission(connection, "DELETE"));
+      assertEquals(1, permission(connection, "messaging.message", "SELECT"));
+      assertEquals(1, permission(connection, "messaging.message", "INSERT"));
+      assertEquals(1, permission(connection, "messaging.message", "UPDATE"));
+      assertEquals(0, permission(connection, "messaging.message", "DELETE"));
 
       final SQLException deleteDenied =
           org.junit.jupiter.api.Assertions.assertThrows(
@@ -98,6 +98,43 @@ final class SchemaVerificationTest {
     }
 
     verifyMessageSchema();
+  }
+
+  @Test
+  void deliveryCursorSchemaPermissionsAndConstraintsShouldBeReadyWithoutAnotherMigration() {
+    migrateMaster();
+    migrateApplicationSchemas();
+    UUID userId = UUID.randomUUID();
+    UUID conversationId = UUID.randomUUID();
+    seedMessageOwner(userId, conversationId);
+
+    try (var connection =
+        TestSqlSupport.openConnection(
+            SQL_SERVER.getHost(),
+            SQL_SERVER.getMappedPort(1433),
+            "wl_chat",
+            APP_LOGIN,
+            APP_PASSWORD)) {
+      assertEquals(1, permission(connection, "messaging.conversation_member", "SELECT"));
+      assertEquals(1, permission(connection, "messaging.conversation_member", "UPDATE"));
+      assertEquals(0, permission(connection, "messaging.conversation_member", "DELETE"));
+
+      try (var valid =
+          connection.prepareStatement(
+              "UPDATE messaging.conversation_member "
+                  + "SET last_delivered_sequence = 4, last_read_sequence = 3 "
+                  + "WHERE conversation_id = ? AND user_id = ?")) {
+        valid.setObject(1, conversationId);
+        valid.setObject(2, userId);
+        assertEquals(1, valid.executeUpdate());
+      }
+      assertConstraintRejects(connection, conversationId, userId, -1, 0);
+      assertConstraintRejects(connection, conversationId, userId, 2, 3);
+    } catch (SQLException exception) {
+      throw new IllegalStateException("Failed delivery cursor schema verification", exception);
+    }
+
+    verifyDeliveryCursorSchema();
   }
 
   @Test
@@ -164,15 +201,70 @@ final class SchemaVerificationTest {
     }
   }
 
-  private static int permission(java.sql.Connection connection, String permission)
-      throws SQLException {
-    try (var statement =
-        connection.prepareStatement("SELECT HAS_PERMS_BY_NAME('messaging.message', 'OBJECT', ?)")) {
-      statement.setString(1, permission);
+  private static int permission(
+      java.sql.Connection connection, String objectName, String permission) throws SQLException {
+    try (var statement = connection.prepareStatement("SELECT HAS_PERMS_BY_NAME(?, 'OBJECT', ?)")) {
+      statement.setString(1, objectName);
+      statement.setString(2, permission);
       try (var result = statement.executeQuery()) {
         result.next();
         return result.getInt(1);
       }
+    }
+  }
+
+  private static void assertConstraintRejects(
+      java.sql.Connection connection, UUID conversationId, UUID userId, long delivered, long read) {
+    SQLException exception =
+        org.junit.jupiter.api.Assertions.assertThrows(
+            SQLException.class,
+            () -> {
+              try (var invalid =
+                  connection.prepareStatement(
+                      "UPDATE messaging.conversation_member "
+                          + "SET last_delivered_sequence = ?, last_read_sequence = ? "
+                          + "WHERE conversation_id = ? AND user_id = ?")) {
+                invalid.setLong(1, delivered);
+                invalid.setLong(2, read);
+                invalid.setObject(3, conversationId);
+                invalid.setObject(4, userId);
+                invalid.executeUpdate();
+              }
+            });
+    assertTrue(exception.getMessage().contains("ck_messaging_conversation_member_positions"));
+  }
+
+  private static void verifyDeliveryCursorSchema() {
+    try (var connection =
+            TestSqlSupport.openConnection(
+                SQL_SERVER.getHost(),
+                SQL_SERVER.getMappedPort(1433),
+                "wl_chat",
+                "sa",
+                DB_PASSWORD);
+        var statement = connection.createStatement()) {
+      try (var result =
+          statement.executeQuery(
+              "SELECT COUNT(*) FROM sys.columns c "
+                  + "JOIN sys.default_constraints d ON d.object_id = c.default_object_id "
+                  + "WHERE c.object_id = OBJECT_ID('messaging.conversation_member') "
+                  + "AND c.name IN ('last_delivered_sequence', 'last_read_sequence') "
+                  + "AND c.is_nullable = 0 "
+                  + "AND d.name IN ('df_messaging_member_last_delivered', "
+                  + "'df_messaging_member_last_read')")) {
+        result.next();
+        assertEquals(2, result.getInt(1));
+      }
+      try (var result =
+          statement.executeQuery(
+              "SELECT COUNT(*) FROM sys.check_constraints "
+                  + "WHERE parent_object_id = OBJECT_ID('messaging.conversation_member') "
+                  + "AND name = 'ck_messaging_conversation_member_positions'")) {
+        result.next();
+        assertEquals(1, result.getInt(1));
+      }
+    } catch (SQLException exception) {
+      throw new IllegalStateException("Failed delivery cursor metadata verification", exception);
     }
   }
 
