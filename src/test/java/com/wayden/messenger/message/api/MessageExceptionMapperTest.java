@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.wayden.messenger.common.api.ApiProblem;
 import com.wayden.messenger.common.http.RequestAuditContext;
 import com.wayden.messenger.message.application.MessageExceptions;
 import java.sql.SQLException;
@@ -21,7 +22,7 @@ final class MessageExceptionMapperTest {
 
     var response =
         mapper.toResponse(new MessageExceptions.InternalException("insert message", rootCause));
-    var problem = (MessageExceptionMapper.MessageProblem) response.getEntity();
+    var problem = (ApiProblem) response.getEntity();
 
     assertEquals(500, response.getStatus());
     assertEquals("MESSAGE_INTERNAL_ERROR", problem.code());

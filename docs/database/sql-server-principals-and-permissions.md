@@ -1,7 +1,7 @@
 # SQL Server Principals and Permissions Baseline
 
-**Scope:** Milestone 1 database foundation  
-**Last reviewed:** 2026-08-08
+**Scope:** Database foundation through Milestone 7
+**Last reviewed:** 2026-08-14
 
 ---
 
@@ -62,6 +62,11 @@ Must not be member of:
 - `sysadmin`
 - `db_owner`
 - `db_ddladmin`
+
+Milestone 7 adds `[identity].[authentication_rate_limit]`. The runtime principal receives only
+`SELECT`, `INSERT`, `UPDATE`, and bounded `DELETE` on that table. It stores SHA-256 scope hashes and
+fixed-window counters, never raw usernames, passwords, tokens, or network addresses. The runtime
+principal remains unable to alter the table or its schema.
 
 ---
 

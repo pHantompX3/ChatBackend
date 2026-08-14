@@ -48,6 +48,7 @@ const environmentPaths =
   process.argv.length > 3
     ? process.argv.slice(3).map((arg) => path.resolve(arg))
     : defaultEnvironmentPaths;
+const openApiPath = path.join(repoRoot, "docs", "api", "openapi.json");
 
 function fail(msg) {
   console.error(`ERROR: ${msg}`);
@@ -107,6 +108,61 @@ function collectRequestUrlRaw(items, out = []) {
     }
   }
   return out;
+}
+
+function collectOperations(items, out = new Set()) {
+  for (const item of items ?? []) {
+    if (item.item) {
+      collectOperations(item.item, out);
+      continue;
+    }
+    const method = String(item?.request?.method || "").toUpperCase();
+    const raw = String(item?.request?.url?.raw || "").split("?", 1)[0];
+    const requestPath = raw
+      .replace(/^\{\{base_url\}\}/, "")
+      .replace(/\{\{[^}]+\}\}/g, "{param}")
+      .replace(/\{[^}]+\}/g, "{param}")
+      .replace(/\/+$/, "");
+    if (method && requestPath) {
+      out.add(`${method} ${requestPath}`);
+    }
+  }
+  return out;
+}
+
+function collectOperationExampleCoverage(items, out = new Map()) {
+  for (const item of items ?? []) {
+    if (item.item) {
+      collectOperationExampleCoverage(item.item, out);
+      continue;
+    }
+    const operations = collectOperations([item]);
+    const operation = operations.values().next().value;
+    if (!operation) {
+      continue;
+    }
+    const coverage = out.get(operation) ?? { success: false, failure: false };
+    for (const response of item.response ?? []) {
+      const status = Number(response?.code);
+      coverage.success ||= status >= 200 && status < 400;
+      coverage.failure ||= status >= 400;
+    }
+    out.set(operation, coverage);
+  }
+  return out;
+}
+
+function openApiOperations(document) {
+  const operations = new Set();
+  for (const [endpointPath, pathItem] of Object.entries(document.paths ?? {})) {
+    const canonicalPath = endpointPath.replace(/\{[^}]+\}/g, "{param}");
+    for (const method of ["get", "post", "put", "delete", "patch"]) {
+      if (pathItem?.[method]) {
+        operations.add(`${method.toUpperCase()} ${canonicalPath}`);
+      }
+    }
+  }
+  return operations;
 }
 
 function collectRunAllSmokeViolations(
@@ -194,6 +250,7 @@ function isPlaceholder(value) {
 }
 
 try {
+  const openApi = readJson(openApiPath);
   const environments = environmentPaths.map((environmentPath) => ({
     path: environmentPath,
     content: readJson(environmentPath),
@@ -312,6 +369,28 @@ try {
   if (!hasHealthUrls) {
     fail(
       `Missing required Quarkus health request URLs: ${requiredHealthUrls.join(", ")}. Run ./scripts/postman/discover-postman.sh to restore protected health checks.`,
+    );
+  }
+
+  const mainCollection = readJson(defaultCollections[0]);
+  const collectionOperations = collectOperations(mainCollection.item);
+  const expectedOperations = openApiOperations(openApi);
+  const missingOperations = Array.from(expectedOperations).filter(
+    (operation) => !collectionOperations.has(operation),
+  );
+  if (missingOperations.length > 0) {
+    fail(
+      `Main Postman collection is missing OpenAPI operations: ${missingOperations.join(", ")}`,
+    );
+  }
+  const exampleCoverage = collectOperationExampleCoverage(mainCollection.item);
+  const incompleteExamples = Array.from(expectedOperations).filter((operation) => {
+    const coverage = exampleCoverage.get(operation);
+    return !coverage?.success || !coverage?.failure;
+  });
+  if (incompleteExamples.length > 0) {
+    fail(
+      `Main Postman collection needs positive and negative examples for: ${incompleteExamples.join(", ")}`,
     );
   }
 

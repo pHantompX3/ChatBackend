@@ -18,6 +18,13 @@ project intentionally performs a release under the current policy.
 
 ### Added
 
+- Implemented a shared RFC 9457 problem representation, safe framework/JSON exception boundaries,
+  stable problem occurrence IDs, authentication headers, and privileged root-cause audit capture.
+- Added generated OpenAPI 3.1 JSON/YAML snapshots, bearer/public-operation metadata, documented
+  login throttling responses, and OpenAPI-to-Postman operation parity validation.
+- Added strict collection limits, bounded cursor pagination for active conversation members,
+  SQL-backed account/source login throttling, trusted-proxy network-source resolution, and JSON
+  application/audit logging with server request and trace correlation.
 - Added the implementation-ready Milestone 7 plan for a common RFC 9457 problem contract,
   generated OpenAPI, strict request/pagination limits, bounded member traversal, shared login
   throttling, structured JSON logs, correlation, and complete Postman operation coverage.
@@ -53,6 +60,7 @@ project intentionally performs a release under the current policy.
 
 ### Changed
 
+- Changed Postman discovery from source-regex inventory to the committed generated OpenAPI contract.
 - Advanced the Maven development version to `0.7.0-SNAPSHOT` for Milestone 7 development.
 - Advanced the Maven development version to `0.6.0-SNAPSHOT` for Milestone 6 development.
 - Advanced the Maven development version to `0.5.0-SNAPSHOT` for Milestone 5 development.

@@ -1,25 +1,35 @@
 package com.wayden.messenger.identity.api;
 
+import com.wayden.messenger.common.api.ApiProblemFactory;
+import com.wayden.messenger.common.http.RequestAuditContext;
 import com.wayden.messenger.identity.application.IdentityExceptions;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.WebApplicationException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import java.net.URI;
+import org.jboss.logging.Logger;
 
 @Provider
-public class IdentityExceptionMapper implements ExceptionMapper<RuntimeException> {
+public class IdentityExceptionMapper
+    implements ExceptionMapper<IdentityExceptions.IdentityException> {
+
+  private static final Logger LOG = Logger.getLogger(IdentityExceptionMapper.class);
+
+  private final RequestAuditContext auditContext;
+  private final ApiProblemFactory problems;
+
+  @Inject
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification = "RequestAuditContext is a CDI-managed request-scoped collaborator")
+  public IdentityExceptionMapper(RequestAuditContext auditContext) {
+    this.auditContext = auditContext;
+    this.problems = new ApiProblemFactory(auditContext);
+  }
 
   @Override
-  public Response toResponse(RuntimeException exception) {
-    if (exception instanceof BadRequestException badRequestException) {
-      return problem(
-          400, "Validation failed", "VALIDATION_ERROR", badRequestException.getMessage());
-    }
-    if (exception instanceof WebApplicationException webApplicationException) {
-      return webApplicationException.getResponse();
-    }
+  public Response toResponse(IdentityExceptions.IdentityException exception) {
     if (exception instanceof IdentityExceptions.BootstrapAlreadyCompletedException) {
       return problem(
           409,
@@ -50,15 +60,16 @@ public class IdentityExceptionMapper implements ExceptionMapper<RuntimeException
       return problem(
           403, "Invitation actor forbidden", "INVITATION_ACTOR_FORBIDDEN", exception.getMessage());
     }
+    auditContext.recordFailure("IDENTITY_INTERNAL_ERROR", exception);
+    LOG.errorf(
+        exception,
+        "Identity request failed requestId=%s operation=%s code=IDENTITY_INTERNAL_ERROR",
+        auditContext.getRequestId(),
+        auditContext.getOperation());
     return problem(500, "Identity error", "IDENTITY_INTERNAL_ERROR", "Unexpected identity error");
   }
 
-  private static Response problem(int status, String title, String code, String detail) {
-    IdentityProblem payload =
-        new IdentityProblem(
-            URI.create("about:blank"), title, status, detail == null ? title : detail, code);
-    return Response.status(status).type("application/problem+json").entity(payload).build();
+  private Response problem(int status, String title, String code, String detail) {
+    return problems.response(status, title, code, detail);
   }
-
-  public record IdentityProblem(URI type, String title, int status, String detail, String code) {}
 }

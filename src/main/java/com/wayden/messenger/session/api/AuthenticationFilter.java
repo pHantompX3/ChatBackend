@@ -1,5 +1,6 @@
 package com.wayden.messenger.session.api;
 
+import com.wayden.messenger.common.api.ApiProblemFactory;
 import com.wayden.messenger.common.api.ApiRoutes;
 import com.wayden.messenger.common.http.RequestAuditContext;
 import com.wayden.messenger.identity.domain.SystemRole;
@@ -91,16 +92,14 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
   private void abort(ContainerRequestContext requestContext, Response.Status status, String code) {
     requestContext.abortWith(
-        Response.status(status)
-            .type("application/problem+json")
-            .entity(
-                new SessionExceptionMapper.SessionProblem(
-                    java.net.URI.create("about:blank"),
-                    "Authentication failed",
-                    status.getStatusCode(),
-                    code,
-                    code))
-            .build());
+        new ApiProblemFactory(requestAuditContext)
+            .response(
+                status.getStatusCode(),
+                status == Response.Status.FORBIDDEN ? "Forbidden" : "Authentication failed",
+                code,
+                status == Response.Status.FORBIDDEN
+                    ? "Request is not permitted"
+                    : "Authentication failed"));
   }
 
   private static String normalizePath(String path) {

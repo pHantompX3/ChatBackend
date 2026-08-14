@@ -10,14 +10,14 @@
 
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven
 
-**Status:** Planned
+**Status:** Implemented
 
 **Last reviewed:** 2026-08-14
 
-**Implementation snapshot:** Implementation has not started. The merged Milestone 6 baseline already
-contains substantial pieces of this milestone, but they are inconsistent or unverified as one public
-contract. This guide defines the remaining consolidation, OpenAPI, limit, authentication-throttle,
-JSON logging, correlation, test, and Postman work.
+**Implementation snapshot:** The shared problem contract, OpenAPI snapshots and parity checks,
+strict limits, bounded member traversal, shared login throttle, trusted network-source resolution,
+JSON logging, correlation, tests, and Postman workflow described here are implemented. WebSockets
+and the explicitly excluded deployment concerns remain assigned to later milestones.
 
 ---
 

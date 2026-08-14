@@ -51,4 +51,24 @@ public final class SessionExceptions {
       super("User was not found");
     }
   }
+
+  public static final class RateLimitedException extends SessionException {
+    private final long retryAfterSeconds;
+
+    public RateLimitedException(long retryAfterSeconds) {
+      super("Too many authentication attempts; try again later");
+      this.retryAfterSeconds = Math.max(1, retryAfterSeconds);
+    }
+
+    public long retryAfterSeconds() {
+      return retryAfterSeconds;
+    }
+  }
+
+  public static final class InternalException extends SessionException {
+    public InternalException(String message, Throwable cause) {
+      super(message);
+      initCause(cause);
+    }
+  }
 }

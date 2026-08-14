@@ -463,10 +463,10 @@ auditing, SQL Server concurrency coverage, and the executable reconnect-reconcil
 implemented under ADR-0014. Transport publication remains only a signal; WebSockets and per-device
 receipts remain deferred.
 
-Milestone 7 planning snapshot (2026-08-14): the implementation-ready API-hardening plan defines a
-common RFC 9457 problem contract, generated OpenAPI and Postman drift direction, strict request and
-pagination limits, bounded member traversal, replica-safe SQL-backed login throttling, structured
-JSON logs, and validated request/trace correlation under ADR-0015. Implementation has not started.
+Milestone 7 status snapshot (2026-08-14): unified RFC 9457 problems, generated and committed
+OpenAPI, OpenAPI-to-Postman operation checks, strict request and pagination limits, cursor-paginated
+member traversal, replica-safe SQL-backed login throttling, trusted proxy resolution, structured
+JSON logs, and validated request/trace correlation are implemented under ADR-0015.
 
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
@@ -507,9 +507,10 @@ JSON logs, and validated request/trace correlation under ADR-0015. Implementatio
 
 Postman artifacts are version-controlled and should be updated whenever API contracts change.
 
-Authoritative source currently used for Postman maintenance:
+Authoritative contract direction used for Postman maintenance:
 
-- implemented routes and DTOs under `src/main/java` (no repository OpenAPI file is currently present)
+- Java resources and DTOs under `src/main/java` generate `docs/api/openapi.json` and
+  `docs/api/openapi.yaml`; Postman discovery and validation consume that operation inventory
 
 Committed artifacts:
 

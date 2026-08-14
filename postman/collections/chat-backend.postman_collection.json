@@ -106,6 +106,43 @@
                 }
               ],
               "body": "{\n  \"status\": \"ok\"\n}"
+            },
+            {
+              "name": "400 Validation failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/ping",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ping"
+                  ]
+                },
+                "description": "Returns service reachability status from PingResource."
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:validation-error\",\n  \"title\": \"Validation failed\",\n  \"status\": 400,\n  \"detail\": \"Request validation failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"VALIDATION_ERROR\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -466,6 +503,69 @@
                 }
               ],
               "body": "{\n  \"messageId\": \"{{message_id}}\",\n  \"conversationId\": \"{{conversation_id}}\",\n  \"senderId\": \"{{sender_user_id}}\",\n  \"clientMessageId\": \"{{client_message_id}}\",\n  \"sequenceNumber\": 1,\n  \"type\": \"TEXT\",\n  \"body\": \"{{message_content}}\",\n  \"createdAt\": \"2026-08-13T18:00:00Z\",\n  \"editedAt\": null,\n  \"deletedAt\": null\n}"
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientMessageId\": \"{{client_message_id}}\",\n  \"body\": \"{{message_content}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "messages"
+                  ]
+                },
+                "description": "Accepts a durable text message for the authenticated sender. A new client key returns 201; an accepted retry returns 200."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -591,6 +691,74 @@
                 }
               ],
               "body": "{\n  \"items\": [\n    {\n      \"messageId\": \"{{message_id}}\",\n      \"conversationId\": \"{{conversation_id}}\",\n      \"senderId\": \"{{sender_user_id}}\",\n      \"clientMessageId\": \"{{client_message_id}}\",\n      \"sequenceNumber\": 1,\n      \"type\": \"TEXT\",\n      \"body\": \"{{message_content}}\",\n      \"createdAt\": \"2026-08-13T18:00:00Z\",\n      \"editedAt\": null,\n      \"deletedAt\": null\n    }\n  ],\n  \"nextAfterSequence\": null\n}"
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages?afterSequence=0&limit={{message_limit}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "messages"
+                  ],
+                  "query": [
+                    {
+                      "key": "afterSequence",
+                      "value": "0",
+                      "description": "Optional exclusive sequence cursor; defaults to 0."
+                    },
+                    {
+                      "key": "limit",
+                      "value": "{{message_limit}}",
+                      "description": "Optional limit in range 1..200; defaults to 50."
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "conversation_id",
+                      "value": "{{conversation_id}}"
+                    }
+                  ]
+                },
+                "description": "Lists messages for a conversation."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -768,6 +936,69 @@
                 }
               ],
               "body": "{\n  \"messageId\": \"{{message_id}}\",\n  \"conversationId\": \"{{conversation_id}}\",\n  \"senderId\": \"{{sender_user_id}}\",\n  \"clientMessageId\": \"{{client_message_id}}\",\n  \"sequenceNumber\": 1,\n  \"type\": \"TEXT\",\n  \"body\": \"{{message_content}}\",\n  \"createdAt\": \"2026-08-13T18:00:00Z\",\n  \"editedAt\": null,\n  \"deletedAt\": null\n}"
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "messages"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/message/api/ConversationMessageResource.java.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientMessageId\": \"{{client_message_id}}\",\n  \"body\": \"{{message_content}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -1185,6 +1416,56 @@
                 }
               ],
               "body": "{\n  \"conversationId\": \"{{conversation_id}}\",\n  \"latestSequence\": 1,\n  \"lastDeliveredSequence\": 1,\n  \"lastReadSequence\": 0,\n  \"unreadCount\": 1\n}"
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/position",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "position"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/delivery/api/DeliveryResource.java."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -1305,6 +1586,69 @@
               "code": 204,
               "header": [],
               "body": ""
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/read-position",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "read-position"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/delivery/api/DeliveryResource.java.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sequence\": {{message_sequence}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -2514,6 +2858,60 @@
                 }
               ],
               "body": "{\n  \"items\": [],\n  \"nextCursor\": null\n}"
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations?limit=50",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "50"
+                    }
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/conversation/api/ConversationResource.java."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -2744,6 +3142,56 @@
               "code": 204,
               "header": [],
               "body": ""
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/leave",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "leave"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/conversation/api/ConversationResource.java."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -2844,6 +3292,56 @@
                 }
               ],
               "body": "[\n  {\n    \"userId\": \"{{admin_user_id}}\",\n    \"username\": \"Admin Root\",\n    \"role\": \"OWNER\",\n    \"joinedAt\": \"2026-08-13T12:00:00Z\"\n  }\n]"
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/members",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "members"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/conversation/api/ConversationResource.java."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -2940,6 +3438,57 @@
               "code": 204,
               "header": [],
               "body": ""
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/members/{{target_user_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "members",
+                    "{{target_user_id}}"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/conversation/api/ConversationResource.java."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -3036,6 +3585,57 @@
               "code": 204,
               "header": [],
               "body": ""
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/members/{{target_user_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "members",
+                    "{{target_user_id}}"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/conversation/api/ConversationResource.java."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -3160,6 +3760,71 @@
               "code": 204,
               "header": [],
               "body": ""
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/members/{{target_user_id}}/role",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "members",
+                    "{{target_user_id}}",
+                    "role"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/conversation/api/ConversationResource.java.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"role\": \"ADMIN\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -3258,6 +3923,58 @@
               "code": 204,
               "header": [],
               "body": ""
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/members/{{target_user_id}}/transfer-ownership",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "members",
+                    "{{target_user_id}}",
+                    "transfer-ownership"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/conversation/api/ConversationResource.java."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -3433,6 +4150,68 @@
                 }
               ],
               "body": "{\n  \"conversationId\": \"{{conversation_id}}\",\n  \"type\": \"DIRECT\",\n  \"title\": null,\n  \"createdBy\": \"{{admin_user_id}}\",\n  \"role\": \"MEMBER\",\n  \"createdAt\": \"2026-08-13T12:00:00Z\",\n  \"updatedAt\": \"2026-08-13T12:00:00Z\"\n}"
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/direct",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "direct"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/conversation/api/ConversationResource.java.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"targetUserId\": \"{{target_user_id}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -3557,6 +4336,68 @@
                 }
               ],
               "body": "{\n  \"conversationId\": \"{{conversation_id}}\",\n  \"type\": \"GROUP\",\n  \"title\": \"Project room\",\n  \"createdBy\": \"{{admin_user_id}}\",\n  \"role\": \"OWNER\",\n  \"createdAt\": \"2026-08-13T12:00:00Z\",\n  \"updatedAt\": \"2026-08-13T12:00:00Z\"\n}"
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/groups",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "groups"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/conversation/api/ConversationResource.java.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Project room\",\n  \"initialMemberIds\": [\n    \"{{target_user_id}}\"\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -3816,6 +4657,57 @@
               "code": 204,
               "header": [],
               "body": ""
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages/{{message_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "messages",
+                    "{{message_id}}"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/message/api/ConversationMessageResource.java."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [
@@ -3944,6 +4836,70 @@
                 }
               ],
               "body": "{\n  \"messageId\": \"{{message_id}}\",\n  \"conversationId\": \"{{conversation_id}}\",\n  \"senderId\": \"{{sender_user_id}}\",\n  \"clientMessageId\": \"{{client_message_id}}\",\n  \"sequenceNumber\": 1,\n  \"type\": \"TEXT\",\n  \"body\": \"{{message_content}}\",\n  \"createdAt\": \"2026-08-13T18:00:00Z\",\n  \"editedAt\": null,\n  \"deletedAt\": null\n}"
+            },
+            {
+              "name": "401 Authentication failed",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{session_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{session_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/conversations/{{conversation_id}}/messages/{{message_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "conversations",
+                    "{{conversation_id}}",
+                    "messages",
+                    "{{message_id}}"
+                  ]
+                },
+                "description": "Auto-discovered from src/main/java/com/wayden/messenger/message/api/ConversationMessageResource.java.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"body\": \"{{message_content}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"urn:wl-chat:problem:missing-token\",\n  \"title\": \"Authentication failed\",\n  \"status\": 401,\n  \"detail\": \"Authentication failed\",\n  \"instance\": \"urn:wl-chat:request:00000000-0000-0000-0000-000000000000\",\n  \"code\": \"MISSING_TOKEN\",\n  \"requestId\": \"00000000-0000-0000-0000-000000000000\"\n}"
             }
           ],
           "event": [

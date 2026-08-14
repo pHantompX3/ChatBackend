@@ -114,6 +114,12 @@ Exit criteria:
 2. Do not edit previously applied Flyway scripts; add new versions instead.
 3. Keep Local and DevDocker SQL data stores separate.
 4. Keep production deployment automation disabled until persistent infrastructure exists.
+5. Leave `chat.http.trusted-proxies` empty when clients connect directly. Configure only the exact
+   immediate proxy IP addresses or CIDRs that are permitted to supply forwarding headers.
+6. Keep login throttling enabled outside isolated tests. Initial defaults are 10 account attempts
+   per five minutes and 30 source attempts per minute, with shared state in SQL Server.
+7. Console, application-file, and HTTP-audit logs are JSON Lines outside tests. Preserve
+   `X-Request-Id` and `X-Trace-Id` when correlating support and audit investigations.
 
 ## Open Decisions
 

@@ -1733,15 +1733,16 @@ Exit criteria:
 
 ## Milestone 7 — API hardening
 
-Planning status snapshot (2026-08-14):
+Implementation status snapshot (2026-08-14):
 
 - the implementation-ready guide is defined in
   `docs/development-guide/milestone-7-api-hardening-step-by-step.md`,
 - shared problem serialization, Java-to-OpenAPI-to-Postman contract direction, strict limits,
   replica-safe SQL-backed login throttling, and structured correlation decisions are accepted in
   `docs/architecture/decision/ADR-0015-harden-http-contracts-and-authentication-throttling.md`,
-- the merged baseline already has partial problem, request-size, pagination, trace ID, logging, and
-  Postman behavior, but Milestone 7 consolidation and verification have not started,
+- common problem serialization, generated OpenAPI snapshots, strict bounded pagination, SQL-backed
+  login throttling, trusted proxy handling, JSON logging, request/trace correlation, and
+  OpenAPI-to-Postman parity checks are implemented,
 - WebSockets, general quotas, caching, tracing export, and deployment-edge controls remain outside
   this milestone.
 

@@ -95,12 +95,16 @@ public class ConversationResource {
   @GET
   @Path("/{conversationId}/members")
   @AuditOperation("conversation.member.list")
-  public List<ConversationMemberResponse> listMembers(
+  public PageResponse<ConversationMemberResponse> listMembers(
       @PathParam("conversationId") String conversationId,
+      @QueryParam("cursor") String cursor,
+      @QueryParam("limit") Integer limit,
       @Context ContainerRequestContext context) {
-    return conversationService.listMembers(actor(context), conversationId(conversationId)).stream()
-        .map(ConversationMemberResponse::from)
-        .toList();
+    var page =
+        conversationService.listMembers(
+            actor(context), conversationId(conversationId), cursor, limit);
+    return new PageResponse<>(
+        page.items().stream().map(ConversationMemberResponse::from).toList(), page.nextCursor());
   }
 
   @PUT

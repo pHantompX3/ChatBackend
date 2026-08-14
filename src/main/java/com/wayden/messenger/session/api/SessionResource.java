@@ -1,7 +1,9 @@
 package com.wayden.messenger.session.api;
 
+import com.wayden.messenger.common.api.ApiProblem;
 import com.wayden.messenger.common.api.ApiRoutes;
 import com.wayden.messenger.common.http.AuditOperation;
+import com.wayden.messenger.common.http.RequestAuditContext;
 import com.wayden.messenger.identity.domain.SystemRole;
 import com.wayden.messenger.identity.domain.UserId;
 import com.wayden.messenger.session.application.SessionService;
@@ -18,6 +20,12 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirements;
 
 @Path(ApiRoutes.API_V1 + "/sessions")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -26,15 +34,56 @@ import lombok.RequiredArgsConstructor;
 public class SessionResource {
 
   private final SessionService sessionService;
+  private final RequestAuditContext requestAuditContext;
 
   @POST
   @PublicEndpoint
+  @SecurityRequirements
+  @APIResponses({
+    @APIResponse(responseCode = "200", description = "Authenticated session created"),
+    @APIResponse(
+        responseCode = "400",
+        description = "Malformed or invalid request",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ApiProblem.class))),
+    @APIResponse(
+        responseCode = "401",
+        description = "Invalid credentials",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ApiProblem.class))),
+    @APIResponse(
+        responseCode = "429",
+        description = "Authentication attempt limit exhausted",
+        headers =
+            @Header(
+                name = "Retry-After",
+                description = "Seconds until another attempt is permitted"),
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ApiProblem.class))),
+    @APIResponse(
+        responseCode = "500",
+        description = "Authentication service unavailable",
+        content =
+            @Content(
+                mediaType = "application/problem+json",
+                schema = @Schema(implementation = ApiProblem.class)))
+  })
   @AuditOperation("identity.session.create")
   public SessionLoginResponse login(@Valid SessionLoginRequest request) {
     validateLoginRequest(request);
     var result =
         sessionService.login(
-            new SessionService.LoginCommand(request.username(), request.password(), null, null));
+            new SessionService.LoginCommand(
+                request.username(),
+                request.password(),
+                requestAuditContext.getUserAgent(),
+                requestAuditContext.getClientIp()));
     return new SessionLoginResponse(result.sessionId(), result.token());
   }
 
