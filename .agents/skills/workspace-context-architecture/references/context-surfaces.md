@@ -1,6 +1,6 @@
-# Copilot Context Surfaces
+# Agent Context Surfaces
 
-## AGENTS.md
+## AGENTS.md / GEMINI.md
 
 Use as the root human-and-agent router.
 
@@ -16,31 +16,21 @@ Should avoid:
 - large policy duplication from other files
 - unstable implementation details
 
-## .github/copilot-instructions.md
+## .agents/rules/*.md & .github/copilot-instructions.md
 
-Use for concise global coding rules that should apply repository-wide when present.
+Use for concise global and scoped coding rules that apply repository-wide or per-directory.
 
 Keep small and stable. Prefer linking to authoritative references.
 
-## Scoped .instructions.md files
+## Scoped rule files
 
 Use for targeted folders/technologies where loading only-in-scope context improves accuracy.
 
 Rules:
 
-- narrow applyTo patterns
+- narrow apply-to scope
 - avoid repeating universal rules
 - reference canonical docs
-
-## .prompt.md files
-
-Use for reusable operational workflows, not as canonical architecture references.
-
-Prompts should point to canonical docs and skills.
-
-## .agent.md files
-
-Create only for clear specialization that cannot be solved by routing + scoped instructions.
 
 ## Skills
 
@@ -50,5 +40,5 @@ A skill should not become a dumping ground for general project facts.
 
 ## Multi-Agent Parity
 
-Whenever editing files in `.github/`, ensure corresponding rules and skills in `.agents/` (`.agents/rules/`, `.agents/skills/`) and `AGENTS.md` are updated to maintain complete parity across all agent ecosystems.
+Whenever editing files in `.agents/`, ensure corresponding instructions and skills in `.github/` (`.github/copilot-instructions.md`, `.github/instructions/`, `.github/skills/`) and `AGENTS.md` are updated to maintain complete parity across all agent ecosystems.
 

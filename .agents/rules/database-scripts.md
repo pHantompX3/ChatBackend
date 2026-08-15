@@ -1,12 +1,8 @@
----
-applyTo: "scripts/database/**/*.sh,scripts/database/flyway/**/*.sql"
----
-
 # Database Scripts Scope Instructions
 
 ## Scope intent
 
-These rules apply when editing database bootstrap, migration scripts, or Flyway SQL files.
+These rules apply when editing database bootstrap, migration scripts, or Flyway SQL files (`scripts/database`).
 
 ## Canonical references
 
@@ -27,5 +23,5 @@ These rules apply when editing database bootstrap, migration scripts, or Flyway 
 
 ## Multi-agent parity
 
-- Corresponding Antigravity rule: [.agents/rules/database-scripts.md](../../.agents/rules/database-scripts.md). Keep both in sync.
+- Corresponding GitHub Copilot instruction: [.github/instructions/database-scripts.instructions.md](../../.github/instructions/database-scripts.instructions.md). Keep both in sync.
 

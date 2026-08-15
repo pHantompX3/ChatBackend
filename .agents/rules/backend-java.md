@@ -1,12 +1,8 @@
----
-applyTo: "src/main/java/**/*.java,src/test/java/**/*.java,src/main/resources/**/*.properties"
----
-
 # Backend Java Scope Instructions
 
 ## Scope intent
 
-These rules apply when editing Java backend code or its runtime properties.
+These rules apply when editing Java backend code or its runtime properties (`src/main/java`, `src/test/java`, `src/main/resources`).
 
 ## Architecture and behavior references
 
@@ -27,5 +23,5 @@ These rules apply when editing Java backend code or its runtime properties.
 
 ## Multi-agent parity
 
-- Corresponding Antigravity rule: [.agents/rules/backend-java.md](../../.agents/rules/backend-java.md). Keep both in sync.
+- Corresponding GitHub Copilot instruction: [.github/instructions/backend-java.instructions.md](../../.github/instructions/backend-java.instructions.md). Keep both in sync.
 
