@@ -490,6 +490,8 @@ JSON logs, and validated request/trace correlation are implemented under ADR-001
   - `docs/development-guide/milestone-7-api-hardening-step-by-step.md`
 - Milestone 7 HTTP contract and authentication-throttling decision:
   - `docs/architecture/decision/ADR-0015-harden-http-contracts-and-authentication-throttling.md`
+- Milestone 8 WebSockets and real-time signaling runbook:
+  - `docs/development-guide/milestone-8-websockets-step-by-step.md`
 - Release history:
   - `CHANGELOG.md`
 - Versioning and changelog policy:
