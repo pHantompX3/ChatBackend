@@ -136,6 +136,74 @@ The guide states WebSockets are non-authoritative and should not be treated as p
 - confirm that the system remains fail-safe when a socket disconnects mid-send
 - assess whether there are any operational risks with large outgoing fanout or noisy user activity
 
+### 3.6 CI/CD, Postman, and testability requirements
+
+Milestone 8 is not complete if it only works in a local IDE run. The agent must also treat delivery verification, automation, and testability as first-class completion criteria.
+
+#### CI/CD and automation
+
+- Verify the app and automated checks still pass in the intended CI path, not just a local hand-run
+- Ensure any new runtime or startup behavior does not break GitHub workflow assumptions or bootstrap scripts
+- Review whether the WebSocket realtime feature or its configuration changes need workflow adjustments, environment variables, or runtime config validation
+- Treat any milestone work as incomplete unless it is compatible with the repository’s default automation flow and operational bootstrap scripts
+
+#### Postman collection maintenance
+
+The repo explicitly requires that API behavior changes be reflected in the Postman assets and validated with the repo’s Postman validation scripts.
+
+Required review/updates for this milestone include:
+
+- update the authoritative API implementation and corresponding Postman collections when WebSocket-related or message/delivery APIs change
+- validate request/response examples and parameter contracts against the live implementation
+- ensure environment files remain aligned when variables or runtime assumptions change
+- maintain realistic auth and session token flows in the collection so the operational contract remains testable
+
+Relevant repo assets include:
+
+- `postman/collections/chat-backend.postman_collection.json`
+- `postman/collections/chat-backend-user-flows.postman_collection.json`
+- `postman/environments/local.example.postman_environment.json`
+- `scripts/postman/validate-postman.sh`
+- `scripts/postman/validate-postman.mjs`
+
+#### Postman flow setup and user journey validation
+
+Milestone 8 should not be considered finished until the user-centric workflows are represented and validated in Postman flow form where relevant.
+
+This means the agent should:
+
+- review whether new realtime or messaging workflows need a named scenario in the flow-oriented collection
+- add or adjust flow coverage for session login, message send, delivery/read semantics, and reconnect recovery if they are now part of the user experience
+- keep the user journey collection aligned with real operational behavior instead of only unit-level semantics
+- treat flow validation as a critical integration check, not a cleanup phase after implementation
+- extend the existing Postman activity rather than creating a disconnected or parallel Postman system for socket validation
+
+#### Integration testing leaning into Postman offerings
+
+The project’s guidance is to treat integration validation as part of product readiness, and Postman is part of that story. The agent should:
+
+- use the Postman collection as a practical integration contract for the API surface
+- add WebSocket-enabled requests and flow scenarios for key Milestone 8 behavior inside the existing Postman activity
+- validate the end-to-end assumptions in a way that complements Quarkus integration tests and Java unit tests
+- prefer evidence from real request flows where the behavior is operational and externally observable
+- keep the WebSocket validation assets aligned with the same collection, environment, and workflow conventions already used by the repo
+
+This should not be implemented as a separate, disconnected Postman project. For this repo, the correct pattern is to add the realtime validation to the existing Postman collection/workspace flow so the setup remains consistent, discoverable, and maintainable.
+
+#### General emphasis on testability
+
+The next agent should explicitly prioritize testability throughout the remaining Milestone 8 work.
+
+This means:
+
+- write or adjust tests so they validate real behavior and not just mock wiring
+- prefer deterministic assertions for state transitions and background-thread outcomes
+- isolate startup and retry logic so it can be tested reliably without relying on timing luck
+- design the realtime and session flows so they are easy to validate via both Java tests and Postman flows
+- keep event emission, connection lifecycle, and session-revocation flows observable and reproducible
+
+A milestone implementation is not considered ready if it requires brittle timing assumptions, unclear lifecycle boundaries, or unvalidated operational flows.
+
 ---
 
 ## 4. What should be reviewed before continuing
@@ -234,6 +302,10 @@ Critical outstanding tasks:
 6. Validate reconnect recovery is deterministic and based on durable REST history, not websocket-only state.
 7. Ensure connection lifecycle cleanup is correct under disconnect and error conditions.
 8. Confirm payload semantics and event types match the project contract and milestone spec.
+9. Review and update CI/CD-facing validation and automation assumptions for the new realtime stack.
+10. Review and update Postman collections, flow scenarios, and environment artifacts to reflect the milestone behavior and keep the operational contract testable.
+11. Add any required WebSocket validation to the existing Postman activity and keep it within the repo’s current collection/workflow structure rather than creating a disconnected parallel system.
+12. Prioritize testability and deterministic validation techniques across Java tests, integration tests, and Postman-based validation runs.
 
 Engineering rules:
 
@@ -242,8 +314,11 @@ Engineering rules:
 - Do not rewrite applied Flyway migrations
 - Add or update tests for any behavior change
 - Validate with the smallest relevant command first, then escalate if justified
+- Treat CI, Postman, and integration validation as milestone completion requirements, not optional cleanup
 - When you change API behavior, update Postman artifacts and validate them as needed
+- For WebSocket or realtime milestones, add the validation assets to the existing Postman collection/workspace structure rather than creating a disconnected parallel Postman setup
 - Preserve the milestone’s invariants and document any important decision in the repo if necessary
+- Favor deterministic, testable code paths over timing-based or brittle assumptions
 
 Before concluding the work, provide:
 
