@@ -39,5 +39,7 @@ public interface ConversationRepository {
   void transferOwnership(
       ConversationId conversationId, UserId currentOwnerId, UserId newOwnerId, Instant now);
 
+  List<UserId> findActiveMemberUserIds(ConversationId conversationId);
+
   record ConversationView(Conversation conversation, ConversationRole actorRole) {}
 }

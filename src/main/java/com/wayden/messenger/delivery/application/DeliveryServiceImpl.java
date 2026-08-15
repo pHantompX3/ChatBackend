@@ -11,8 +11,10 @@ import com.wayden.messenger.identity.domain.UserId;
 import com.wayden.messenger.message.domain.MessageId;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import java.time.Clock;
 import java.util.concurrent.ThreadLocalRandom;
 import org.jboss.logging.Logger;
 
@@ -25,6 +27,9 @@ public class DeliveryServiceImpl implements DeliveryService {
   private final DeliveryRepository repository;
   private final DeliveryAcknowledgementAttempt acknowledgementAttempt;
   private final RequestAuditContext auditContext;
+  private final Clock clock;
+  private final Event<DeliveryEvents.DeliveryAcknowledgedEvent> deliveryAcknowledgedEvent;
+  private final Event<DeliveryEvents.ReadAcknowledgedEvent> readAcknowledgedEvent;
 
   @Inject
   @SuppressFBWarnings(
@@ -33,10 +38,16 @@ public class DeliveryServiceImpl implements DeliveryService {
   public DeliveryServiceImpl(
       DeliveryRepository repository,
       DeliveryAcknowledgementAttempt acknowledgementAttempt,
-      RequestAuditContext auditContext) {
+      RequestAuditContext auditContext,
+      Clock clock,
+      Event<DeliveryEvents.DeliveryAcknowledgedEvent> deliveryAcknowledgedEvent,
+      Event<DeliveryEvents.ReadAcknowledgedEvent> readAcknowledgedEvent) {
     this.repository = repository;
     this.acknowledgementAttempt = acknowledgementAttempt;
     this.auditContext = auditContext;
+    this.clock = clock;
+    this.deliveryAcknowledgedEvent = deliveryAcknowledgedEvent;
+    this.readAcknowledgedEvent = readAcknowledgedEvent;
   }
 
   @Override
@@ -101,7 +112,7 @@ public class DeliveryServiceImpl implements DeliveryService {
                 ? acknowledgementAttempt.acknowledgeRead(conversationId, actorId, requestedSequence)
                 : acknowledgementAttempt.acknowledgeDelivery(
                     conversationId, actorId, requestedSequence);
-        handleAttempt(attempt, conversationId, requestedSequence, read, attemptNumber - 1);
+        handleAttempt(attempt, actorId, conversationId, requestedSequence, read, attemptNumber - 1);
         return;
       } catch (DeliveryExceptions.DeadlockException deadlock) {
         lastDeadlock = deadlock;
@@ -127,6 +138,7 @@ public class DeliveryServiceImpl implements DeliveryService {
 
   private void handleAttempt(
       AcknowledgementAttempt attempt,
+      UserId actorId,
       ConversationId conversationId,
       long requestedSequence,
       boolean read,
@@ -153,6 +165,19 @@ public class DeliveryServiceImpl implements DeliveryService {
         "currentReadSequence", Long.toString(result.currentReadSequence()));
     auditContext.putCustomAttribute("deliveryOutcome", result.outcome().name());
     auditContext.putCustomAttribute("deliveryDeadlockRetryCount", Integer.toString(retryCount));
+    if (read) {
+      readAcknowledgedEvent.fire(
+          new DeliveryEvents.ReadAcknowledgedEvent(
+              conversationId,
+              actorId,
+              result.currentReadSequence(),
+              result.currentDeliveredSequence(),
+              clock.instant()));
+    } else {
+      deliveryAcknowledgedEvent.fire(
+          new DeliveryEvents.DeliveryAcknowledgedEvent(
+              conversationId, actorId, result.currentDeliveredSequence(), clock.instant()));
+    }
   }
 
   private static long sequence(Long rawSequence) {
