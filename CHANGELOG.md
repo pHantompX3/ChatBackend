@@ -9,12 +9,22 @@ and changelog requirements.
 
 ## Retrospective version note
 
-Versions `0.0.1` through `0.4.0` are reconstructed milestone snapshots based on repository history.
-They describe the logical application versions represented by completed milestones, but those
-versions were not published or tagged retroactively. Versioned release tags begin only when the
-project intentionally performs a release under the current policy.
+Versions `0.0.1` through `0.7.0` are reconstructed milestone snapshots based on repository history.
+They describe the logical application versions represented by completed milestones, but formal
+release tags begin when the project intentionally performs a production release under the current policy.
 
 ## [Unreleased]
+
+### Added
+
+- Advanced Maven project version to `0.8.0-SNAPSHOT` for active Milestone 8 development.
+- Added the implementation-ready Milestone 8 development guide (`docs/development-guide/milestone-8-websockets-step-by-step.md`)
+  for Quarkus WebSockets Next real-time event signaling, connection management, post-commit transactional
+  fan-out, active membership authorization filtering, and deterministic REST reconnect recovery.
+- Established multi-agent guardrail parity and bidirectional synchronization across `.github/` and
+  `.agents/` customization surfaces for all AI agents.
+
+## [0.7.0] - 2026-08-14
 
 ### Added
 
@@ -25,11 +35,22 @@ project intentionally performs a release under the current policy.
 - Added strict collection limits, bounded cursor pagination for active conversation members,
   SQL-backed account/source login throttling, trusted-proxy network-source resolution, and JSON
   application/audit logging with server request and trace correlation.
-- Added the implementation-ready Milestone 7 plan for a common RFC 9457 problem contract,
-  generated OpenAPI, strict request/pagination limits, bounded member traversal, shared login
-  throttling, structured JSON logs, correlation, and complete Postman operation coverage.
 - Added ADR-0015 to establish Java-to-OpenAPI-to-Postman contract direction, replica-safe SQL-backed
   login throttling, explicit limit behavior, and structured request correlation.
+
+### Changed
+
+- Changed Postman discovery from source-regex inventory to the committed generated OpenAPI contract.
+
+### Fixed
+
+- Raised the HTTP request-body cap so the maximum valid message remains accepted when JSON uses
+  six-byte Unicode escape sequences.
+
+## [0.6.0] - 2026-08-14
+
+### Added
+
 - Added authenticated per-user delivery and read acknowledgements with monotonic SQL Server cursor
   updates, committed-history bounds, stale-retry idempotency, and atomic read-implies-delivery
   behavior.
@@ -38,14 +59,20 @@ project intentionally performs a release under the current policy.
 - Added delivery-specific problem responses, post-commit safe audit metadata, bounded fresh-
   transaction deadlock retries, schema/permission checks, concurrency/privacy coverage, and an
   executable Postman reconnect-reconciliation journey.
-- Added the implementation-ready Milestone 6 plan for explicit per-user delivery/read
-  acknowledgements, derived unread counts, sender-only aggregate status, reconnect reconciliation,
-  authorization, auditing, and SQL Server concurrency coverage.
 - Added ADR-0014 to establish per-user rather than per-device cursors, explicit acknowledgement as
   the only proof of delivery/read state, and aggregate-only group receipt visibility.
-- Added the implementation-ready Milestone 5 plan for durable message send, deterministic history
-  retrieval, idempotency, editing, soft deletion, authorization, auditing, and concurrency tests.
-- Added repository-wide semantic-versioning and changelog-management guardrails.
+
+### Fixed
+
+- Rejected fractional, string, and out-of-range delivery acknowledgement sequences instead of
+  allowing Jackson to coerce them into signed integers; retained delivery targets and committed
+  high-water context in failure audits, and avoided exclusive-style locks for read-only status
+  queries.
+
+## [0.5.0] - 2026-08-13
+
+### Added
+
 - Added durable authenticated text-message persistence with server-owned IDs, sender identity,
   timestamps, and per-conversation sequence numbers.
 - Added sender-scoped client-message idempotency with concurrency-safe duplicate recovery and
@@ -57,28 +84,19 @@ project intentionally performs a release under the current policy.
 - Added SQL Server schema, least-privilege, rollback, API authorization, pagination, moderation,
   audit-redaction, and synchronized concurrency tests.
 - Added executable Postman send, retry, history, edit, delete, and tombstone workflows.
+- Added repository-wide semantic-versioning and changelog-management guardrails.
 
 ### Changed
 
-- Changed Postman discovery from source-regex inventory to the committed generated OpenAPI contract.
-- Advanced the Maven development version to `0.7.0-SNAPSHOT` for Milestone 7 development.
-- Advanced the Maven development version to `0.6.0-SNAPSHOT` for Milestone 6 development.
-- Advanced the Maven development version to `0.5.0-SNAPSHOT` for Milestone 5 development.
 - Replaced the unsafe client-supplied sender message stub and standalone `/api/v1/messages` route
   with authenticated conversation-scoped message APIs.
 
 ### Fixed
 
-- Rejected fractional, string, and out-of-range delivery acknowledgement sequences instead of
-  allowing Jackson to coerce them into signed integers; retained delivery targets and committed
-  high-water context in failure audits, and avoided exclusive-style locks for read-only status
-  queries.
 - Normalized Postman Cloud's omitted empty response arrays and implicit default environment-variable
   types during drift checks, while reporting the first differing field for actionable failures.
 - Corrected generated and curated Postman message contracts to use bearer authentication, valid
   request bodies, accurate response examples, and executable status assertions.
-- Raised the HTTP request-body cap so the maximum valid message remains accepted when JSON uses
-  six-byte Unicode escape sequences.
 - Corrected exhausted deadlock telemetry to report two performed retries and distinguish exhaustion
   from an active retry.
 - Added deterministic coverage for duplicate-winner recovery, bounded deadlock retries, membership
