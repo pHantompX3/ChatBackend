@@ -14,6 +14,9 @@ The contract direction is Java resources and DTOs to generated OpenAPI to Postma
 ## Repository Layout
 
 - postman/collections/chat-backend.postman_collection.json
+- postman/collections/chat-backend-user-flows.postman_collection.json
+- postman/collections/chat-backend-websocket-manual-integration.postman_collection.json
+- postman/collections/chat-backend-websocket-participants-down.postman_collection.json
 - postman/environments/local.example.postman_environment.json
 - postman/environments/devdocker.example.postman_environment.json
 - postman/environments/production.example.postman_environment.json
@@ -44,6 +47,8 @@ Create local config for Postman Cloud sync:
    - postman-workspace-id
    - optional postman-collection-id
    - optional postman-flow-collection-id
+   - optional postman-websocket-collection-id
+   - optional postman-websocket-teardown-collection-id
    - optional postman-local-environment-id
    - optional postman-dev-environment-id
    - optional postman-prod-environment-id
@@ -60,6 +65,8 @@ You can also override by environment variables:
 - POSTMAN_WORKSPACE_ID
 - POSTMAN_COLLECTION_ID
 - POSTMAN_FLOW_COLLECTION_ID
+- POSTMAN_WEBSOCKET_COLLECTION_ID
+- POSTMAN_WEBSOCKET_TEARDOWN_COLLECTION_ID
 - POSTMAN_ENVIRONMENT_ID
 - POSTMAN_LOCAL_ENVIRONMENT_ID
 - POSTMAN_DEV_ENVIRONMENT_ID
@@ -113,6 +120,17 @@ variables and scenarios, but Newman, Postman CLI collection runs, monitors, and 
 current CI workflow do not execute it. Automated repository tests validate the underlying
 authentication, registry, fan-out/privacy, acknowledgement, revocation, and REST reconciliation
 components; they are not a live handshake-and-frame CI test.
+
+The repository includes a human-guided setup and trigger collection at
+`postman/collections/chat-backend-websocket-manual-integration.postman_collection.json`. Run only its
+provisioning folder to establish two fresh participants and persist `socket_participant_1_token` and
+`socket_participant_2_token` in the selected environment. Then follow
+`docs/client-integration/manual-websocket-postman-testing-guide.md` to open two authenticated socket
+tabs, trigger interactions individually, and inspect authoritative SQL Server evidence.
+
+The companion `postman/collections/chat-backend-websocket-participants-down.postman_collection.json`
+runner logs W and L out, verifies both revoked tokens receive `401`, and clears the two raw token
+values while retaining durable SQL evidence.
 
 ## Smoke Flow Authoring Requirements
 

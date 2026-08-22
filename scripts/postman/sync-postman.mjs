@@ -20,6 +20,18 @@ const defaultCollectionPaths = [
     "collections",
     "chat-backend-user-flows.postman_collection.json",
   ),
+  path.join(
+    repoRoot,
+    "postman",
+    "collections",
+    "chat-backend-websocket-manual-integration.postman_collection.json",
+  ),
+  path.join(
+    repoRoot,
+    "postman",
+    "collections",
+    "chat-backend-websocket-participants-down.postman_collection.json",
+  ),
 ];
 const defaultEnvironmentPaths = [
   path.join(
@@ -111,6 +123,17 @@ function loadConfig(configPath) {
       "postman-flow-collection-id",
       "POSTMAN_FLOW_COLLECTION_ID",
     ]),
+    websocketCollectionId: get("POSTMAN_WEBSOCKET_COLLECTION_ID", [
+      "postman-websocket-collection-id",
+      "POSTMAN_WEBSOCKET_COLLECTION_ID",
+    ]),
+    websocketTeardownCollectionId: get(
+      "POSTMAN_WEBSOCKET_TEARDOWN_COLLECTION_ID",
+      [
+        "postman-websocket-teardown-collection-id",
+        "POSTMAN_WEBSOCKET_TEARDOWN_COLLECTION_ID",
+      ],
+    ),
     environmentId: get("POSTMAN_ENVIRONMENT_ID", [
       "postman-environment-id",
       "POSTMAN_ENVIRONMENT_ID",
@@ -708,6 +731,28 @@ async function run() {
         label: "Flow",
         propertyKey: "postman-flow-collection-id",
         collectionId: config.flowCollectionId,
+      };
+    }
+    if (
+      collectionName ===
+      "chat-backend-websocket-manual-integration.postman_collection.json"
+    ) {
+      return {
+        collectionPath,
+        label: "WebSocket manual integration",
+        propertyKey: "postman-websocket-collection-id",
+        collectionId: config.websocketCollectionId,
+      };
+    }
+    if (
+      collectionName ===
+      "chat-backend-websocket-participants-down.postman_collection.json"
+    ) {
+      return {
+        collectionPath,
+        label: "WebSocket participants bring-down",
+        propertyKey: "postman-websocket-teardown-collection-id",
+        collectionId: config.websocketTeardownCollectionId,
       };
     }
 

@@ -500,6 +500,8 @@ never treated as durable delivery proof.
   - `docs/development-guide/milestone-8-websockets-step-by-step.md`
 - Canonical client responsibility, offline behavior, and recovery guide:
   - `docs/client-integration/client-responsibility-and-recovery-guide.md`
+- Human-run two-participant WebSocket/Postman integration guide:
+  - `docs/client-integration/manual-websocket-postman-testing-guide.md`
 - Release history:
   - `CHANGELOG.md`
 - Versioning and changelog policy:

@@ -40,6 +40,12 @@ release tags begin when the project intentionally performs a production release 
 - Documented the agreed WebSocket validation boundary: repository automation covers protocol
   components and durable REST recovery, while the project owner currently performs network-level
   handshake and frame integration testing through a separate Postman Desktop collection.
+- Added a synchronized Postman setup collection and intuitive manual guide that provision two socket
+  participants, persist separate session-token variables, trigger message/receipt lifecycle events,
+  exercise bidirectional acknowledgements, and verify durable evidence directly in SQL Server.
+- Added the paired socket-participant bring-down runner and named the human test actors W (Wayden) and
+  L (Lacara), with a complete exchange covering liveness, multi-connection fan-out, all current event
+  types, socket acknowledgements, invalid commands, reconnect recovery, and session-revocation closes.
 
 ### Fixed
 

@@ -286,6 +286,9 @@ should exercise real handshakes, frames, close codes, concurrent connections, an
 Repository unit/integration results must not be described as automated end-to-end WebSocket transport
 coverage unless a future protocol-capable test harness is added to CI.
 
+The executable human setup, two-participant interaction sequence, and SQL evidence queries are
+defined in `docs/client-integration/manual-websocket-postman-testing-guide.md`.
+
 ## 12. Backend Gaps to Revisit Before Client Production Readiness
 
 The audit found these areas where client workarounds are possible but not ideal:

@@ -1,0 +1,92 @@
+{
+  "info": {
+    "_postman_id": "cebf6957-dd46-44fa-82d7-c37bc2925943",
+    "name": "WL-Chat Socket Participants - Bring Down",
+    "description": "Ordered teardown runner for the W (Wayden) and L (Lacara) manual WebSocket journey. It revokes both participant sessions, verifies both raw tokens are rejected, and removes the token values from the selected Postman environment. Durable users, conversation, messages, and audit evidence are intentionally retained in SQL Server.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "socket_participant_1_token", "value": "" },
+    { "key": "socket_participant_2_token", "value": "" },
+    { "key": "socket_conversation_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "D01 - Logout W and close W socket",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('Expected: W logout returns 204', function () { pm.response.to.have.status(204); });"
+          ]
+        }
+      }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_1_token}}", "type": "string" }] },
+        "method": "POST",
+        "url": { "raw": "{{base_url}}/api/v1/sessions/logout" },
+        "description": "W's live socket should close with code 4401 after the durable session revocation commits."
+      }
+    },
+    {
+      "name": "D02 - Logout L and close L socket",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('Expected: L logout returns 204', function () { pm.response.to.have.status(204); });"
+          ]
+        }
+      }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_2_token}}", "type": "string" }] },
+        "method": "POST",
+        "url": { "raw": "{{base_url}}/api/v1/sessions/logout" },
+        "description": "L's live socket should close with code 4401 after the durable session revocation commits."
+      }
+    },
+    {
+      "name": "D03 - Verify W token rejected and clear it",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('Expected: revoked W token is denied with 401', function () { pm.response.to.have.status(401); });",
+            "if (pm.response.code === 401) { pm.environment.unset('socket_participant_1_token'); }"
+          ]
+        }
+      }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_1_token}}", "type": "string" }] },
+        "method": "GET",
+        "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}" }
+      }
+    },
+    {
+      "name": "D04 - Verify L token rejected and clear it",
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('Expected: revoked L token is denied with 401', function () { pm.response.to.have.status(401); });",
+            "if (pm.response.code === 401) {",
+            "  pm.environment.unset('socket_participant_2_token');",
+            "  pm.environment.unset('socket_admin_token');",
+            "  pm.environment.unset('socket_invitation_token');",
+            "}"
+          ]
+        }
+      }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_2_token}}", "type": "string" }] },
+        "method": "GET",
+        "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}" },
+        "description": "Only raw secret variables are cleared. Durable IDs remain available for SQL evidence review."
+      }
+    }
+  ]
+}
