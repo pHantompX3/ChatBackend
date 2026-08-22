@@ -31,7 +31,8 @@ public class ConnectionRegistry {
   private final ConcurrentHashMap<String, ConnectionMetadata> connectionIndex =
       new ConcurrentHashMap<>();
 
-  public record ConnectionMetadata(UserId userId, SessionId sessionId, Instant connectedAt) {}
+  public record ConnectionMetadata(
+      UserId userId, SessionId sessionId, Instant expiresAt, Instant connectedAt) {}
 
   /**
    * Registers a new authenticated WebSocket connection.
@@ -40,11 +41,18 @@ public class ConnectionRegistry {
    * @param userId the authenticated user
    * @param sessionId the session backing this connection
    */
-  public void register(WebSocketConnection connection, UserId userId, SessionId sessionId) {
-    userSockets
-        .computeIfAbsent(userId.value(), id -> ConcurrentHashMap.newKeySet())
-        .add(connection);
-    connectionIndex.put(connection.id(), new ConnectionMetadata(userId, sessionId, Instant.now()));
+  public synchronized void register(
+      WebSocketConnection connection, UserId userId, SessionId sessionId, Instant expiresAt) {
+    userSockets.compute(
+        userId.value(),
+        (id, sockets) -> {
+          Set<WebSocketConnection> activeSockets =
+              sockets == null ? ConcurrentHashMap.newKeySet() : sockets;
+          activeSockets.add(connection);
+          return activeSockets;
+        });
+    connectionIndex.put(
+        connection.id(), new ConnectionMetadata(userId, sessionId, expiresAt, Instant.now()));
     LOG.debugf("WebSocket registered: connectionId=%s userId=%s", connection.id(), userId.value());
   }
 
@@ -53,16 +61,15 @@ public class ConnectionRegistry {
    *
    * @param connection the connection that was closed
    */
-  public void unregister(WebSocketConnection connection) {
+  public synchronized void unregister(WebSocketConnection connection) {
     ConnectionMetadata meta = connectionIndex.remove(connection.id());
     if (meta != null) {
-      Set<WebSocketConnection> sockets = userSockets.get(meta.userId().value());
-      if (sockets != null) {
-        sockets.remove(connection);
-        if (sockets.isEmpty()) {
-          userSockets.remove(meta.userId().value(), sockets);
-        }
-      }
+      userSockets.computeIfPresent(
+          meta.userId().value(),
+          (id, sockets) -> {
+            sockets.remove(connection);
+            return sockets.isEmpty() ? null : sockets;
+          });
       LOG.debugf(
           "WebSocket unregistered: connectionId=%s userId=%s",
           connection.id(), meta.userId().value());
@@ -87,6 +94,11 @@ public class ConnectionRegistry {
     return Optional.ofNullable(connectionIndex.get(connection.id()));
   }
 
+  public boolean isActive(WebSocketConnection connection, Instant now) {
+    ConnectionMetadata metadata = connectionIndex.get(connection.id());
+    return metadata != null && metadata.expiresAt().isAfter(now);
+  }
+
   /**
    * Closes all WebSocket connections belonging to a specific session with the given code and
    * reason.
@@ -109,7 +121,17 @@ public class ConnectionRegistry {
           LOG.infof(
               "Closing WebSocket for revoked session: connectionId=%s userId=%s sessionId=%s code=%d",
               entry.getKey(), userId.value(), sessionId, closeCode);
-          connection.closeAndAwait(new io.quarkus.websockets.next.CloseReason(closeCode, reason));
+          try {
+            connection.closeAndAwait(new io.quarkus.websockets.next.CloseReason(closeCode, reason));
+          } catch (Exception e) {
+            LOG.warnf(
+                e,
+                "Failed to close revoked WebSocket connectionId=%s userId=%s",
+                entry.getKey(),
+                userId.value());
+          } finally {
+            unregister(connection);
+          }
         }
       }
     }

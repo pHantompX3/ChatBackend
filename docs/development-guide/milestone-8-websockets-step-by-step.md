@@ -284,18 +284,18 @@ While REST remains fully supported and authoritative, clients connected over Web
 
 1. **Ping Command**:
    ```json
-   { "action": "ping", "clientTimestamp": 1723732200000 }
+   { "action": "ping" }
    ```
    Server responds immediately with `pong` frame:
    ```json
-   { "action": "pong", "clientTimestamp": 1723732200000, "serverTimestamp": 1723732200010 }
+   { "type": "pong" }
    ```
 2. **Acknowledge Delivery Command (`delivery.ack`)**:
    ```json
    {
      "action": "delivery.ack",
      "conversationId": "c1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c",
-     "sequenceNumber": 42
+     "sequence": 42
    }
    ```
    Server delegates directly to `DeliveryService.acknowledgeDelivery(...)`, updating SQL Server and triggering post-commit fan-out.
@@ -304,7 +304,7 @@ While REST remains fully supported and authoritative, clients connected over Web
    {
      "action": "read.ack",
      "conversationId": "c1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c",
-     "sequenceNumber": 42
+     "sequence": 42
    }
    ```
    Server delegates directly to `DeliveryService.acknowledgeRead(...)`, updating SQL Server (with read-implies-delivery monotonic updates) and triggering post-commit fan-out.
@@ -637,17 +637,15 @@ public class ChatWebSocketEndpoint {
     }
 
     private void handlePing(JsonNode root, WebSocketConnection connection) {
-        long clientTs = root.path("clientTimestamp").asLong();
-        connection.sendText(String.format("{\"action\":\"pong\",\"clientTimestamp\":%d,\"serverTimestamp\":%d}",
-                clientTs, System.currentTimeMillis()));
+        connection.sendText("{\"type\":\"pong\"}");
     }
 
     private void handleDeliveryAck(JsonNode root, WebSocketConnection connection) {
-        // Parse conversationId and sequenceNumber, delegate to deliveryService
+        // Parse conversationId and sequence, delegate to deliveryService
     }
 
     private void handleReadAck(JsonNode root, WebSocketConnection connection) {
-        // Parse conversationId and sequenceNumber, delegate to deliveryService
+        // Parse conversationId and sequence, delegate to deliveryService
     }
 
     private String extractToken(HandshakeRequest handshake) {

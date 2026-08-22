@@ -88,6 +88,9 @@ backend tracks receipts per user, not per device, and does not expose receipt ti
   than running a tight loop.
 - Treat `401` from REST or socket close code `4401` as an authentication-state transition: stop
   automatic authenticated work, clear sensitive credentials, close the socket, and show login.
+- Non-browser WebSocket clients may use any casing for the `Authorization` bearer scheme, and
+  surrounding token whitespace is ignored to match REST authentication. Clients should still emit
+  the conventional `Authorization: Bearer <token>` form.
 - Call `POST /api/v1/sessions/logout` when the user explicitly signs out. Local credential deletion
   should still happen if the network call cannot complete.
 
@@ -205,6 +208,9 @@ trying to distinguish those cases.
   durably stored by the client. Send read acknowledgement only after the product's actual read rule is
   satisfied (for example, visible while the conversation is foregrounded).
 - Acknowledge the highest contiguous sequence, never merely the newest frame observed.
+- Send WebSocket acknowledgement `sequence` values as JSON integers within the signed 64-bit range;
+  strings, fractions, and out-of-range numbers receive `INVALID_COMMAND` and cannot advance durable
+  delivery/read state.
 - Use either REST `PUT /delivery-position` and `PUT /read-position` or the matching WebSocket commands.
   If a WebSocket command's result is uncertain, retrying the same or lower sequence is safe because
   cursor updates are monotonic and stale/equal acknowledgements are no-ops.

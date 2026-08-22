@@ -63,7 +63,8 @@ public class WebSocketSessionAuthenticator {
         .isEmpty()) {
       return Optional.empty();
     }
-    return Optional.of(new AuthenticatedPrincipal(session.userId(), session.id()));
+    return Optional.of(
+        new AuthenticatedPrincipal(session.userId(), session.id(), session.expiresAt()));
   }
 
   private static byte[] sha256(String input) {
@@ -76,5 +77,7 @@ public class WebSocketSessionAuthenticator {
   }
 
   public record AuthenticatedPrincipal(
-      UserId userId, com.wayden.messenger.session.domain.SessionId sessionId) {}
+      UserId userId,
+      com.wayden.messenger.session.domain.SessionId sessionId,
+      java.time.Instant expiresAt) {}
 }

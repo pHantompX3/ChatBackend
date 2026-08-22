@@ -17,6 +17,7 @@ import io.quarkus.websockets.next.OnTextMessage;
 import io.quarkus.websockets.next.WebSocket;
 import io.quarkus.websockets.next.WebSocketConnection;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.jboss.logging.Logger;
@@ -80,7 +81,17 @@ public class ChatWebSocketEndpoint {
     }
 
     AuthenticatedPrincipal auth = principal.get();
-    registry.register(connection, auth.userId(), auth.sessionId());
+    registry.register(connection, auth.userId(), auth.sessionId(), auth.expiresAt());
+
+    // Close the authenticate/register race: if revocation committed between the first lookup and
+    // registration, the revocation observer could not have seen this connection. A second lookup
+    // either confirms the same live session or removes the stale registration immediately.
+    Optional<AuthenticatedPrincipal> confirmed = authenticator.authenticate(rawToken.get());
+    if (confirmed.isEmpty() || !confirmed.get().sessionId().equals(auth.sessionId())) {
+      registry.unregister(connection);
+      connection.closeAndAwait(new CloseReason(CLOSE_UNAUTHORIZED, "Invalid or expired session"));
+      return;
+    }
     LOG.infof(
         "WebSocket connected: connectionId=%s userId=%s", connection.id(), auth.userId().value());
   }
@@ -100,6 +111,12 @@ public class ChatWebSocketEndpoint {
 
   @OnTextMessage
   public void onTextMessage(String message, WebSocketConnection connection) {
+    Optional<ConnectionRegistry.ConnectionMetadata> metadata = registry.metadataFor(connection);
+    if (metadata.isEmpty() || !metadata.get().expiresAt().isAfter(Instant.now())) {
+      registry.unregister(connection);
+      connection.closeAndAwait(new CloseReason(CLOSE_UNAUTHORIZED, "Invalid or expired session"));
+      return;
+    }
     try {
       JsonNode node = objectMapper.readTree(message);
       String action = node.path("action").asText(node.path("type").asText());
@@ -107,8 +124,8 @@ public class ChatWebSocketEndpoint {
         case "ping" ->
             // Respond with a pong to satisfy client liveness checks
             connection.sendTextAndAwait("{\"type\":\"pong\"}");
-        case "delivery.ack" -> acknowledge(node, connection, false);
-        case "read.ack" -> acknowledge(node, connection, true);
+        case "delivery.ack" -> acknowledge(node, metadata.get(), false);
+        case "read.ack" -> acknowledge(node, metadata.get(), true);
         default -> sendError(connection, "UNKNOWN_COMMAND");
       }
     } catch (Exception e) {
@@ -117,14 +134,15 @@ public class ChatWebSocketEndpoint {
     }
   }
 
-  private void acknowledge(JsonNode node, WebSocketConnection connection, boolean read) {
-    ConnectionRegistry.ConnectionMetadata metadata =
-        registry
-            .metadataFor(connection)
-            .orElseThrow(() -> new IllegalStateException("Connection is not authenticated"));
+  private void acknowledge(
+      JsonNode node, ConnectionRegistry.ConnectionMetadata metadata, boolean read) {
     ConversationId conversationId =
         new ConversationId(UUID.fromString(node.required("conversationId").textValue()));
-    long sequence = node.required("sequence").longValue();
+    JsonNode sequenceNode = node.required("sequence");
+    if (!sequenceNode.isIntegralNumber() || !sequenceNode.canConvertToLong()) {
+      throw new IllegalArgumentException("sequence must be a signed 64-bit integer");
+    }
+    long sequence = sequenceNode.longValue();
     if (read) {
       deliveryService.acknowledgeRead(metadata.userId(), conversationId, sequence);
     } else {
@@ -176,8 +194,12 @@ public class ChatWebSocketEndpoint {
 
     // 4. Try Authorization header (non-browser clients)
     String authorization = handshake.header("Authorization");
-    if (authorization != null && authorization.startsWith("Bearer ")) {
-      return Optional.of(authorization.substring("Bearer ".length()));
+    if (authorization != null
+        && authorization.regionMatches(true, 0, "Bearer ", 0, "Bearer ".length())) {
+      String token = authorization.substring("Bearer ".length()).trim();
+      if (!token.isEmpty()) {
+        return Optional.of(token);
+      }
     }
 
     return Optional.empty();

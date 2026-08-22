@@ -9,6 +9,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.quarkus.websockets.next.WebSocketConnection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Set;
 import org.jboss.logging.Logger;
 
@@ -73,17 +74,33 @@ public class RealtimeEventDispatcher {
     for (UserId memberId : activeMembers) {
       Set<WebSocketConnection> connections = connectionRegistry.connectionsForUser(memberId);
       for (WebSocketConnection connection : connections) {
-        try {
-          connection.sendTextAndAwait(json);
-        } catch (Exception e) {
-          LOG.warnf(
-              e,
-              "Failed to send realtime frame to connectionId=%s userId=%s eventType=%s",
-              connection.id(),
-              memberId.value(),
-              envelope.eventType());
+        if (!connectionRegistry.isActive(connection, Instant.now())) {
+          continue;
         }
+        send(connection, memberId, envelope.eventType(), json);
       }
     }
+  }
+
+  private static void send(
+      WebSocketConnection connection, UserId userId, String eventType, String json) {
+    try {
+      connection
+          .sendText(json)
+          .subscribe()
+          .with(ignored -> {}, failure -> logSendFailure(failure, connection, userId, eventType));
+    } catch (Exception failure) {
+      logSendFailure(failure, connection, userId, eventType);
+    }
+  }
+
+  private static void logSendFailure(
+      Throwable failure, WebSocketConnection connection, UserId userId, String eventType) {
+    LOG.warnf(
+        failure,
+        "Failed to send realtime frame to connectionId=%s userId=%s eventType=%s",
+        connection.id(),
+        userId.value(),
+        eventType);
   }
 }

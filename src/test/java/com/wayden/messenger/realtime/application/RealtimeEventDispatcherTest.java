@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 final class RealtimeEventDispatcherTest {
@@ -27,12 +28,19 @@ final class RealtimeEventDispatcherTest {
     List<String> secondDeviceFrames = new ArrayList<>();
     List<String> outsiderFrames = new ArrayList<>();
     ConnectionRegistry registry = new ConnectionRegistry();
+    Instant expiresAt = Instant.now().plusSeconds(60);
     registry.register(
-        connection("member-1", memberFrames), member, new SessionId(UUID.randomUUID()));
+        connection("member-1", memberFrames), member, new SessionId(UUID.randomUUID()), expiresAt);
     registry.register(
-        connection("member-2", secondDeviceFrames), member, new SessionId(UUID.randomUUID()));
+        connection("member-2", secondDeviceFrames),
+        member,
+        new SessionId(UUID.randomUUID()),
+        expiresAt);
     registry.register(
-        connection("outsider", outsiderFrames), outsider, new SessionId(UUID.randomUUID()));
+        connection("outsider", outsiderFrames),
+        outsider,
+        new SessionId(UUID.randomUUID()),
+        expiresAt);
     ConversationRepository repository = activeMembers(List.of(member));
     RealtimeEventDispatcher dispatcher =
         new RealtimeEventDispatcher(
@@ -52,6 +60,36 @@ final class RealtimeEventDispatcherTest {
     assertEquals(0, outsiderFrames.size());
   }
 
+  @Test
+  void shouldAttemptEveryConnectionWhenOneAsynchronousSendFails() {
+    UserId member = new UserId(UUID.randomUUID());
+    ConversationId conversationId = new ConversationId(UUID.randomUUID());
+    AtomicInteger attempts = new AtomicInteger();
+    ConnectionRegistry registry = new ConnectionRegistry();
+    Instant expiresAt = Instant.now().plusSeconds(60);
+    registry.register(
+        connection("failing", attempts, true), member, new SessionId(UUID.randomUUID()), expiresAt);
+    registry.register(
+        connection("succeeding", attempts, false),
+        member,
+        new SessionId(UUID.randomUUID()),
+        expiresAt);
+    RealtimeEventDispatcher dispatcher =
+        new RealtimeEventDispatcher(
+            activeMembers(List.of(member)), registry, new ObjectMapper().findAndRegisterModules());
+
+    dispatcher.dispatch(
+        conversationId,
+        new RealtimeEventEnvelope(
+            UUID.randomUUID(),
+            "message.created",
+            Instant.now(),
+            conversationId.value(),
+            java.util.Map.of("sequence", 1)));
+
+    assertEquals(2, attempts.get());
+  }
+
   private static ConversationRepository activeMembers(List<UserId> members) {
     return (ConversationRepository)
         Proxy.newProxyInstance(
@@ -69,14 +107,36 @@ final class RealtimeEventDispatcherTest {
             (proxy, method, arguments) -> {
               return switch (method.getName()) {
                 case "id" -> id;
-                case "sendTextAndAwait" -> {
+                case "sendText" -> {
                   frames.add((String) arguments[0]);
-                  yield null;
+                  yield io.smallrye.mutiny.Uni.createFrom().voidItem();
                 }
                 case "hashCode" -> System.identityHashCode(proxy);
                 case "equals" -> proxy == arguments[0];
                 default -> null;
               };
             });
+  }
+
+  private static WebSocketConnection connection(
+      String id, AtomicInteger attempts, boolean failSend) {
+    return (WebSocketConnection)
+        Proxy.newProxyInstance(
+            WebSocketConnection.class.getClassLoader(),
+            new Class<?>[] {WebSocketConnection.class},
+            (proxy, method, arguments) ->
+                switch (method.getName()) {
+                  case "id" -> id;
+                  case "sendText" -> {
+                    attempts.incrementAndGet();
+                    yield failSend
+                        ? io.smallrye.mutiny.Uni.createFrom()
+                            .failure(new IllegalStateException("synthetic send failure"))
+                        : io.smallrye.mutiny.Uni.createFrom().voidItem();
+                  }
+                  case "hashCode" -> System.identityHashCode(proxy);
+                  case "equals" -> proxy == arguments[0];
+                  default -> null;
+                });
   }
 }

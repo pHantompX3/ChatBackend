@@ -31,6 +31,9 @@ release tags begin when the project intentionally performs a production release 
   to the existing SQL-backed application service.
 - Added focused coverage for WebSocket session/user authentication, connection lifecycle snapshots,
   multi-device fan-out, membership isolation, and unchanged-acknowledgement suppression.
+- Added a Quarkus WebSocket transport integration test covering a real authenticated handshake,
+  ping/pong, post-commit versus rolled-back event publication, and multi-socket session-revocation
+  closure with code `4401`.
 - Added a canonical client responsibility and recovery guide covering offline outbox behavior,
   idempotent sends, socket lifecycle, ordered reconciliation, delivery/read semantics, failure
   handling, privacy transitions, first-client acceptance criteria, and current backend capability gaps.
@@ -51,6 +54,16 @@ release tags begin when the project intentionally performs a production release 
 
 ### Fixed
 
+- Made per-user registry registration/removal atomic, isolated failures while closing revoked
+  sessions, and changed realtime fan-out to independent asynchronous sends so one socket cannot
+  delay or prevent delivery attempts to later sockets.
+- Closed unregistered or expired sockets with `4401`, closed the authentication/registration
+  revocation race through immediate session revalidation, retained session expiry in connection
+  metadata, and excluded expired connections from event fan-out.
+- Aligned WebSocket bearer parsing with REST scheme casing/whitespace behavior and rejected
+  fractional, string, or out-of-range acknowledgement sequences before durable cursor mutation.
+- Corrected Milestone 8 ping/pong and acknowledgement examples to match the implemented
+  `{"type":"pong"}` response and `sequence` command field.
 - Corrected the manual WebSocket SQL evidence examples to bracket SQL Server schemas and objects,
   and made participant account/session verification resolve IDs internally from the generated W/L
   usernames so manual UUID lookup is unnecessary.
