@@ -32,7 +32,8 @@ public class MessageServiceImpl implements MessageService {
   private final Clock clock;
   private final RequestAuditContext auditContext;
   private final jakarta.enterprise.event.Event<MessageEvents.MessageEditedEvent> messageEditedEvent;
-  private final jakarta.enterprise.event.Event<MessageEvents.MessageDeletedEvent> messageDeletedEvent;
+  private final jakarta.enterprise.event.Event<MessageEvents.MessageDeletedEvent>
+      messageDeletedEvent;
 
   @Inject
   @SuppressFBWarnings(
@@ -165,7 +166,8 @@ public class MessageServiceImpl implements MessageService {
     ActorAccess access = requireAccess(conversationId, actorId, true);
     Message current = requireMessage(conversationId, messageId, true);
     boolean administrative = authorizeDelete(actorId, access, current);
-    if (!current.isDeleted()) {
+    boolean deleted = !current.isDeleted();
+    if (deleted) {
       Instant deletedAt = clock.instant();
       if (!repository.softDelete(messageId, deletedAt)) {
         Message winner = requireMessage(conversationId, messageId, true);
@@ -176,13 +178,13 @@ public class MessageServiceImpl implements MessageService {
         }
       }
     }
-    Message latestForEvent = current.isDeleted() ? current : requireMessage(conversationId, messageId, false);
+    Message latestForEvent = deleted ? requireMessage(conversationId, messageId, false) : current;
     auditMutation(
         administrative ? "message.administratively.deleted" : "message.deleted",
         conversationId,
         current,
         administrative);
-    if (latestForEvent.isDeleted()) {
+    if (deleted && latestForEvent.isDeleted()) {
       messageDeletedEvent.fire(MessageEvents.MessageDeletedEvent.from(latestForEvent));
     }
   }

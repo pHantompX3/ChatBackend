@@ -50,17 +50,11 @@ public final class MessageEvents {
   }
 
   public record MessageDeletedEvent(
-      ConversationId conversationId,
-      MessageId messageId,
-      long sequenceNumber,
-      Instant deletedAt) {
+      ConversationId conversationId, MessageId messageId, long sequenceNumber, Instant deletedAt) {
 
     public static MessageDeletedEvent from(Message message) {
       return new MessageDeletedEvent(
-          message.conversationId(),
-          message.id(),
-          message.sequenceNumber(),
-          message.deletedAt());
+          message.conversationId(), message.id(), message.sequenceNumber(), message.deletedAt());
     }
   }
 }

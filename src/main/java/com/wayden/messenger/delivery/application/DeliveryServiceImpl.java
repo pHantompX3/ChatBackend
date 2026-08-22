@@ -5,6 +5,7 @@ import com.wayden.messenger.conversation.domain.ConversationId;
 import com.wayden.messenger.delivery.application.DeliveryRepository.AcknowledgementAttempt;
 import com.wayden.messenger.delivery.application.DeliveryRepository.StatusLookup;
 import com.wayden.messenger.delivery.domain.AcknowledgementResult;
+import com.wayden.messenger.delivery.domain.AcknowledgementResult.Outcome;
 import com.wayden.messenger.delivery.domain.MessageDeliveryStatus;
 import com.wayden.messenger.delivery.domain.MessagePosition;
 import com.wayden.messenger.identity.domain.UserId;
@@ -165,6 +166,9 @@ public class DeliveryServiceImpl implements DeliveryService {
         "currentReadSequence", Long.toString(result.currentReadSequence()));
     auditContext.putCustomAttribute("deliveryOutcome", result.outcome().name());
     auditContext.putCustomAttribute("deliveryDeadlockRetryCount", Integer.toString(retryCount));
+    if (result.outcome() != Outcome.ADVANCED) {
+      return;
+    }
     if (read) {
       readAcknowledgedEvent.fire(
           new DeliveryEvents.ReadAcknowledgedEvent(

@@ -445,7 +445,7 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 ## Authoritative Documentation
 
-Current application development version: `0.7.0-SNAPSHOT`. Application releases follow Semantic
+Current application development version: `0.8.0-SNAPSHOT`. Application releases follow Semantic
 Versioning; API generations and Flyway migration versions remain independent.
 
 Milestone 3 status snapshot (2026-08-11): session schema, login/logout/filter behavior, and the administrative revoke-all-sessions API are implemented and validated.
@@ -467,6 +467,12 @@ Milestone 7 status snapshot (2026-08-14): unified RFC 9457 problems, generated a
 OpenAPI, OpenAPI-to-Postman operation checks, strict request and pagination limits, cursor-paginated
 member traversal, replica-safe SQL-backed login throttling, trusted proxy resolution, structured
 JSON logs, and validated request/trace correlation are implemented under ADR-0015.
+
+Milestone 8 status snapshot (2026-08-22): authenticated WebSocket signaling, multi-connection
+registration, active-member-only post-commit fan-out, message and delivery/read events, inbound
+delivery/read acknowledgements, heartbeat support, session-revocation disconnects, and durable REST
+reconciliation are implemented under ADR-0016. SQL Server remains authoritative; socket delivery is
+never treated as durable delivery proof.
 
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`

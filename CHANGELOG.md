@@ -23,6 +23,24 @@ release tags begin when the project intentionally performs a production release 
   fan-out, active membership authorization filtering, and deterministic REST reconnect recovery.
 - Established multi-agent guardrail parity and bidirectional synchronization across `.github/` and
   `.agents/` customization surfaces for all AI agents.
+- Implemented the authenticated `/api/v1/ws` realtime signaling endpoint, multi-device connection
+  registry, active-member-only post-commit fan-out, heartbeat responses, and immediate disconnects
+  following session revocation.
+- Added realtime events for durable message creation, editing, deletion, delivery advancement, and
+  read advancement, plus optional WebSocket commands that delegate delivery/read acknowledgements
+  to the existing SQL-backed application service.
+- Added focused coverage for WebSocket session/user authentication, connection lifecycle snapshots,
+  multi-device fan-out, membership isolation, and unchanged-acknowledgement suppression.
+
+### Fixed
+
+- Updated pre-existing message and delivery unit tests for the Milestone 8 event dependencies and
+  restored the Spotless build gate across all realtime-related source files.
+- Prevented duplicate realtime deletion and acknowledgement events when the durable state did not
+  change, rejected sockets for disabled users, and replaced the live connection-set view with an
+  immutable snapshot for safe concurrent fan-out.
+- Removed an unsupported WebSockets Next timeout property that Quarkus silently ignored; liveness
+  remains provided by the supported automatic ping interval and client reconnect reconciliation.
 
 ## [0.7.0] - 2026-08-14
 

@@ -5,6 +5,7 @@ import com.wayden.messenger.conversation.application.ConversationRepository;
 import com.wayden.messenger.conversation.domain.ConversationId;
 import com.wayden.messenger.identity.domain.UserId;
 import com.wayden.messenger.realtime.domain.RealtimeEventEnvelope;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.quarkus.websockets.next.WebSocketConnection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -27,6 +28,9 @@ public class RealtimeEventDispatcher {
   private final ObjectMapper objectMapper;
 
   @Inject
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification = "Injected collaborators are container-managed application services.")
   public RealtimeEventDispatcher(
       ConversationRepository conversationRepository,
       ConnectionRegistry connectionRegistry,

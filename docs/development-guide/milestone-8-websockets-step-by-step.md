@@ -10,7 +10,7 @@
 
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven
 
-**Status:** Planned / Ready for Implementation
+**Status:** Implemented / Validation Complete
 
 **Last reviewed:** 2026-08-15
 
@@ -45,7 +45,7 @@ Milestone 8 does **not** implement external multi-node distributed message broke
 
 - accepted **ADR-0016** establishing the non-authoritative WebSocket architecture, post-commit fanout, and reconnect recovery contract,
 - addition of `io.quarkus:quarkus-websockets-next` to `pom.xml`,
-- authenticated WebSocket endpoint under `/api/v1/ws` (with `/ws` alias) supporting token authentication via query parameter (`?token=...`) or `Sec-WebSocket-Protocol` header,
+- authenticated WebSocket endpoint under the canonical `/api/v1/ws` path supporting token authentication via query parameter (`?token=...`) or `Sec-WebSocket-Protocol` header,
 - in-memory `ConnectionRegistry` tracking active user sessions, connection instances, and subscription metadata,
 - post-commit domain event listeners (`@Observes(during = TransactionPhase.AFTER_SUCCESS)`) integrated with `MessageServiceImpl` and `DeliveryServiceImpl`,
 - typed event envelopes and JSON frame serializers for:
@@ -66,7 +66,7 @@ Milestone 8 does **not** implement external multi-node distributed message broke
 - non-members and departed members (`left_at IS NOT NULL`) cannot receive events for conversations they do not belong to,
 - publishing an event to a WebSocket connection is never treated as delivery proof; delivery state changes only upon explicit recipient ACK,
 - sender delivery indicators reflect durable cursor state stored in `messaging.conversation_member`,
-- revoking a session (`POST /api/v1/sessions/revoke-all` or `DELETE /api/v1/sessions/current`) terminates all corresponding active WebSocket connections immediately,
+- revoking a session through authenticated logout (`POST /api/v1/sessions/logout`) or the administrative user-scoped revoke-all operation (`POST /api/v1/sessions/users/{userId}/revoke-all`) terminates the corresponding active WebSocket connections immediately,
 - clients disconnected during message transmission can reconnect and fully recover missed messages in order via `GET /api/v1/conversations/{id}/messages?afterSequence={seq}`,
 - all automated unit and integration tests pass with `./mvnw clean verify`, and Spotless code formatting passes.
 
@@ -329,7 +329,6 @@ Configure runtime WebSocket properties in `src/main/resources/application.proper
 quarkus.websockets-next.path=/api/v1/ws
 quarkus.websockets-next.server.max-frame-size=65536
 quarkus.websockets-next.server.auto-ping-interval=30s
-quarkus.websockets-next.server.timeout=60s
 ```
 
 ---
@@ -759,8 +758,9 @@ Document the design decisions in `docs/architecture/decision/ADR-0016-use-websoc
 1. **`README.md`**: Update milestone progress matrix to reflect Milestone 8 implementation.
 2. **`CHANGELOG.md`**: Add Milestone 8 deliverables under `[Unreleased]`.
 3. **OpenAPI & Postman**:
-   * Document WebSocket endpoint `/api/v1/ws` in OpenAPI specifications.
-   * Add Postman reconnect-reconciliation user flow in `postman/collections/chat-backend-user-flows.postman_collection.json`.
+   * Keep OpenAPI authoritative for HTTP recovery and acknowledgement operations; OpenAPI does not model the WebSocket upgrade contract.
+   * Document `/api/v1/ws` and its authentication/event contract in this guide and the Postman runbook.
+   * Retain the executable Postman reconnect-reconciliation user flow in `postman/collections/chat-backend-user-flows.postman_collection.json`.
    * Run `./scripts/postman/validate-postman.sh`.
 
 ---
@@ -773,8 +773,9 @@ Run the complete validation pipeline in order:
 # 1. Flyway naming validation
 ./scripts/database/validate-flyway-naming.sh
 
-# 2. OpenAPI validation
-./scripts/openapi/validate-openapi.sh
+# 2. Generate and compare the OpenAPI snapshot
+./mvnw --batch-mode --no-transfer-progress -DskipTests package
+diff -u <(jq -S . docs/api/openapi.json) <(jq -S . target/generated-openapi/openapi.json)
 
 # 3. Postman collection validation
 ./scripts/postman/validate-postman.sh

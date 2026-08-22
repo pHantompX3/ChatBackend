@@ -97,6 +97,16 @@ By default validation runs against all three committed environment templates:
 - postman/environments/devdocker.example.postman_environment.json
 - postman/environments/production.example.postman_environment.json
 
+## WebSocket Signaling Validation
+
+Postman collection schema v2.1 and Newman validate the authoritative HTTP recovery journey; they do
+not encode a runnable WebSocket request. In Postman desktop, create a WebSocket request using
+`ws://localhost:8080/api/v1/ws?token={{member_session_token}}` (or the equivalent environment host),
+then verify `{"action":"ping"}` returns `{"type":"pong"}`. Delivery and read commands use
+`{"action":"delivery.ack","conversationId":"<uuid>","sequence":<n>}` and the corresponding
+`read.ack` action. After reconnecting, run the existing reconnect-reconciliation journey to recover
+missed durable messages over REST before advancing a cursor.
+
 ## Smoke Flow Authoring Requirements
 
 These are required for all newly created flow requests and all new additions to Run-all API smoke journey:

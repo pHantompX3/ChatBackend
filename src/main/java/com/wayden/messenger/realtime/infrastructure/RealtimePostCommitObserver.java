@@ -39,8 +39,7 @@ public class RealtimePostCommitObserver {
   }
 
   public void onMessageCreated(
-      @Observes(during = TransactionPhase.AFTER_SUCCESS)
-          MessageEvents.MessageCreatedEvent event) {
+      @Observes(during = TransactionPhase.AFTER_SUCCESS) MessageEvents.MessageCreatedEvent event) {
     try {
       RealtimePayloads.MessageCreatedPayload payload =
           new RealtimePayloads.MessageCreatedPayload(
@@ -157,8 +156,7 @@ public class RealtimePostCommitObserver {
   }
 
   public void onSessionRevoked(
-      @Observes(during = TransactionPhase.AFTER_SUCCESS)
-          SessionEvents.SessionRevokedEvent event) {
+      @Observes(during = TransactionPhase.AFTER_SUCCESS) SessionEvents.SessionRevokedEvent event) {
     try {
       connectionRegistry.closeConnectionsForSession(
           event.userId(), event.sessionId(), 4401, "Session revoked");
@@ -175,7 +173,8 @@ public class RealtimePostCommitObserver {
       @Observes(during = TransactionPhase.AFTER_SUCCESS)
           SessionEvents.AllSessionsRevokedEvent event) {
     try {
-      connectionRegistry.closeConnectionsForSession(event.userId(), null, 4401, "All sessions revoked");
+      connectionRegistry.closeConnectionsForSession(
+          event.userId(), null, 4401, "All sessions revoked");
     } catch (Exception e) {
       LOG.errorf(
           e,

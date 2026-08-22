@@ -5,8 +5,8 @@ import com.wayden.messenger.session.domain.SessionId;
 import io.quarkus.websockets.next.WebSocketConnection;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,8 +15,8 @@ import org.jboss.logging.Logger;
 /**
  * In-memory registry that tracks active WebSocket connections by user ID and connection ID.
  *
- * <p>This is intentionally non-authoritative: it reflects currently connected sockets only and
- * does not survive restarts. Clients must reconcile missed events via REST.
+ * <p>This is intentionally non-authoritative: it reflects currently connected sockets only and does
+ * not survive restarts. Clients must reconcile missed events via REST.
  */
 @ApplicationScoped
 public class ConnectionRegistry {
@@ -31,8 +31,7 @@ public class ConnectionRegistry {
   private final ConcurrentHashMap<String, ConnectionMetadata> connectionIndex =
       new ConcurrentHashMap<>();
 
-  public record ConnectionMetadata(
-      UserId userId, SessionId sessionId, Instant connectedAt) {}
+  public record ConnectionMetadata(UserId userId, SessionId sessionId, Instant connectedAt) {}
 
   /**
    * Registers a new authenticated WebSocket connection.
@@ -45,8 +44,7 @@ public class ConnectionRegistry {
     userSockets
         .computeIfAbsent(userId.value(), id -> ConcurrentHashMap.newKeySet())
         .add(connection);
-    connectionIndex.put(
-        connection.id(), new ConnectionMetadata(userId, sessionId, Instant.now()));
+    connectionIndex.put(connection.id(), new ConnectionMetadata(userId, sessionId, Instant.now()));
     LOG.debugf("WebSocket registered: connectionId=%s userId=%s", connection.id(), userId.value());
   }
 
@@ -80,9 +78,13 @@ public class ConnectionRegistry {
   public Set<WebSocketConnection> connectionsForUser(UserId userId) {
     Set<WebSocketConnection> sockets = userSockets.get(userId.value());
     if (sockets == null || sockets.isEmpty()) {
-      return Collections.emptySet();
+      return Set.of();
     }
-    return Collections.unmodifiableSet(sockets);
+    return Set.copyOf(sockets);
+  }
+
+  public Optional<ConnectionMetadata> metadataFor(WebSocketConnection connection) {
+    return Optional.ofNullable(connectionIndex.get(connection.id()));
   }
 
   /**
@@ -100,16 +102,14 @@ public class ConnectionRegistry {
     for (Map.Entry<String, ConnectionMetadata> entry : snapshot.entrySet()) {
       ConnectionMetadata meta = entry.getValue();
       boolean matches =
-          meta.userId().equals(userId)
-              && (sessionId == null || meta.sessionId().equals(sessionId));
+          meta.userId().equals(userId) && (sessionId == null || meta.sessionId().equals(sessionId));
       if (matches) {
         WebSocketConnection connection = findConnection(meta.userId(), entry.getKey());
         if (connection != null) {
           LOG.infof(
               "Closing WebSocket for revoked session: connectionId=%s userId=%s sessionId=%s code=%d",
               entry.getKey(), userId.value(), sessionId, closeCode);
-          connection.closeAndAwait(
-              new io.quarkus.websockets.next.CloseReason(closeCode, reason));
+          connection.closeAndAwait(new io.quarkus.websockets.next.CloseReason(closeCode, reason));
         }
       }
     }

@@ -16,7 +16,8 @@ public class MessageSendAttempt {
   private final MessageRepository repository;
   private final MessageIdGenerator idGenerator;
   private final Clock clock;
-  private final jakarta.enterprise.event.Event<MessageEvents.MessageCreatedEvent> messageCreatedEvent;
+  private final jakarta.enterprise.event.Event<MessageEvents.MessageCreatedEvent>
+      messageCreatedEvent;
 
   @Inject
   @SuppressFBWarnings(

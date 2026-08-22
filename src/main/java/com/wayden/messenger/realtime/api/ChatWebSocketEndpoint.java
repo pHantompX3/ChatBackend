@@ -2,9 +2,12 @@ package com.wayden.messenger.realtime.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wayden.messenger.conversation.domain.ConversationId;
+import com.wayden.messenger.delivery.application.DeliveryService;
 import com.wayden.messenger.realtime.application.ConnectionRegistry;
 import com.wayden.messenger.realtime.application.WebSocketSessionAuthenticator;
 import com.wayden.messenger.realtime.application.WebSocketSessionAuthenticator.AuthenticatedPrincipal;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.quarkus.websockets.next.CloseReason;
 import io.quarkus.websockets.next.HandshakeRequest;
 import io.quarkus.websockets.next.OnClose;
@@ -15,6 +18,7 @@ import io.quarkus.websockets.next.WebSocket;
 import io.quarkus.websockets.next.WebSocketConnection;
 import jakarta.inject.Inject;
 import java.util.Optional;
+import java.util.UUID;
 import org.jboss.logging.Logger;
 
 /**
@@ -41,15 +45,21 @@ public class ChatWebSocketEndpoint {
   private final WebSocketSessionAuthenticator authenticator;
   private final ConnectionRegistry registry;
   private final ObjectMapper objectMapper;
+  private final DeliveryService deliveryService;
 
   @Inject
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification = "Injected collaborators are container-managed application services.")
   public ChatWebSocketEndpoint(
       WebSocketSessionAuthenticator authenticator,
       ConnectionRegistry registry,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      DeliveryService deliveryService) {
     this.authenticator = authenticator;
     this.registry = registry;
     this.objectMapper = objectMapper;
+    this.deliveryService = deliveryService;
   }
 
   @OnOpen
@@ -65,8 +75,7 @@ public class ChatWebSocketEndpoint {
     Optional<AuthenticatedPrincipal> principal = authenticator.authenticate(rawToken.get());
     if (principal.isEmpty()) {
       LOG.debugf("WebSocket rejected — invalid/expired token: connectionId=%s", connection.id());
-      connection.closeAndAwait(
-          new CloseReason(CLOSE_UNAUTHORIZED, "Invalid or expired session"));
+      connection.closeAndAwait(new CloseReason(CLOSE_UNAUTHORIZED, "Invalid or expired session"));
       return;
     }
 
@@ -85,10 +94,7 @@ public class ChatWebSocketEndpoint {
   @OnError
   public void onError(WebSocketConnection connection, Throwable cause) {
     LOG.warnf(
-        cause,
-        "WebSocket error: connectionId=%s reason=%s",
-        connection.id(),
-        cause.getMessage());
+        cause, "WebSocket error: connectionId=%s reason=%s", connection.id(), cause.getMessage());
     registry.unregister(connection);
   }
 
@@ -96,17 +102,41 @@ public class ChatWebSocketEndpoint {
   public void onTextMessage(String message, WebSocketConnection connection) {
     try {
       JsonNode node = objectMapper.readTree(message);
-      String type = node.path("type").asText();
-      switch (type) {
+      String action = node.path("action").asText(node.path("type").asText());
+      switch (action) {
         case "ping" ->
             // Respond with a pong to satisfy client liveness checks
             connection.sendTextAndAwait("{\"type\":\"pong\"}");
-        default ->
-            LOG.debugf(
-                "Unknown WebSocket command type=%s connectionId=%s", type, connection.id());
+        case "delivery.ack" -> acknowledge(node, connection, false);
+        case "read.ack" -> acknowledge(node, connection, true);
+        default -> sendError(connection, "UNKNOWN_COMMAND");
       }
     } catch (Exception e) {
       LOG.warnf(e, "Failed to parse WebSocket message from connectionId=%s", connection.id());
+      sendError(connection, "INVALID_COMMAND");
+    }
+  }
+
+  private void acknowledge(JsonNode node, WebSocketConnection connection, boolean read) {
+    ConnectionRegistry.ConnectionMetadata metadata =
+        registry
+            .metadataFor(connection)
+            .orElseThrow(() -> new IllegalStateException("Connection is not authenticated"));
+    ConversationId conversationId =
+        new ConversationId(UUID.fromString(node.required("conversationId").textValue()));
+    long sequence = node.required("sequence").longValue();
+    if (read) {
+      deliveryService.acknowledgeRead(metadata.userId(), conversationId, sequence);
+    } else {
+      deliveryService.acknowledgeDelivery(metadata.userId(), conversationId, sequence);
+    }
+  }
+
+  private static void sendError(WebSocketConnection connection, String code) {
+    try {
+      connection.sendTextAndAwait("{\"type\":\"error\",\"code\":\"" + code + "\"}");
+    } catch (Exception ignored) {
+      // The connection may already be closed; realtime error frames are not retried.
     }
   }
 

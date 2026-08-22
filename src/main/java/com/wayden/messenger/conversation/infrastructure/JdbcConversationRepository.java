@@ -307,7 +307,7 @@ public class JdbcConversationRepository implements ConversationRepository {
       try (var resultSet = statement.executeQuery()) {
         List<UserId> userIds = new ArrayList<>();
         while (resultSet.next()) {
-          userIds.add(new UserId((UUID) resultSet.getObject("user_id")));
+          userIds.add(new UserId(resultSet.getObject("user_id", UUID.class)));
         }
         return Collections.unmodifiableList(userIds);
       }

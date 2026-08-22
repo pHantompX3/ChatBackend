@@ -1,6 +1,8 @@
 package com.wayden.messenger.realtime.application;
 
+import com.wayden.messenger.identity.application.UserRepository;
 import com.wayden.messenger.identity.domain.UserId;
+import com.wayden.messenger.identity.domain.UserStatus;
 import com.wayden.messenger.session.application.SessionRepository;
 import com.wayden.messenger.session.domain.Session;
 import com.wayden.messenger.session.domain.SessionStatus;
@@ -21,11 +23,14 @@ import java.util.Optional;
 public class WebSocketSessionAuthenticator {
 
   private final SessionRepository sessionRepository;
+  private final UserRepository userRepository;
   private final Clock clock;
 
   @Inject
-  public WebSocketSessionAuthenticator(SessionRepository sessionRepository, Clock clock) {
+  public WebSocketSessionAuthenticator(
+      SessionRepository sessionRepository, UserRepository userRepository, Clock clock) {
     this.sessionRepository = sessionRepository;
+    this.userRepository = userRepository;
     this.clock = clock;
   }
 
@@ -33,8 +38,8 @@ public class WebSocketSessionAuthenticator {
    * Attempts to authenticate the raw token from the handshake.
    *
    * @param rawToken the raw bearer token string
-   * @return an authenticated {@link AuthenticatedPrincipal} if valid, or {@link
-   *     Optional#empty()} if missing, not found, revoked, or expired
+   * @return an authenticated {@link AuthenticatedPrincipal} if valid, or {@link Optional#empty()}
+   *     if missing, not found, revoked, or expired
    */
   public Optional<AuthenticatedPrincipal> authenticate(String rawToken) {
     if (rawToken == null || rawToken.isBlank()) {
@@ -50,6 +55,12 @@ public class WebSocketSessionAuthenticator {
       return Optional.empty();
     }
     if (!session.expiresAt().isAfter(clock.instant())) {
+      return Optional.empty();
+    }
+    if (userRepository
+        .findById(session.userId())
+        .filter(user -> user.status() == UserStatus.ACTIVE)
+        .isEmpty()) {
       return Optional.empty();
     }
     return Optional.of(new AuthenticatedPrincipal(session.userId(), session.id()));

@@ -10,9 +10,13 @@ import com.wayden.messenger.delivery.application.DeliveryRepository.Acknowledgem
 import com.wayden.messenger.delivery.domain.AcknowledgementResult;
 import com.wayden.messenger.delivery.domain.AcknowledgementResult.Outcome;
 import com.wayden.messenger.identity.domain.UserId;
+import jakarta.enterprise.event.Event;
+import java.lang.reflect.Proxy;
 import java.sql.SQLException;
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 final class DeliveryServiceImplTest {
@@ -28,7 +32,7 @@ final class DeliveryServiceImplTest {
             new AcknowledgementResult(4, 0, 3, 0, 0, Outcome.ADVANCED));
     var attempt = new ScriptedAttempt(List.of(deadlock(), deadlock(), committed));
     var audit = new RequestAuditContext();
-    var service = new DeliveryServiceImpl(null, attempt, audit);
+    var service = service(attempt, audit, mockEvent(), mockEvent());
 
     service.acknowledgeDelivery(ACTOR_ID, CONVERSATION_ID, 3L);
 
@@ -48,12 +52,12 @@ final class DeliveryServiceImplTest {
     assertThrows(
         DeliveryExceptions.ResourceNotFoundException.class,
         () ->
-            new DeliveryServiceImpl(null, notFound, notFoundAudit)
+            service(notFound, notFoundAudit, mockEvent(), mockEvent())
                 .acknowledgeRead(ACTOR_ID, CONVERSATION_ID, 1L));
     assertThrows(
         DeliveryExceptions.SequenceAheadException.class,
         () ->
-            new DeliveryServiceImpl(null, ahead, aheadAudit)
+            service(ahead, aheadAudit, mockEvent(), mockEvent())
                 .acknowledgeRead(ACTOR_ID, CONVERSATION_ID, 3L));
 
     assertEquals(
@@ -67,7 +71,7 @@ final class DeliveryServiceImplTest {
   void acknowledgementShouldWrapExhaustedDeadlocks() {
     var attempt = new ScriptedAttempt(List.of(deadlock(), deadlock(), deadlock()));
     var audit = new RequestAuditContext();
-    var service = new DeliveryServiceImpl(null, attempt, audit);
+    var service = service(attempt, audit, mockEvent(), mockEvent());
 
     DeliveryExceptions.InternalException failure =
         assertThrows(
@@ -82,7 +86,7 @@ final class DeliveryServiceImplTest {
   @Test
   void acknowledgementShouldRejectMissingAndNegativeSequenceBeforeAttempt() {
     var attempt = new ScriptedAttempt(List.of());
-    var service = new DeliveryServiceImpl(null, attempt, new RequestAuditContext());
+    var service = service(attempt, new RequestAuditContext(), mockEvent(), mockEvent());
 
     assertThrows(
         DeliveryExceptions.ValidationException.class,
@@ -91,6 +95,54 @@ final class DeliveryServiceImplTest {
         DeliveryExceptions.ValidationException.class,
         () -> service.acknowledgeDelivery(ACTOR_ID, CONVERSATION_ID, -1L));
     assertEquals(0, attempt.calls);
+  }
+
+  @Test
+  void unchangedAcknowledgementShouldNotEmitRealtimeEvent() {
+    var unchanged =
+        new AcknowledgementAttempt.Acknowledged(
+            new AcknowledgementResult(4, 3, 3, 0, 0, Outcome.UNCHANGED));
+    AtomicInteger deliveredCount = new AtomicInteger();
+    AtomicInteger readCount = new AtomicInteger();
+    Event<DeliveryEvents.DeliveryAcknowledgedEvent> delivered = recordingEvent(deliveredCount);
+    Event<DeliveryEvents.ReadAcknowledgedEvent> read = recordingEvent(readCount);
+
+    service(new ScriptedAttempt(List.of(unchanged)), new RequestAuditContext(), delivered, read)
+        .acknowledgeDelivery(ACTOR_ID, CONVERSATION_ID, 3L);
+
+    assertEquals(0, deliveredCount.get());
+    assertEquals(0, readCount.get());
+  }
+
+  private static DeliveryServiceImpl service(
+      DeliveryAcknowledgementAttempt attempt,
+      RequestAuditContext audit,
+      Event<DeliveryEvents.DeliveryAcknowledgedEvent> delivered,
+      Event<DeliveryEvents.ReadAcknowledgedEvent> read) {
+    return new DeliveryServiceImpl(null, attempt, audit, Clock.systemUTC(), delivered, read);
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> Event<T> mockEvent() {
+    return recordingEvent(new AtomicInteger());
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> Event<T> recordingEvent(AtomicInteger fireCount) {
+    return (Event<T>)
+        Proxy.newProxyInstance(
+            Event.class.getClassLoader(),
+            new Class<?>[] {Event.class},
+            (proxy, method, arguments) -> {
+              if (method.getName().equals("fire")) {
+                fireCount.incrementAndGet();
+                return null;
+              }
+              if (method.getReturnType().isInstance(proxy)) {
+                return proxy;
+              }
+              return null;
+            });
   }
 
   private static Object deadlock() {

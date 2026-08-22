@@ -43,8 +43,10 @@ public class SessionServiceImpl implements SessionService {
   private final Duration accountWindow;
   private final int sourceAttemptLimit;
   private final Duration sourceWindow;
-  private final jakarta.enterprise.event.Event<SessionEvents.SessionRevokedEvent> sessionRevokedEvent;
-  private final jakarta.enterprise.event.Event<SessionEvents.AllSessionsRevokedEvent> allSessionsRevokedEvent;
+  private final jakarta.enterprise.event.Event<SessionEvents.SessionRevokedEvent>
+      sessionRevokedEvent;
+  private final jakarta.enterprise.event.Event<SessionEvents.AllSessionsRevokedEvent>
+      allSessionsRevokedEvent;
   private final SecureRandom random = new SecureRandom();
 
   @Inject
@@ -70,7 +72,8 @@ public class SessionServiceImpl implements SessionService {
       @ConfigProperty(name = "chat.auth.rate-limit.source-window", defaultValue = "PT1M")
           Duration sourceWindow,
       jakarta.enterprise.event.Event<SessionEvents.SessionRevokedEvent> sessionRevokedEvent,
-      jakarta.enterprise.event.Event<SessionEvents.AllSessionsRevokedEvent> allSessionsRevokedEvent) {
+      jakarta.enterprise.event.Event<SessionEvents.AllSessionsRevokedEvent>
+          allSessionsRevokedEvent) {
     this.sessionRepository = sessionRepository;
     this.userRepository = userRepository;
     this.passwordHasher = passwordHasher;
