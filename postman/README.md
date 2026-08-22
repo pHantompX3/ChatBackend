@@ -107,6 +107,13 @@ then verify `{"action":"ping"}` returns `{"type":"pong"}`. Delivery and read com
 `read.ack` action. After reconnecting, run the existing reconnect-reconciliation journey to recover
 missed durable messages over REST before advancing a cursor.
 
+Network-level WebSocket integration is currently an explicit manual validation responsibility owned
+by the project owner. A separate Postman Desktop WebSocket collection may reuse these environment
+variables and scenarios, but Newman, Postman CLI collection runs, monitors, and the repository's
+current CI workflow do not execute it. Automated repository tests validate the underlying
+authentication, registry, fan-out/privacy, acknowledgement, revocation, and REST reconciliation
+components; they are not a live handshake-and-frame CI test.
+
 ## Smoke Flow Authoring Requirements
 
 These are required for all newly created flow requests and all new additions to Run-all API smoke journey:

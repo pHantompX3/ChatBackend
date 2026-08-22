@@ -272,6 +272,20 @@ A client is not ready for production integration until automated tests demonstra
 - unknown socket event types and additional JSON fields are forward-compatible;
 - secrets and message bodies do not appear in client telemetry.
 
+### 11.1 Current WebSocket validation boundary
+
+The repository's automated tests cover WebSocket authentication logic, connection registry
+lifecycle, active-member fan-out and privacy filtering, multi-connection delivery, acknowledgement
+event behavior, session-revocation dispatch, and durable REST reconciliation. The automated Postman
+journey covers the HTTP setup and recovery contracts.
+
+Postman collection schema v2.1, Newman, and the Postman CLI do not execute WebSocket requests. The
+project owner therefore currently owns network-level WebSocket integration validation as a manual
+Postman Desktop activity using a separately maintained WebSocket collection. That manual validation
+should exercise real handshakes, frames, close codes, concurrent connections, and REST reconciliation.
+Repository unit/integration results must not be described as automated end-to-end WebSocket transport
+coverage unless a future protocol-capable test harness is added to CI.
+
 ## 12. Backend Gaps to Revisit Before Client Production Readiness
 
 The audit found these areas where client workarounds are possible but not ideal:
@@ -286,6 +300,9 @@ The audit found these areas where client workarounds are possible but not ideal:
    reconciliation.
 6. **No machine-readable WebSocket contract in OpenAPI:** event/command schemas are documented in the
    Milestone 8 guide and source rather than generated as an AsyncAPI artifact.
+7. **No automated network-level WebSocket integration gate:** the current project agreement relies on
+   owner-run Postman Desktop validation for the live transport while repository automation validates
+   the underlying components and durable REST recovery behavior.
 
 These are not evidence that the current backend loses durable data. They identify where the first
 client must compensate or where a future backend milestone could simplify client behavior.

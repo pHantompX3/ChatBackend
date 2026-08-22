@@ -37,6 +37,9 @@ release tags begin when the project intentionally performs a production release 
 - Established a repository-wide milestone-completion cycle requiring new client-facing learnings to
   be recorded when discovered and the client responsibility guide to be audited before every
   milestone is declared complete.
+- Documented the agreed WebSocket validation boundary: repository automation covers protocol
+  components and durable REST recovery, while the project owner currently performs network-level
+  handshake and frame integration testing through a separate Postman Desktop collection.
 
 ### Fixed
 
