@@ -24,6 +24,8 @@ environment selected. It persists:
 | --- | --- |
 | `socket_participant_1_token` | Raw bearer/session token for W (Wayden). |
 | `socket_participant_2_token` | Raw bearer/session token for L (Lacara). |
+| `socket_participant_1_bearer_token` | Complete `Bearer ...` header value for W's socket tab. |
+| `socket_participant_2_bearer_token` | Complete `Bearer ...` header value for L's socket tab. |
 | `socket_participant_1_user_id` | W's durable user ID. |
 | `socket_participant_2_user_id` | L's durable user ID. |
 | `socket_conversation_id` | Direct conversation shared by the participants. |
@@ -52,20 +54,23 @@ ensures the two session tokens belong to distinct users while keeping their test
 
 ## 4. Open Two Authenticated Socket Tabs
 
-Create two WebSocket requests in Postman Desktop. For Local use
-`ws://localhost:8080/api/v1/ws`; for DevDocker use `ws://localhost:8081/api/v1/ws`, unless the
-environment was configured with a different host port.
+Create two WebSocket requests in Postman Desktop using
+`{{ws_base_url}}/api/v1/ws`. The committed Local environment resolves this to
+`ws://localhost:8080/api/v1/ws`, DevDocker resolves it to `ws://localhost:8081/api/v1/ws`, and
+Production must be configured with the deployed `wss://` host.
 
 ### W (Wayden) tab
 
-- URL: the applicable `/api/v1/ws` URL
-- Header: `Authorization: Bearer {{socket_participant_1_token}}`
+- URL: `{{ws_base_url}}/api/v1/ws`
+- Header key: `Authorization`
+- Header value: `{{socket_participant_1_bearer_token}}`
 - Suggested name: `Socket W - Wayden`
 
 ### L (Lacara) tab
 
-- URL: the same `/api/v1/ws` URL
-- Header: `Authorization: Bearer {{socket_participant_2_token}}`
+- URL: `{{ws_base_url}}/api/v1/ws`
+- Header key: `Authorization`
+- Header value: `{{socket_participant_2_bearer_token}}`
 - Suggested name: `Socket L - Lacara`
 
 Connect both tabs. In each tab send:
@@ -82,6 +87,10 @@ Each must receive:
 
 If Postman does not resolve environment variables in the WebSocket header, copy the current value
 from the environment into the header temporarily. Do not save or export the resolved secret.
+
+Do not put `{{socket_participant_1_token}}` or `{{socket_participant_2_token}}` directly in an
+`Authorization` header: those variables contain only the raw token. A raw token can complete the HTTP
+upgrade and then be closed immediately with `4401` because it lacks the required `Bearer ` scheme.
 
 ## 5. Simulate the Exchange
 
@@ -131,14 +140,35 @@ create a new message. In L's socket tab send:
 ```json
 {
   "action": "delivery.ack",
-  "conversationId": "<socket_conversation_id>",
-  "sequence": 1
+  "conversationId": "{{socket_conversation_id}}",
+  "sequence": {{socket_message_sequence}}
 }
 ```
 
-Then send the corresponding `read.ack`. Replace the conversation and sequence placeholders with the
-current environment values. Verify the resulting `delivery.updated` and `read.updated` frames on both
-sockets, then run T05 and T06 to prove the commands advanced SQL-backed state.
+Then send the corresponding command with `"action": "read.ack"`. Postman resolves the selected
+environment's conversation and sequence variables when the message is sent. Keep the UUID variable
+inside JSON quotes and the numeric sequence variable outside quotes. Verify the resulting
+`delivery.updated` and `read.updated` frames on both sockets, then run T05 and T06 to prove the
+commands advanced SQL-backed state.
+
+Do not send `"conversationId": "<socket_conversation_id>"`; angle-bracket text in this guide denotes
+a human-substituted SQL placeholder, not Postman variable syntax. The socket endpoint correctly
+rejects that literal text as `INVALID_COMMAND` because it is not a UUID.
+
+### Acknowledgement preflight and troubleshooting
+
+Before sending either socket acknowledgement:
+
+1. Run T01 and confirm it returns `201` for the currently selected `socket_conversation_id`.
+2. Confirm T01 populated `socket_message_sequence`; do not replace it with a guessed or hardcoded `1`.
+3. Run T06 and confirm `latestSequence` is greater than or equal to `socket_message_sequence`.
+4. Send the command from L's socket, whose token belongs to an active member of that conversation.
+
+If a valid UUID command still returns `INVALID_COMMAND`, compare the outgoing sequence with T06's
+`latestSequence`. A sequence beyond the committed high-water mark is rejected and leaves the durable
+cursor unchanged. Also confirm that the Bring Up runner, T01, T06, and the socket tabs all use the same
+selected Postman environment; mixing sessions or conversation variables from different runs can
+produce the same safe error response.
 
 Equal or lower acknowledgement retries are valid no-ops and should not create a second advancement
 event. A sequence beyond the committed high-water mark should produce a stable error frame and must
@@ -146,33 +176,231 @@ not change the database cursor.
 
 ## 7. Complete W/L Socket Capability Exchange
 
-Use this order when performing a full manual pass:
+Perform the following steps in order. Keep a small evidence table with columns for step, sending
+participant, received event type, `eventId`, conversation ID, message ID, sequence, and result.
+Start from a fresh Bring Up run and do not run REST triggers T02 or T03 before the socket-command
+steps below; otherwise the delivery/read cursors will already be advanced and the socket commands
+will correctly become silent idempotent no-ops.
 
-1. **Authentication and liveness:** connect W and L with their own bearer tokens and verify
-   application `ping`/`pong` on both tabs.
-2. **Multi-connection fan-out:** open a second W socket with W's token. T01 must reach W's two sockets
-   and L's socket, proving one user may have multiple live clients.
-3. **Created-message fan-out:** run T01 and correlate the REST response with all
-   `message.created` envelopes.
-4. **Bidirectional delivery command:** send `delivery.ack` from L's socket, then run T05/T06 to prove
-   the cursor is durable.
-5. **Idempotent acknowledgement:** repeat the same `delivery.ack`. Durable position must remain equal
-   and no second `delivery.updated` advancement event should be emitted.
-6. **Bidirectional read command:** send `read.ack` from L's socket. Both participants should receive
-   `read.updated`, and L's delivery cursor must advance with its read cursor.
-7. **Edit fan-out:** run T04 and verify `message.edited` retains the original message ID and sequence.
-8. **Receipt projection:** run T05 and T06 to compare sender aggregate status with L's own durable
-   position.
-9. **Delete fan-out and tombstone:** run T07/T08 and verify the `message.deleted` signal agrees with
-   the retained SQL/REST tombstone.
-10. **Unknown command:** send `{"action":"not.supported"}` and expect
-    `{"type":"error","code":"UNKNOWN_COMMAND"}` without disconnecting.
-11. **Invalid command:** send malformed JSON or an acknowledgement missing required fields and expect
-    `INVALID_COMMAND` without changing SQL state.
-12. **Gap/reconnect recovery:** disconnect L, create another W message, reconnect L, and recover it
-    through REST because the missed frame is not replayed.
-13. **Session revocation:** run the Bring Down collection while both sockets remain open. W and L
-    should each close with `4401`; both revoked tokens must subsequently receive `401`.
+### 7.1 Connect and prove liveness
+
+Connect `Socket W - Wayden` and `Socket L - Lacara`. From W send:
+
+```json
+{"action":"ping"}
+```
+
+W must receive exactly:
+
+```json
+{"type":"pong"}
+```
+
+Repeat from L and expect the same response on L. A pong is local to the requesting connection; the
+other participant should not receive it. Record both passes before continuing.
+
+### 7.2 Prove multiple connections for one user
+
+Open `Socket W2 - Wayden second device` using the same URL and
+`Authorization: {{socket_participant_1_bearer_token}}`. Send `{"action":"ping"}` from W2 and verify
+only W2 receives its pong. Keep W, W2, and L connected for the next step.
+
+### 7.3 W creates a durable message
+
+Run collection request `T01 - W sends message to L`. This is an authoritative REST mutation because
+the current socket protocol does not accept message-send commands. Confirm REST returns `201` and
+stores `socket_message_id` and `socket_message_sequence`.
+
+W, W2, and L must each receive one envelope shaped as follows:
+
+```json
+{
+  "eventId": "<server-event-uuid>",
+  "eventType": "message.created",
+  "occurredAt": "<server-timestamp>",
+  "conversationId": "<socket_conversation_id value>",
+  "payload": {
+    "conversationId": "<socket_conversation_id value>",
+    "messageId": "<socket_message_id value>",
+    "sequenceNumber": 1,
+    "senderId": "<socket_participant_1_user_id value>",
+    "clientMessageId": "<socket_client_message_id value>",
+    "body": "Hello from participant 1 over the durable REST path",
+    "createdAt": "<server-timestamp>"
+  }
+}
+```
+
+Use the actual returned sequence rather than assuming it is `1`. On each receiving client, correlate
+by `messageId`, order by `sequenceNumber`, and treat duplicate copies of the same `eventId` as one UI
+change. Confirm all three envelopes agree with the REST response before acknowledging.
+
+### 7.4 L acknowledges delivery through the socket
+
+From L send this exact Postman-variable message:
+
+```json
+{
+  "action": "delivery.ack",
+  "conversationId": "{{socket_conversation_id}}",
+  "sequence": {{socket_message_sequence}}
+}
+```
+
+W, W2, and L must each receive:
+
+```json
+{
+  "eventId": "<server-event-uuid>",
+  "eventType": "delivery.updated",
+  "occurredAt": "<server-timestamp>",
+  "conversationId": "<socket_conversation_id value>",
+  "payload": {
+    "conversationId": "<socket_conversation_id value>",
+    "userId": "<socket_participant_2_user_id value>",
+    "lastDeliveredSequence": 1,
+    "updatedAt": "<server-timestamp>"
+  }
+}
+```
+
+Verify `userId` is L and use the actual stored sequence. W may now render its sender-visible delivery
+indicator, while L records that its shared per-user delivery cursor advanced. Run T06 and confirm
+`lastDeliveredSequence` equals or exceeds the acknowledged sequence.
+
+### 7.5 Prove acknowledgement idempotency
+
+Send the same `delivery.ack` from L again. The command is a successful no-op and does not send a
+command-response frame. Wait a short observation window and confirm no additional
+`delivery.updated` event appears. Run T06 again and confirm the cursor did not regress or advance.
+
+### 7.6 L acknowledges read through the socket
+
+From L send:
+
+```json
+{
+  "action": "read.ack",
+  "conversationId": "{{socket_conversation_id}}",
+  "sequence": {{socket_message_sequence}}
+}
+```
+
+W, W2, and L must each receive:
+
+```json
+{
+  "eventId": "<server-event-uuid>",
+  "eventType": "read.updated",
+  "occurredAt": "<server-timestamp>",
+  "conversationId": "<socket_conversation_id value>",
+  "payload": {
+    "conversationId": "<socket_conversation_id value>",
+    "userId": "<socket_participant_2_user_id value>",
+    "lastReadSequence": 1,
+    "lastDeliveredSequence": 1,
+    "updatedAt": "<server-timestamp>"
+  }
+}
+```
+
+Verify both cursor fields are at least the actual acknowledged sequence. W may render its read
+indicator. L should treat the message as read and update its unread presentation. Run T05 and T06 to
+compare W's aggregate sender projection with L's own durable position.
+
+### 7.7 W edits the message
+
+Run T04. REST must return `200`. W, W2, and L must each receive:
+
+```json
+{
+  "eventId": "<server-event-uuid>",
+  "eventType": "message.edited",
+  "occurredAt": "<server-timestamp>",
+  "conversationId": "<socket_conversation_id value>",
+  "payload": {
+    "conversationId": "<socket_conversation_id value>",
+    "messageId": "<socket_message_id value>",
+    "sequenceNumber": 1,
+    "body": "Edited by participant 1",
+    "editedAt": "<server-timestamp>"
+  }
+}
+```
+
+Each client replaces the cached body for that `messageId`, retains its original sequence/order, and
+records the edit timestamp. Do not insert a second message row.
+
+### 7.8 W deletes the message and L verifies the tombstone
+
+Run T07. REST must return `204`. W, W2, and L must each receive:
+
+```json
+{
+  "eventId": "<server-event-uuid>",
+  "eventType": "message.deleted",
+  "occurredAt": "<server-timestamp>",
+  "conversationId": "<socket_conversation_id value>",
+  "payload": {
+    "conversationId": "<socket_conversation_id value>",
+    "messageId": "<socket_message_id value>",
+    "sequenceNumber": 1,
+    "deletedAt": "<server-timestamp>"
+  }
+}
+```
+
+Each client removes the body from display/search but keeps a tombstone at the original sequence. Run
+T08 as L and confirm REST returns that same message with `body: null` and non-null `deletedAt`.
+
+### 7.9 Prove stable command errors
+
+From either participant send:
+
+```json
+{"action":"not.supported"}
+```
+
+Only that socket must receive:
+
+```json
+{"type":"error","code":"UNKNOWN_COMMAND"}
+```
+
+Then send malformed JSON, for example:
+
+```text
+{
+```
+
+Only that socket must receive:
+
+```json
+{"type":"error","code":"INVALID_COMMAND"}
+```
+
+The connection must remain usable: send `{"action":"ping"}` afterward and expect pong. Do not apply
+error frames as conversation events, and verify no message/cursor state changed.
+
+### 7.10 Prove missed-frame recovery
+
+1. Record L's last contiguous sequence and disconnect L.
+2. Run T01 again as W. W and W2 receive `message.created`; disconnected L receives nothing.
+3. Reconnect L and ping it.
+4. As L, call message history with `afterSequence` equal to its previously recorded contiguous
+   sequence.
+5. Persist the returned message, advance L's local contiguous position, and only then acknowledge it.
+
+No old WebSocket frame should replay. The successful REST recovery proves SQL Server, not the socket,
+is authoritative.
+
+### 7.11 Bring both participants down
+
+Keep W, W2, and L open and run `WL-Chat Socket Participants - Bring Down` in order. D01 revokes W's
+session, so both W and W2 should close with `4401`. D02 revokes L's session, so L should close with
+`4401`. D03 and D04 prove both tokens receive `401` and clear the raw/bearer token variables. Do not
+interpret disconnect timing as durable evidence; verify the `identity.session` rows as described
+below.
 
 Active-membership privacy filtering cannot be fully demonstrated with this direct two-participant
 fixture because direct-conversation membership lifecycle rules are not a substitute for group removal.

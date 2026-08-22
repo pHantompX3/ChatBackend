@@ -25,7 +25,7 @@
       "request": {
         "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_1_token}}", "type": "string" }] },
         "method": "POST",
-        "url": { "raw": "{{base_url}}/api/v1/sessions/logout" },
+        "url": { "raw": "{{base_url}}/api/v1/sessions/logout", "host": ["{{base_url}}"], "path": ["api", "v1", "sessions", "logout"] },
         "description": "W's live socket should close with code 4401 after the durable session revocation commits."
       }
     },
@@ -43,7 +43,7 @@
       "request": {
         "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_2_token}}", "type": "string" }] },
         "method": "POST",
-        "url": { "raw": "{{base_url}}/api/v1/sessions/logout" },
+        "url": { "raw": "{{base_url}}/api/v1/sessions/logout", "host": ["{{base_url}}"], "path": ["api", "v1", "sessions", "logout"] },
         "description": "L's live socket should close with code 4401 after the durable session revocation commits."
       }
     },
@@ -62,7 +62,7 @@
       "request": {
         "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_1_token}}", "type": "string" }] },
         "method": "GET",
-        "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}" }
+        "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "conversations", "{{socket_conversation_id}}"] }
       }
     },
     {
@@ -75,6 +75,8 @@
             "pm.test('Expected: revoked L token is denied with 401', function () { pm.response.to.have.status(401); });",
             "if (pm.response.code === 401) {",
             "  pm.environment.unset('socket_participant_2_token');",
+            "  pm.environment.unset('socket_participant_1_bearer_token');",
+            "  pm.environment.unset('socket_participant_2_bearer_token');",
             "  pm.environment.unset('socket_admin_token');",
             "  pm.environment.unset('socket_invitation_token');",
             "}"
@@ -84,7 +86,7 @@
       "request": {
         "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_2_token}}", "type": "string" }] },
         "method": "GET",
-        "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}" },
+        "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "conversations", "{{socket_conversation_id}}"] },
         "description": "Only raw secret variables are cleared. Durable IDs remain available for SQL evidence review."
       }
     }

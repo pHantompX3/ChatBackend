@@ -46,9 +46,22 @@ release tags begin when the project intentionally performs a production release 
 - Added the paired socket-participant bring-down runner and named the human test actors W (Wayden) and
   L (Lacara), with a complete exchange covering liveness, multi-connection fan-out, all current event
   types, socket acknowledgements, invalid commands, reconnect recovery, and session-revocation closes.
+- Added an environment-specific `ws_base_url` variable for reusable Local, DevDocker, and Production
+  WebSocket connections in Postman Desktop.
 
 ### Fixed
 
+- Replaced the manual socket acknowledgement's angle-bracket conversation placeholder with directly
+  resolvable Postman variables for the conversation UUID and numeric message sequence.
+- Added acknowledgement preflight guidance requiring a T01-created sequence and T06 committed
+  high-water verification instead of a guessed sequence value.
+- Expanded the W/L manual capability exchange into granular send/receive instructions with exact
+  socket commands, expected event-envelope shapes, client-side handling, REST correlation, recovery,
+  error, multi-connection, and teardown evidence at every step.
+- Persisted complete W/L bearer-header variables for manual WebSocket tabs, preventing a successful
+  protocol upgrade followed by an immediate `4401` close when a raw token lacks the `Bearer ` scheme.
+- Added complete Postman URL components to the socket workflow collections so Postman Cloud retains
+  their request URLs, and normalized omitted-versus-empty request headers during strict drift checks.
 - Updated pre-existing message and delivery unit tests for the Milestone 8 event dependencies and
   restored the Spotless build gate across all realtime-related source files.
 - Prevented duplicate realtime deletion and acknowledgement events when the durable state did not

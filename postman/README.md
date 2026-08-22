@@ -108,7 +108,7 @@ By default validation runs against all three committed environment templates:
 
 Postman collection schema v2.1 and Newman validate the authoritative HTTP recovery journey; they do
 not encode a runnable WebSocket request. In Postman desktop, create a WebSocket request using
-`ws://localhost:8080/api/v1/ws?token={{member_session_token}}` (or the equivalent environment host),
+`{{ws_base_url}}/api/v1/ws?token={{member_session_token}}`,
 then verify `{"action":"ping"}` returns `{"type":"pong"}`. Delivery and read commands use
 `{"action":"delivery.ack","conversationId":"<uuid>","sequence":<n>}` and the corresponding
 `read.ack` action. After reconnecting, run the existing reconnect-reconciliation journey to recover
@@ -127,6 +127,14 @@ provisioning folder to establish two fresh participants and persist `socket_part
 `socket_participant_2_token` in the selected environment. Then follow
 `docs/client-integration/manual-websocket-postman-testing-guide.md` to open two authenticated socket
 tabs, trigger interactions individually, and inspect authoritative SQL Server evidence.
+
+The runner also persists `socket_participant_1_bearer_token` and
+`socket_participant_2_bearer_token`. Use those complete values for the WebSocket `Authorization`
+headers; the raw token variables intentionally do not include the required `Bearer ` prefix.
+
+Every committed environment defines `ws_base_url` separately from the HTTP `base_url`: Local uses
+`ws://localhost:8080`, DevDocker uses `ws://localhost:8081`, and Production requires its deployed
+`wss://` host. Saved WebSocket tabs should use `{{ws_base_url}}/api/v1/ws`.
 
 The companion `postman/collections/chat-backend-websocket-participants-down.postman_collection.json`
 runner logs W and L out, verifies both revoked tokens receive `401`, and clears the two raw token

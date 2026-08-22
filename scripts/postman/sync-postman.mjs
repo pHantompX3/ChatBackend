@@ -304,7 +304,7 @@ function normalizeCollection(collection) {
     }
     return {
       method: request.method ?? undefined,
-      header: Array.isArray(request.header)
+      header: Array.isArray(request.header) && request.header.length > 0
         ? request.header.map(normalizeHeader)
         : undefined,
       url: normalizeUrl(request.url),
