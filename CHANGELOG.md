@@ -52,8 +52,8 @@ release tags begin when the project intentionally performs a production release 
 ### Fixed
 
 - Corrected the manual WebSocket SQL evidence examples to bracket SQL Server schemas and objects,
-  and clarified that `UNIQUEIDENTIFIER` parameters require participant user UUIDs rather than the
-  generated W/L usernames.
+  and made participant account/session verification resolve IDs internally from the generated W/L
+  usernames so manual UUID lookup is unnecessary.
 - Corrected the manual WebSocket SQL evidence query to select the identity account's actual
   `system_role` and `status` columns instead of a nonexistent `enabled` column.
 - Replaced the manual socket acknowledgement's angle-bracket conversation placeholder with directly

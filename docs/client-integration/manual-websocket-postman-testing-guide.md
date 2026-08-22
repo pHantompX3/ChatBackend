@@ -22,6 +22,8 @@ environment selected. It persists:
 
 | Variable | Purpose |
 | --- | --- |
+| `socket_participant_1_username` | W's generated username for human-readable SQL verification. |
+| `socket_participant_2_username` | L's generated username for human-readable SQL verification. |
 | `socket_participant_1_token` | Raw bearer/session token for W (Wayden). |
 | `socket_participant_2_token` | Raw bearer/session token for L (Lacara). |
 | `socket_participant_1_bearer_token` | Complete `Bearer ...` header value for W's socket tab. |
@@ -409,11 +411,12 @@ boundary.
 
 ## 8. Verify Authoritative SQL Server State
 
-Run these read-only queries with the current Postman variable values substituted for the UUID
-placeholders. The `UNIQUEIDENTIFIER` variables require the UUID values from
-`socket_participant_1_user_id` and `socket_participant_2_user_id`; do not substitute the generated
-`wayden-socket-*` or `lacara-socket-*` usernames. Use an administrative/developer query principal;
-the application runtime principal is intentionally least-privileged.
+Run these read-only queries with the current Postman username and resource variable values substituted
+for the angle-bracket placeholders. The participant queries intentionally begin with
+`socket_participant_1_username` and `socket_participant_2_username`, then resolve the corresponding
+user IDs through joins where required. Testers therefore do not need to find or copy participant UUIDs.
+Use an administrative/developer query principal; the application runtime principal is intentionally
+least-privileged.
 
 The examples bracket schemas and objects because `IDENTITY` is a SQL Server keyword. `USE [wl_chat];`
 is optional when the query connection is already scoped to `wl_chat`, but may be placed before the
@@ -422,17 +425,19 @@ declarations when running against another database context.
 ### Users and active sessions
 
 ```sql
-DECLARE @participant1 UNIQUEIDENTIFIER = '<socket_participant_1_user_id>';
-DECLARE @participant2 UNIQUEIDENTIFIER = '<socket_participant_2_user_id>';
+DECLARE @participant1_username NVARCHAR(255) = '<socket_participant_1_username>';
+DECLARE @participant2_username NVARCHAR(255) = '<socket_participant_2_username>';
 
 SELECT id, username, normalized_username, system_role, status, created_at, updated_at
 FROM [identity].[user_account]
-WHERE id IN (@participant1, @participant2);
+WHERE username IN (@participant1_username, @participant2_username);
 
-SELECT id, user_id, status, created_at, expires_at, last_seen_at, revoked_at
-FROM [identity].[session]
-WHERE user_id IN (@participant1, @participant2)
-ORDER BY created_at DESC;
+SELECT a.username, s.id, s.user_id, s.status,
+       s.created_at, s.expires_at, s.last_seen_at, s.revoked_at
+FROM [identity].[session] AS s
+JOIN [identity].[user_account] AS a ON a.id = s.user_id
+WHERE a.username IN (@participant1_username, @participant2_username)
+ORDER BY s.created_at DESC;
 ```
 
 The raw Postman tokens will not appear because only `token_hash` is persisted.
