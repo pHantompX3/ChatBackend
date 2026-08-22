@@ -419,7 +419,7 @@ intentionally least-privileged.
 DECLARE @participant1 UNIQUEIDENTIFIER = '<socket_participant_1_user_id>';
 DECLARE @participant2 UNIQUEIDENTIFIER = '<socket_participant_2_user_id>';
 
-SELECT id, username, enabled, created_at
+SELECT id, username, normalized_username, system_role, status, created_at, updated_at
 FROM identity.user_account
 WHERE id IN (@participant1, @participant2);
 
