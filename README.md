@@ -498,6 +498,8 @@ never treated as durable delivery proof.
   - `docs/architecture/decision/ADR-0015-harden-http-contracts-and-authentication-throttling.md`
 - Milestone 8 WebSockets and real-time signaling runbook:
   - `docs/development-guide/milestone-8-websockets-step-by-step.md`
+- Canonical client responsibility, offline behavior, and recovery guide:
+  - `docs/client-integration/client-responsibility-and-recovery-guide.md`
 - Release history:
   - `CHANGELOG.md`
 - Versioning and changelog policy:

@@ -31,6 +31,12 @@ release tags begin when the project intentionally performs a production release 
   to the existing SQL-backed application service.
 - Added focused coverage for WebSocket session/user authentication, connection lifecycle snapshots,
   multi-device fan-out, membership isolation, and unchanged-acknowledgement suppression.
+- Added a canonical client responsibility and recovery guide covering offline outbox behavior,
+  idempotent sends, socket lifecycle, ordered reconciliation, delivery/read semantics, failure
+  handling, privacy transitions, first-client acceptance criteria, and current backend capability gaps.
+- Established a repository-wide milestone-completion cycle requiring new client-facing learnings to
+  be recorded when discovered and the client responsibility guide to be audited before every
+  milestone is declared complete.
 
 ### Fixed
 

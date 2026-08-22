@@ -14,6 +14,7 @@ ChatBackend is a Java 25 Quarkus backend for a private messaging platform, curre
 - Development guides: [docs/development-guide](docs/development-guide)
 - Operations strategy: [docs/operations/environment-strategy-and-rollout-plan.md](docs/operations/environment-strategy-and-rollout-plan.md)
 - API/domain specs: [docs/private-instant-messaging-platform-spec-v0.2-sql-server.md](docs/private-instant-messaging-platform-spec-v0.2-sql-server.md)
+- Client integration and recovery contract: [docs/client-integration/client-responsibility-and-recovery-guide.md](docs/client-integration/client-responsibility-and-recovery-guide.md)
 
 ## Code map
 
@@ -31,6 +32,10 @@ ChatBackend is a Java 25 Quarkus backend for a private messaging platform, curre
 - Record new architecture decisions as ADR files under [docs/architecture/decision](docs/architecture/decision).
 - Update [CHANGELOG.md](CHANGELOG.md) in the same change set for every notable change, following the
   canonical [versioning and changelog policy](docs/development-guide/versioning-and-changelog-policy.md).
+- Record every verified client-facing responsibility, recovery rule, UX implication, or backend
+  capability gap in the canonical [client integration and recovery guide](docs/client-integration/client-responsibility-and-recovery-guide.md)
+  when it is learned. Before declaring any milestone complete, audit the milestone against that guide
+  and update it, or explicitly report that the review found no client-facing changes.
 - Multi-agent guardrail parity: Whenever any rule, instruction, or skill is added or updated in one agent surface (e.g. `.github/` or `.agents/`), update all equivalent agent surfaces in the same change set to prevent drift across different agent tools.
 
 ## Multi-agent context architecture & guardrail synchronization
