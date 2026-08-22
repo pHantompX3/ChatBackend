@@ -14,6 +14,9 @@ The contract direction is Java resources and DTOs to generated OpenAPI to Postma
 ## Repository Layout
 
 - postman/collections/chat-backend.postman_collection.json
+- postman/collections/chat-backend-user-flows.postman_collection.json
+- postman/collections/chat-backend-websocket-manual-integration.postman_collection.json
+- postman/collections/chat-backend-websocket-participants-down.postman_collection.json
 - postman/environments/local.example.postman_environment.json
 - postman/environments/devdocker.example.postman_environment.json
 - postman/environments/production.example.postman_environment.json
@@ -44,6 +47,8 @@ Create local config for Postman Cloud sync:
    - postman-workspace-id
    - optional postman-collection-id
    - optional postman-flow-collection-id
+   - optional postman-websocket-collection-id
+   - optional postman-websocket-teardown-collection-id
    - optional postman-local-environment-id
    - optional postman-dev-environment-id
    - optional postman-prod-environment-id
@@ -60,6 +65,8 @@ You can also override by environment variables:
 - POSTMAN_WORKSPACE_ID
 - POSTMAN_COLLECTION_ID
 - POSTMAN_FLOW_COLLECTION_ID
+- POSTMAN_WEBSOCKET_COLLECTION_ID
+- POSTMAN_WEBSOCKET_TEARDOWN_COLLECTION_ID
 - POSTMAN_ENVIRONMENT_ID
 - POSTMAN_LOCAL_ENVIRONMENT_ID
 - POSTMAN_DEV_ENVIRONMENT_ID
@@ -96,6 +103,42 @@ By default validation runs against all three committed environment templates:
 - postman/environments/local.example.postman_environment.json
 - postman/environments/devdocker.example.postman_environment.json
 - postman/environments/production.example.postman_environment.json
+
+## WebSocket Signaling Validation
+
+Postman collection schema v2.1 and Newman validate the authoritative HTTP recovery journey; they do
+not encode a runnable WebSocket request. In Postman desktop, create a WebSocket request using
+`{{ws_base_url}}/api/v1/ws?token={{member_session_token}}`,
+then verify `{"action":"ping"}` returns `{"type":"pong"}`. Delivery and read commands use
+`{"action":"delivery.ack","conversationId":"<uuid>","sequence":<n>}` and the corresponding
+`read.ack` action. After reconnecting, run the existing reconnect-reconciliation journey to recover
+missed durable messages over REST before advancing a cursor.
+
+Network-level WebSocket integration is currently an explicit manual validation responsibility owned
+by the project owner. A separate Postman Desktop WebSocket collection may reuse these environment
+variables and scenarios, but Newman, Postman CLI collection runs, monitors, and the repository's
+current CI workflow do not execute it. Automated repository tests validate the underlying
+authentication, registry, fan-out/privacy, acknowledgement, revocation, and REST reconciliation
+components; they are not a live handshake-and-frame CI test.
+
+The repository includes a human-guided setup and trigger collection at
+`postman/collections/chat-backend-websocket-manual-integration.postman_collection.json`. Run only its
+provisioning folder to establish two fresh participants and persist `socket_participant_1_token` and
+`socket_participant_2_token` in the selected environment. Then follow
+`docs/client-integration/manual-websocket-postman-testing-guide.md` to open two authenticated socket
+tabs, trigger interactions individually, and inspect authoritative SQL Server evidence.
+
+The runner also persists `socket_participant_1_bearer_token` and
+`socket_participant_2_bearer_token`. Use those complete values for the WebSocket `Authorization`
+headers; the raw token variables intentionally do not include the required `Bearer ` prefix.
+
+Every committed environment defines `ws_base_url` separately from the HTTP `base_url`: Local uses
+`ws://localhost:8080`, DevDocker uses `ws://localhost:8081`, and Production requires its deployed
+`wss://` host. Saved WebSocket tabs should use `{{ws_base_url}}/api/v1/ws`.
+
+The companion `postman/collections/chat-backend-websocket-participants-down.postman_collection.json`
+runner logs W and L out, verifies both revoked tokens receive `401`, and clears the two raw token
+values while retaining durable SQL evidence.
 
 ## Smoke Flow Authoring Requirements
 

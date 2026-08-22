@@ -24,3 +24,8 @@ These rules apply when editing Java backend code or its runtime properties.
 
 - Use `./mvnw clean verify` for non-trivial changes.
 - Keep or add focused tests under [src/test](../../src/test) when behavior changes.
+
+## Multi-agent parity
+
+- Corresponding Antigravity rule: [.agents/rules/backend-java.md](../../.agents/rules/backend-java.md). Keep both in sync.
+

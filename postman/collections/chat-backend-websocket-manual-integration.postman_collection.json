@@ -1,0 +1,373 @@
+{
+  "info": {
+    "_postman_id": "9a8bd48b-5705-4da0-9f53-e4886e578277",
+    "name": "WL-Chat Socket Participants - Bring Up",
+    "description": "Bring-up runner and human-guided WebSocket interaction triggers for W (Wayden) and L (Lacara). Run only the provisioning folder as a collection. Then open two Postman Desktop WebSocket tabs and run the REST trigger requests individually while observing both sockets and SQL Server.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "socket_admin_token", "value": "" },
+    { "key": "socket_admin_user_id", "value": "" },
+    { "key": "socket_participant_1_username", "value": "" },
+    { "key": "socket_participant_1_password", "value": "MemberPassw0rd!" },
+    { "key": "socket_participant_1_user_id", "value": "" },
+    { "key": "socket_participant_1_token", "value": "" },
+    { "key": "socket_participant_1_bearer_token", "value": "" },
+    { "key": "socket_participant_2_username", "value": "" },
+    { "key": "socket_participant_2_password", "value": "MemberPassw0rd!" },
+    { "key": "socket_participant_2_user_id", "value": "" },
+    { "key": "socket_participant_2_token", "value": "" },
+    { "key": "socket_participant_2_bearer_token", "value": "" },
+    { "key": "socket_invitation_token", "value": "" },
+    { "key": "socket_invitation_expires_at", "value": "" },
+    { "key": "socket_conversation_id", "value": "" },
+    { "key": "socket_client_message_id", "value": "" },
+    { "key": "socket_message_id", "value": "" },
+    { "key": "socket_message_sequence", "value": "0" }
+  ],
+  "item": [
+    {
+      "name": "01 - Provision two socket participants",
+      "description": "Run this folder once. It creates two fresh invited users, logs both in, persists their raw session tokens in socket_participant_1_token and socket_participant_2_token, and creates their direct conversation.",
+      "item": [
+        {
+          "name": "S01 - Bootstrap or resolve administrator",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const suffix = Date.now() + '-' + Math.floor(Math.random() * 100000);",
+                  "pm.environment.set('socket_participant_1_username', 'wayden-socket-' + suffix);",
+                  "pm.environment.set('socket_participant_2_username', 'lacara-socket-' + suffix);",
+                  "pm.environment.set('socket_participant_1_password', pm.environment.get('socket_participant_1_password') || 'MemberPassw0rd!');",
+                  "pm.environment.set('socket_participant_2_password', pm.environment.get('socket_participant_2_password') || 'MemberPassw0rd!');",
+                  "pm.environment.set('socket_invitation_expires_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: administrator bootstrap returns 200 or already exists with 409', function () {",
+                  "  pm.expect([200, 409]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('socket_admin_user_id', body.userId);",
+                  "} else {",
+                  "  const existingAdminId = pm.variables.replaceIn(pm.environment.get('admin_user_id') || '');",
+                  "  pm.environment.set('socket_admin_user_id', existingAdminId);",
+                  "}",
+                  "pm.test('Expected: administrator user ID is available for invitation creation', function () {",
+                  "  pm.expect(pm.environment.get('socket_admin_user_id')).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrap_admin_username}}\",\n  \"password\": \"{{bootstrap_admin_password}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/bootstrap/admin", "host": ["{{base_url}}"], "path": ["api", "v1", "bootstrap", "admin"] },
+            "description": "On an existing database, admin_user_id must resolve to the established bootstrap administrator ID."
+          }
+        },
+        {
+          "name": "S02 - Login administrator",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Expected: administrator login returns 200', function () { pm.response.to.have.status(200); });",
+                "pm.environment.set('socket_admin_token', pm.response.json().token);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{bootstrap_admin_username}}\",\n  \"password\": \"{{bootstrap_admin_password}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/sessions", "host": ["{{base_url}}"], "path": ["api", "v1", "sessions"] }
+          }
+        },
+        {
+          "name": "S03 - Create participant 1 invitation",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Expected: participant 1 invitation returns 200', function () { pm.response.to.have.status(200); });",
+                "pm.environment.set('socket_invitation_token', pm.response.json().invitationToken);"
+              ]
+            }
+          }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_admin_token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actorUserId\": \"{{socket_admin_user_id}}\",\n  \"expiresAt\": \"{{socket_invitation_expires_at}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/invitations", "host": ["{{base_url}}"], "path": ["api", "v1", "invitations"] }
+          }
+        },
+        {
+          "name": "S04 - Redeem participant 1 invitation",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Expected: participant 1 redemption returns 200', function () { pm.response.to.have.status(200); });",
+                "const body = pm.response.json();",
+                "pm.environment.set('socket_participant_1_user_id', body.userId);",
+                "pm.environment.set('socket_participant_1_username', body.username);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invitationToken\": \"{{socket_invitation_token}}\",\n  \"username\": \"{{socket_participant_1_username}}\",\n  \"password\": \"{{socket_participant_1_password}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/invitations/redeem", "host": ["{{base_url}}"], "path": ["api", "v1", "invitations", "redeem"] }
+          }
+        },
+        {
+          "name": "S05 - Login participant 1 and persist socket token",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Expected: participant 1 login returns 200', function () { pm.response.to.have.status(200); });",
+                "const token = pm.response.json().token;",
+                "pm.environment.set('socket_participant_1_token', token);",
+                "pm.environment.set('socket_participant_1_bearer_token', 'Bearer ' + token);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{socket_participant_1_username}}\",\n  \"password\": \"{{socket_participant_1_password}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/sessions", "host": ["{{base_url}}"], "path": ["api", "v1", "sessions"] }
+          }
+        },
+        {
+          "name": "S06 - Create participant 2 invitation",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Expected: participant 2 invitation returns 200', function () { pm.response.to.have.status(200); });",
+                "pm.environment.set('socket_invitation_token', pm.response.json().invitationToken);"
+              ]
+            }
+          }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_admin_token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actorUserId\": \"{{socket_admin_user_id}}\",\n  \"expiresAt\": \"{{socket_invitation_expires_at}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/invitations", "host": ["{{base_url}}"], "path": ["api", "v1", "invitations"] }
+          }
+        },
+        {
+          "name": "S07 - Redeem participant 2 invitation",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Expected: participant 2 redemption returns 200', function () { pm.response.to.have.status(200); });",
+                "const body = pm.response.json();",
+                "pm.environment.set('socket_participant_2_user_id', body.userId);",
+                "pm.environment.set('socket_participant_2_username', body.username);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invitationToken\": \"{{socket_invitation_token}}\",\n  \"username\": \"{{socket_participant_2_username}}\",\n  \"password\": \"{{socket_participant_2_password}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/invitations/redeem", "host": ["{{base_url}}"], "path": ["api", "v1", "invitations", "redeem"] }
+          }
+        },
+        {
+          "name": "S08 - Login participant 2 and persist socket token",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Expected: participant 2 login returns 200', function () { pm.response.to.have.status(200); });",
+                "const token = pm.response.json().token;",
+                "pm.environment.set('socket_participant_2_token', token);",
+                "pm.environment.set('socket_participant_2_bearer_token', 'Bearer ' + token);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{socket_participant_2_username}}\",\n  \"password\": \"{{socket_participant_2_password}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/sessions", "host": ["{{base_url}}"], "path": ["api", "v1", "sessions"] }
+          }
+        },
+        {
+          "name": "S09 - Create direct conversation",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Expected: direct conversation returns 200 or 201', function () { pm.expect([200, 201]).to.include(pm.response.code); });",
+                "pm.environment.set('socket_conversation_id', pm.response.json().conversationId);"
+              ]
+            }
+          }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_1_token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"targetUserId\": \"{{socket_participant_2_user_id}}\"\n}" },
+            "url": { "raw": "{{base_url}}/api/v1/conversations/direct", "host": ["{{base_url}}"], "path": ["api", "v1", "conversations", "direct"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Manual REST triggers while sockets are connected",
+      "description": "Do not run this folder as a collection. Open both WebSocket tabs first, then run these requests individually in the documented order and observe the resulting frames.",
+      "item": [
+        {
+          "name": "T01 - W sends message to L",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": ["pm.environment.set('socket_client_message_id', pm.variables.replaceIn('{{$guid}}'));"] }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected: message is durably accepted with 201', function () { pm.response.to.have.status(201); });",
+                  "const body = pm.response.json();",
+                  "pm.environment.set('socket_message_id', body.messageId);",
+                  "pm.environment.set('socket_message_sequence', body.sequenceNumber);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_1_token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"clientMessageId\": \"{{socket_client_message_id}}\",\n  \"body\": \"Hello from participant 1 over the durable REST path\"\n}" },
+            "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}/messages", "host": ["{{base_url}}"], "path": ["api", "v1", "conversations", "{{socket_conversation_id}}", "messages"] }
+          }
+        },
+        {
+          "name": "T02 - L acknowledges delivery",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expected: delivery acknowledgement returns 204', function () { pm.response.to.have.status(204); });"] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_2_token}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"sequence\": {{socket_message_sequence}}\n}" },
+            "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}/delivery-position", "host": ["{{base_url}}"], "path": ["api", "v1", "conversations", "{{socket_conversation_id}}", "delivery-position"] }
+          }
+        },
+        {
+          "name": "T03 - L acknowledges read",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expected: read acknowledgement returns 204', function () { pm.response.to.have.status(204); });"] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_2_token}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"sequence\": {{socket_message_sequence}}\n}" },
+            "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}/read-position", "host": ["{{base_url}}"], "path": ["api", "v1", "conversations", "{{socket_conversation_id}}", "read-position"] }
+          }
+        },
+        {
+          "name": "T04 - W edits message",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expected: message edit returns 200', function () { pm.response.to.have.status(200); });"] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_1_token}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"body\": \"Edited by participant 1\"\n}" },
+            "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}/messages/{{socket_message_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "conversations", "{{socket_conversation_id}}", "messages", "{{socket_message_id}}"] }
+          }
+        },
+        {
+          "name": "T05 - W queries aggregate receipt status",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expected: sender status query returns 200', function () { pm.response.to.have.status(200); });"] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_1_token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}/messages/{{socket_message_id}}/status", "host": ["{{base_url}}"], "path": ["api", "v1", "conversations", "{{socket_conversation_id}}", "messages", "{{socket_message_id}}", "status"] }
+          }
+        },
+        {
+          "name": "T06 - L queries own position",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expected: participant position query returns 200', function () { pm.response.to.have.status(200); });"] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_2_token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}/position", "host": ["{{base_url}}"], "path": ["api", "v1", "conversations", "{{socket_conversation_id}}", "position"] }
+          }
+        },
+        {
+          "name": "T07 - W deletes message",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expected: message delete returns 204', function () { pm.response.to.have.status(204); });"] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_1_token}}", "type": "string" }] },
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}/messages/{{socket_message_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "conversations", "{{socket_conversation_id}}", "messages", "{{socket_message_id}}"] }
+          }
+        },
+        {
+          "name": "T08 - L verifies durable tombstone",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expected: history query returns 200', function () { pm.response.to.have.status(200); });", "pm.test('Expected: deleted message is retained as a tombstone', function () {", "  const item = pm.response.json().items.find(entry => entry.messageId === pm.environment.get('socket_message_id'));", "  pm.expect(item).to.exist;", "  pm.expect(item.body).to.equal(null);", "  pm.expect(item.deletedAt).to.not.equal(null);", "});"] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{socket_participant_2_token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/v1/conversations/{{socket_conversation_id}}/messages?afterSequence=0&limit=50", "host": ["{{base_url}}"], "path": ["api", "v1", "conversations", "{{socket_conversation_id}}", "messages"], "query": [{ "key": "afterSequence", "value": "0" }, { "key": "limit", "value": "50" }] }
+          }
+        }
+      ]
+    }
+  ]
+}

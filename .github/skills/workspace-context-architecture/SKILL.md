@@ -51,6 +51,8 @@ This skill performs conservative, evidence-based workspace context architecture 
 - Do not create empty scaffolding.
 - Do not embed machine-specific absolute paths in persistent instructions.
 - Do not duplicate policy across AGENTS.md, copilot-instructions, scoped instructions, prompts, and skills.
+- Maintain full parity across multi-agent surfaces (.github/ <-> .agents/ <-> AGENTS.md) whenever guardrails are altered.
+
 
 ## Deliverable contract
 

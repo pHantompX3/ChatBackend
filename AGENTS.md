@@ -14,6 +14,7 @@ ChatBackend is a Java 25 Quarkus backend for a private messaging platform, curre
 - Development guides: [docs/development-guide](docs/development-guide)
 - Operations strategy: [docs/operations/environment-strategy-and-rollout-plan.md](docs/operations/environment-strategy-and-rollout-plan.md)
 - API/domain specs: [docs/private-instant-messaging-platform-spec-v0.2-sql-server.md](docs/private-instant-messaging-platform-spec-v0.2-sql-server.md)
+- Client integration and recovery contract: [docs/client-integration/client-responsibility-and-recovery-guide.md](docs/client-integration/client-responsibility-and-recovery-guide.md)
 
 ## Code map
 
@@ -31,14 +32,36 @@ ChatBackend is a Java 25 Quarkus backend for a private messaging platform, curre
 - Record new architecture decisions as ADR files under [docs/architecture/decision](docs/architecture/decision).
 - Update [CHANGELOG.md](CHANGELOG.md) in the same change set for every notable change, following the
   canonical [versioning and changelog policy](docs/development-guide/versioning-and-changelog-policy.md).
+- Record every verified client-facing responsibility, recovery rule, UX implication, or backend
+  capability gap in the canonical [client integration and recovery guide](docs/client-integration/client-responsibility-and-recovery-guide.md)
+  when it is learned. Before declaring any milestone complete, audit the milestone against that guide
+  and update it, or explicitly report that the review found no client-facing changes.
+- Multi-agent guardrail parity: Whenever any rule, instruction, or skill is added or updated in one agent surface (e.g. `.github/` or `.agents/`), update all equivalent agent surfaces in the same change set to prevent drift across different agent tools.
 
-## Copilot context architecture
+## Multi-agent context architecture & guardrail synchronization
 
-- Reusable context-architecture capability: [.github/skills/workspace-context-architecture/SKILL.md](.github/skills/workspace-context-architecture/SKILL.md)
-- Workspace-context architect prompt entrypoint: [.github/prompts/workspace-context-architect.prompt.md](.github/prompts/workspace-context-architect.prompt.md)
+This repository supports diverse AI agent environments. All agents, regardless of vendor or model eccentricities, must adhere to synchronized guardrails:
+
+- **Universal entrypoint**: [AGENTS.md](AGENTS.md)
+- **Antigravity / Gemini customization surface**:
+  - Global rules: [.agents/rules/repository-instructions.md](.agents/rules/repository-instructions.md)
+  - Scoped Java rules: [.agents/rules/backend-java.md](.agents/rules/backend-java.md)
+  - Scoped DB rules: [.agents/rules/database-scripts.md](.agents/rules/database-scripts.md)
+  - Context architecture skill: [.agents/skills/workspace-context-architecture/SKILL.md](.agents/skills/workspace-context-architecture/SKILL.md)
+- **GitHub Copilot customization surface**:
+  - Global instructions: [.github/copilot-instructions.md](.github/copilot-instructions.md)
+  - Scoped Java instructions: [.github/instructions/backend-java.instructions.md](.github/instructions/backend-java.instructions.md)
+  - Scoped DB instructions: [.github/instructions/database-scripts.instructions.md](.github/instructions/database-scripts.instructions.md)
+  - Context architecture skill: [.github/skills/workspace-context-architecture/SKILL.md](.github/skills/workspace-context-architecture/SKILL.md)
+  - Workspace architect prompt: [.github/prompts/workspace-context-architect.prompt.md](.github/prompts/workspace-context-architect.prompt.md)
+
+### Agent branch naming convention
+
+When an agent creates a development branch, prefix it with the agent identifier (e.g. `antigravity/<feature-or-milestone>`, `codex/<feature-or-milestone>`) or use the milestone name (`milestone-<number>`).
 
 ## What to avoid changing casually
 
 - CI workflow behavior in [.github/workflows](.github/workflows) without validation evidence.
 - Database bootstrap/migration ordering and scripts under [scripts/database](scripts/database).
 - Canonical docs and ADR linkage without updating cross-references.
+- De-synchronizing guardrail definitions between `.github/` and `.agents/`.

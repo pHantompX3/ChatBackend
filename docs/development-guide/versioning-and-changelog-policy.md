@@ -117,7 +117,8 @@ Do not create retroactive tags for the reconstructed `0.0.1` through `0.4.0` cha
 - Reconstructed Milestone 4 snapshot: `0.4.0`
 - Milestone 5 development baseline: `0.5.0-SNAPSHOT`
 - Milestone 6 development baseline: `0.6.0-SNAPSHOT`
-- Active Milestone 7 development: `0.7.0-SNAPSHOT`
+- Completed Milestone 7 development: `0.7.0-SNAPSHOT`
+- Active Milestone 8 development: `0.8.0-SNAPSHOT`
 - First production-ready release: `1.0.0`
 
 The reconstructed versions document logical historical boundaries only. Repository history remains

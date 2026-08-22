@@ -10,6 +10,8 @@ postman-workspace-id=<POSTMAN_WORKSPACE_ID>
 # Optional existing cloud resources to update deterministically
 postman-collection-id=<POSTMAN_COLLECTION_ID_OR_UID>
 postman-flow-collection-id=<POSTMAN_FLOW_COLLECTION_ID_OR_UID>
+postman-websocket-collection-id=<POSTMAN_WEBSOCKET_COLLECTION_ID_OR_UID>
+postman-websocket-teardown-collection-id=<POSTMAN_WEBSOCKET_TEARDOWN_COLLECTION_ID_OR_UID>
 
 # Optional environment-specific cloud targets
 # Legacy fallback: postman-environment-id is treated as local environment id.

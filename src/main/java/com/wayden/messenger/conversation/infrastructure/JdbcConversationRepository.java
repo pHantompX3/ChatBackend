@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -97,6 +98,10 @@ public class JdbcConversationRepository implements ConversationRepository {
           + "WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL";
   private static final String TOUCH_SQL =
       "UPDATE [messaging].[conversation] SET updated_at = ? WHERE id = ?";
+  private static final String FIND_ACTIVE_MEMBER_USER_IDS_SQL =
+      "SELECT user_id FROM [messaging].[conversation_member] "
+          + "WHERE conversation_id = ? AND left_at IS NULL "
+          + "ORDER BY joined_at ASC, user_id ASC";
 
   private final DataSource dataSource;
 
@@ -291,6 +296,23 @@ public class JdbcConversationRepository implements ConversationRepository {
       touch(connection, conversationId, now);
     } catch (SQLException exception) {
       throw failure("transfer conversation ownership", exception);
+    }
+  }
+
+  @Override
+  public List<UserId> findActiveMemberUserIds(ConversationId conversationId) {
+    try (var connection = dataSource.getConnection();
+        var statement = connection.prepareStatement(FIND_ACTIVE_MEMBER_USER_IDS_SQL)) {
+      statement.setObject(1, conversationId.value());
+      try (var resultSet = statement.executeQuery()) {
+        List<UserId> userIds = new ArrayList<>();
+        while (resultSet.next()) {
+          userIds.add(new UserId(resultSet.getObject("user_id", UUID.class)));
+        }
+        return Collections.unmodifiableList(userIds);
+      }
+    } catch (SQLException exception) {
+      throw failure("find active member user ids for conversation", exception);
     }
   }
 
