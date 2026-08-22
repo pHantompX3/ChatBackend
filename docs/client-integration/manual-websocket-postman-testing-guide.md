@@ -399,7 +399,7 @@ is authoritative.
 Keep W, W2, and L open and run `WL-Chat Socket Participants - Bring Down` in order. D01 revokes W's
 session, so both W and W2 should close with `4401`. D02 revokes L's session, so L should close with
 `4401`. D03 and D04 prove both tokens receive `401` and clear the raw/bearer token variables. Do not
-interpret disconnect timing as durable evidence; verify the `identity.session` rows as described
+interpret disconnect timing as durable evidence; verify the `[identity].[session]` rows as described
 below.
 
 Active-membership privacy filtering cannot be fully demonstrated with this direct two-participant
@@ -410,8 +410,14 @@ boundary.
 ## 8. Verify Authoritative SQL Server State
 
 Run these read-only queries with the current Postman variable values substituted for the UUID
-placeholders. Use an administrative/developer query principal; the application runtime principal is
-intentionally least-privileged.
+placeholders. The `UNIQUEIDENTIFIER` variables require the UUID values from
+`socket_participant_1_user_id` and `socket_participant_2_user_id`; do not substitute the generated
+`wayden-socket-*` or `lacara-socket-*` usernames. Use an administrative/developer query principal;
+the application runtime principal is intentionally least-privileged.
+
+The examples bracket schemas and objects because `IDENTITY` is a SQL Server keyword. `USE [wl_chat];`
+is optional when the query connection is already scoped to `wl_chat`, but may be placed before the
+declarations when running against another database context.
 
 ### Users and active sessions
 
@@ -420,11 +426,11 @@ DECLARE @participant1 UNIQUEIDENTIFIER = '<socket_participant_1_user_id>';
 DECLARE @participant2 UNIQUEIDENTIFIER = '<socket_participant_2_user_id>';
 
 SELECT id, username, normalized_username, system_role, status, created_at, updated_at
-FROM identity.user_account
+FROM [identity].[user_account]
 WHERE id IN (@participant1, @participant2);
 
 SELECT id, user_id, status, created_at, expires_at, last_seen_at, revoked_at
-FROM identity.session
+FROM [identity].[session]
 WHERE user_id IN (@participant1, @participant2)
 ORDER BY created_at DESC;
 ```
@@ -437,12 +443,12 @@ The raw Postman tokens will not appear because only `token_hash` is persisted.
 DECLARE @conversation UNIQUEIDENTIFIER = '<socket_conversation_id>';
 
 SELECT id, conversation_type, next_message_sequence, created_at, updated_at
-FROM messaging.conversation
+FROM [messaging].[conversation]
 WHERE id = @conversation;
 
 SELECT conversation_id, user_id, conversation_role, joined_at, left_at,
        last_delivered_sequence, last_read_sequence
-FROM messaging.conversation_member
+FROM [messaging].[conversation_member]
 WHERE conversation_id = @conversation
 ORDER BY joined_at;
 ```
@@ -458,7 +464,7 @@ DECLARE @message UNIQUEIDENTIFIER = '<socket_message_id>';
 
 SELECT id, conversation_id, sender_id, client_message_id, sequence_number,
        message_type, body, created_at, edited_at, deleted_at
-FROM messaging.message
+FROM [messaging].[message]
 WHERE conversation_id = @conversation
   AND id = @message;
 ```
