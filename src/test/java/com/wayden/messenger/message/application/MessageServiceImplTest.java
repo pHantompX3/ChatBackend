@@ -15,6 +15,8 @@ import com.wayden.messenger.message.domain.Message;
 import com.wayden.messenger.message.domain.MessageBody;
 import com.wayden.messenger.message.domain.MessageId;
 import com.wayden.messenger.message.domain.MessageType;
+import jakarta.enterprise.event.Event;
+import java.lang.reflect.Proxy;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
@@ -91,7 +93,8 @@ final class MessageServiceImplTest {
 
   private static MessageServiceImpl service(
       MessageSendAttempt attempt, RequestAuditContext auditContext) {
-    return new MessageServiceImpl(null, attempt, Clock.fixed(NOW, ZoneOffset.UTC), auditContext);
+    return new MessageServiceImpl(
+        null, attempt, Clock.fixed(NOW, ZoneOffset.UTC), auditContext, mockEvent(), mockEvent());
   }
 
   private static Message message() {
@@ -137,7 +140,7 @@ final class MessageServiceImplTest {
     private int resolveCalls;
 
     private ScriptedSendAttempt(List<AttemptOutcome> attempts, List<AttemptOutcome> resolutions) {
-      super(null, null, null);
+      super(null, null, null, mockEvent());
       this.attempts = attempts;
       this.resolutions = resolutions;
     }
@@ -151,5 +154,14 @@ final class MessageServiceImplTest {
     public SendResult resolveAccepted(SendMessageCommand command) {
       return resolutions.get(resolveCalls++).run();
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> Event<T> mockEvent() {
+    return (Event<T>)
+        Proxy.newProxyInstance(
+            Event.class.getClassLoader(),
+            new Class<?>[] {Event.class},
+            (proxy, method, arguments) -> method.getReturnType().isInstance(proxy) ? proxy : null);
   }
 }

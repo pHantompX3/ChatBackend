@@ -43,6 +43,10 @@ public class SessionServiceImpl implements SessionService {
   private final Duration accountWindow;
   private final int sourceAttemptLimit;
   private final Duration sourceWindow;
+  private final jakarta.enterprise.event.Event<SessionEvents.SessionRevokedEvent>
+      sessionRevokedEvent;
+  private final jakarta.enterprise.event.Event<SessionEvents.AllSessionsRevokedEvent>
+      allSessionsRevokedEvent;
   private final SecureRandom random = new SecureRandom();
 
   @Inject
@@ -66,7 +70,10 @@ public class SessionServiceImpl implements SessionService {
       @ConfigProperty(name = "chat.auth.rate-limit.source-limit", defaultValue = "30")
           int sourceAttemptLimit,
       @ConfigProperty(name = "chat.auth.rate-limit.source-window", defaultValue = "PT1M")
-          Duration sourceWindow) {
+          Duration sourceWindow,
+      jakarta.enterprise.event.Event<SessionEvents.SessionRevokedEvent> sessionRevokedEvent,
+      jakarta.enterprise.event.Event<SessionEvents.AllSessionsRevokedEvent>
+          allSessionsRevokedEvent) {
     this.sessionRepository = sessionRepository;
     this.userRepository = userRepository;
     this.passwordHasher = passwordHasher;
@@ -78,6 +85,8 @@ public class SessionServiceImpl implements SessionService {
     this.accountWindow = accountWindow;
     this.sourceAttemptLimit = sourceAttemptLimit;
     this.sourceWindow = sourceWindow;
+    this.sessionRevokedEvent = sessionRevokedEvent;
+    this.allSessionsRevokedEvent = allSessionsRevokedEvent;
   }
 
   @Override
@@ -161,6 +170,7 @@ public class SessionServiceImpl implements SessionService {
     requestAuditContext.putCustomAttribute("actorUserId", session.userId().value().toString());
     requestAuditContext.putCustomAttribute("actorAuthType", "session");
     requestAuditContext.putCustomAttribute("targetSessionId", session.id().value().toString());
+    sessionRevokedEvent.fire(new SessionEvents.SessionRevokedEvent(session.userId(), session.id()));
   }
 
   @Override
@@ -180,6 +190,7 @@ public class SessionServiceImpl implements SessionService {
         "targetUserId", command.targetUserId().value().toString());
     requestAuditContext.putCustomAttribute(
         "revokedSessionCount", Integer.toString(revokedSessionCount));
+    allSessionsRevokedEvent.fire(new SessionEvents.AllSessionsRevokedEvent(command.targetUserId()));
     return revokedSessionCount;
   }
 

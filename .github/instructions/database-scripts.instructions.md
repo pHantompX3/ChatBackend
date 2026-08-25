@@ -24,3 +24,8 @@ These rules apply when editing database bootstrap, migration scripts, or Flyway 
 
 - Validate script behavior with repository bootstrap/migrate scripts under [scripts/database](../../scripts/database).
 - For meaningful changes, run `./mvnw clean verify` and confirm health/readiness behavior remains aligned.
+
+## Multi-agent parity
+
+- Corresponding Antigravity rule: [.agents/rules/database-scripts.md](../../.agents/rules/database-scripts.md). Keep both in sync.
+

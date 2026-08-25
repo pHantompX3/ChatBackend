@@ -16,16 +16,22 @@ public class MessageSendAttempt {
   private final MessageRepository repository;
   private final MessageIdGenerator idGenerator;
   private final Clock clock;
+  private final jakarta.enterprise.event.Event<MessageEvents.MessageCreatedEvent>
+      messageCreatedEvent;
 
   @Inject
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",
       justification = "Clock is a container-managed collaborator.")
   public MessageSendAttempt(
-      MessageRepository repository, MessageIdGenerator idGenerator, Clock clock) {
+      MessageRepository repository,
+      MessageIdGenerator idGenerator,
+      Clock clock,
+      jakarta.enterprise.event.Event<MessageEvents.MessageCreatedEvent> messageCreatedEvent) {
     this.repository = repository;
     this.idGenerator = idGenerator;
     this.clock = clock;
+    this.messageCreatedEvent = messageCreatedEvent;
   }
 
   @Transactional(Transactional.TxType.REQUIRES_NEW)
@@ -51,6 +57,7 @@ public class MessageSendAttempt {
             null,
             null);
     repository.insert(message);
+    messageCreatedEvent.fire(MessageEvents.MessageCreatedEvent.from(message));
     return new SendResult(message, true);
   }
 

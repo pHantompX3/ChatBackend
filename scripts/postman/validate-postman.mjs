@@ -20,6 +20,18 @@ const defaultCollections = [
     "collections",
     "chat-backend-user-flows.postman_collection.json",
   ),
+  path.join(
+    repoRoot,
+    "postman",
+    "collections",
+    "chat-backend-websocket-manual-integration.postman_collection.json",
+  ),
+  path.join(
+    repoRoot,
+    "postman",
+    "collections",
+    "chat-backend-websocket-participants-down.postman_collection.json",
+  ),
 ];
 const defaultEnvironmentPaths = [
   path.join(

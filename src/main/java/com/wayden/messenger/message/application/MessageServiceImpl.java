@@ -31,6 +31,9 @@ public class MessageServiceImpl implements MessageService {
   private final MessageSendAttempt sendAttempt;
   private final Clock clock;
   private final RequestAuditContext auditContext;
+  private final jakarta.enterprise.event.Event<MessageEvents.MessageEditedEvent> messageEditedEvent;
+  private final jakarta.enterprise.event.Event<MessageEvents.MessageDeletedEvent>
+      messageDeletedEvent;
 
   @Inject
   @SuppressFBWarnings(
@@ -40,11 +43,15 @@ public class MessageServiceImpl implements MessageService {
       MessageRepository repository,
       MessageSendAttempt sendAttempt,
       Clock clock,
-      RequestAuditContext auditContext) {
+      RequestAuditContext auditContext,
+      jakarta.enterprise.event.Event<MessageEvents.MessageEditedEvent> messageEditedEvent,
+      jakarta.enterprise.event.Event<MessageEvents.MessageDeletedEvent> messageDeletedEvent) {
     this.repository = repository;
     this.sendAttempt = sendAttempt;
     this.clock = clock;
     this.auditContext = auditContext;
+    this.messageEditedEvent = messageEditedEvent;
+    this.messageDeletedEvent = messageDeletedEvent;
   }
 
   @Override
@@ -149,6 +156,7 @@ public class MessageServiceImpl implements MessageService {
           "edit message", new IllegalStateException("Conditional message edit changed no rows"));
     }
     auditMutation("message.edited", conversationId, edited, false);
+    messageEditedEvent.fire(MessageEvents.MessageEditedEvent.from(edited));
     return edited;
   }
 
@@ -158,7 +166,8 @@ public class MessageServiceImpl implements MessageService {
     ActorAccess access = requireAccess(conversationId, actorId, true);
     Message current = requireMessage(conversationId, messageId, true);
     boolean administrative = authorizeDelete(actorId, access, current);
-    if (!current.isDeleted()) {
+    boolean deleted = !current.isDeleted();
+    if (deleted) {
       Instant deletedAt = clock.instant();
       if (!repository.softDelete(messageId, deletedAt)) {
         Message winner = requireMessage(conversationId, messageId, true);
@@ -169,11 +178,15 @@ public class MessageServiceImpl implements MessageService {
         }
       }
     }
+    Message latestForEvent = deleted ? requireMessage(conversationId, messageId, false) : current;
     auditMutation(
         administrative ? "message.administratively.deleted" : "message.deleted",
         conversationId,
         current,
         administrative);
+    if (deleted && latestForEvent.isDeleted()) {
+      messageDeletedEvent.fire(MessageEvents.MessageDeletedEvent.from(latestForEvent));
+    }
   }
 
   private ActorAccess requireAccess(

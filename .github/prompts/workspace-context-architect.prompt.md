@@ -32,6 +32,8 @@ Produce:
 - workspace assessment (strengths, weaknesses, maturity)
 - explicit file-level change log (path -> purpose -> reason)
 - resulting context-routing hierarchy
-- Copilot loading model (always-on vs scoped vs manual)
+- multi-agent guardrail parity check (.github/ <-> .agents/ <-> AGENTS.md)
+- agent loading model (always-on vs scoped vs manual)
 - canonical source map
 - validation evidence and remaining issues
+

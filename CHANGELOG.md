@@ -9,12 +9,86 @@ and changelog requirements.
 
 ## Retrospective version note
 
-Versions `0.0.1` through `0.4.0` are reconstructed milestone snapshots based on repository history.
-They describe the logical application versions represented by completed milestones, but those
-versions were not published or tagged retroactively. Versioned release tags begin only when the
-project intentionally performs a release under the current policy.
+Versions `0.0.1` through `0.7.0` are reconstructed milestone snapshots based on repository history.
+They describe the logical application versions represented by completed milestones, but formal
+release tags begin when the project intentionally performs a production release under the current policy.
 
 ## [Unreleased]
+
+### Added
+
+- Advanced Maven project version to `0.8.0-SNAPSHOT` for active Milestone 8 development.
+- Added the implementation-ready Milestone 8 development guide (`docs/development-guide/milestone-8-websockets-step-by-step.md`)
+  for Quarkus WebSockets Next real-time event signaling, connection management, post-commit transactional
+  fan-out, active membership authorization filtering, and deterministic REST reconnect recovery.
+- Established multi-agent guardrail parity and bidirectional synchronization across `.github/` and
+  `.agents/` customization surfaces for all AI agents.
+- Implemented the authenticated `/api/v1/ws` realtime signaling endpoint, multi-device connection
+  registry, active-member-only post-commit fan-out, heartbeat responses, and immediate disconnects
+  following session revocation.
+- Added realtime events for durable message creation, editing, deletion, delivery advancement, and
+  read advancement, plus optional WebSocket commands that delegate delivery/read acknowledgements
+  to the existing SQL-backed application service.
+- Added focused coverage for WebSocket session/user authentication, connection lifecycle snapshots,
+  multi-device fan-out, membership isolation, and unchanged-acknowledgement suppression.
+- Added a Quarkus WebSocket transport integration test covering a real authenticated handshake,
+  ping/pong, post-commit versus rolled-back event publication, and multi-socket session-revocation
+  closure with code `4401`.
+- Added a canonical client responsibility and recovery guide covering offline outbox behavior,
+  idempotent sends, socket lifecycle, ordered reconciliation, delivery/read semantics, failure
+  handling, privacy transitions, first-client acceptance criteria, and current backend capability gaps.
+- Established a repository-wide milestone-completion cycle requiring new client-facing learnings to
+  be recorded when discovered and the client responsibility guide to be audited before every
+  milestone is declared complete.
+- Documented the agreed WebSocket validation boundary: repository automation covers protocol
+  components and durable REST recovery, while the project owner currently performs network-level
+  handshake and frame integration testing through a separate Postman Desktop collection.
+- Added a synchronized Postman setup collection and intuitive manual guide that provision two socket
+  participants, persist separate session-token variables, trigger message/receipt lifecycle events,
+  exercise bidirectional acknowledgements, and verify durable evidence directly in SQL Server.
+- Added the paired socket-participant bring-down runner and named the human test actors W (Wayden) and
+  L (Lacara), with a complete exchange covering liveness, multi-connection fan-out, all current event
+  types, socket acknowledgements, invalid commands, reconnect recovery, and session-revocation closes.
+- Added an environment-specific `ws_base_url` variable for reusable Local, DevDocker, and Production
+  WebSocket connections in Postman Desktop.
+
+### Fixed
+
+- Made per-user registry registration/removal atomic, isolated failures while closing revoked
+  sessions, and changed realtime fan-out to independent asynchronous sends so one socket cannot
+  delay or prevent delivery attempts to later sockets.
+- Closed unregistered or expired sockets with `4401`, closed the authentication/registration
+  revocation race through immediate session revalidation, retained session expiry in connection
+  metadata, and excluded expired connections from event fan-out.
+- Aligned WebSocket bearer parsing with REST scheme casing/whitespace behavior and rejected
+  fractional, string, or out-of-range acknowledgement sequences before durable cursor mutation.
+- Corrected Milestone 8 ping/pong and acknowledgement examples to match the implemented
+  `{"type":"pong"}` response and `sequence` command field.
+- Corrected the manual WebSocket SQL evidence examples to bracket SQL Server schemas and objects,
+  and made participant account/session verification resolve IDs internally from the generated W/L
+  usernames so manual UUID lookup is unnecessary.
+- Corrected the manual WebSocket SQL evidence query to select the identity account's actual
+  `system_role` and `status` columns instead of a nonexistent `enabled` column.
+- Replaced the manual socket acknowledgement's angle-bracket conversation placeholder with directly
+  resolvable Postman variables for the conversation UUID and numeric message sequence.
+- Added acknowledgement preflight guidance requiring a T01-created sequence and T06 committed
+  high-water verification instead of a guessed sequence value.
+- Expanded the W/L manual capability exchange into granular send/receive instructions with exact
+  socket commands, expected event-envelope shapes, client-side handling, REST correlation, recovery,
+  error, multi-connection, and teardown evidence at every step.
+- Persisted complete W/L bearer-header variables for manual WebSocket tabs, preventing a successful
+  protocol upgrade followed by an immediate `4401` close when a raw token lacks the `Bearer ` scheme.
+- Added complete Postman URL components to the socket workflow collections so Postman Cloud retains
+  their request URLs, and normalized omitted-versus-empty request headers during strict drift checks.
+- Updated pre-existing message and delivery unit tests for the Milestone 8 event dependencies and
+  restored the Spotless build gate across all realtime-related source files.
+- Prevented duplicate realtime deletion and acknowledgement events when the durable state did not
+  change, rejected sockets for disabled users, and replaced the live connection-set view with an
+  immutable snapshot for safe concurrent fan-out.
+- Removed an unsupported WebSockets Next timeout property that Quarkus silently ignored; liveness
+  remains provided by the supported automatic ping interval and client reconnect reconciliation.
+
+## [0.7.0] - 2026-08-14
 
 ### Added
 
@@ -25,11 +99,22 @@ project intentionally performs a release under the current policy.
 - Added strict collection limits, bounded cursor pagination for active conversation members,
   SQL-backed account/source login throttling, trusted-proxy network-source resolution, and JSON
   application/audit logging with server request and trace correlation.
-- Added the implementation-ready Milestone 7 plan for a common RFC 9457 problem contract,
-  generated OpenAPI, strict request/pagination limits, bounded member traversal, shared login
-  throttling, structured JSON logs, correlation, and complete Postman operation coverage.
 - Added ADR-0015 to establish Java-to-OpenAPI-to-Postman contract direction, replica-safe SQL-backed
   login throttling, explicit limit behavior, and structured request correlation.
+
+### Changed
+
+- Changed Postman discovery from source-regex inventory to the committed generated OpenAPI contract.
+
+### Fixed
+
+- Raised the HTTP request-body cap so the maximum valid message remains accepted when JSON uses
+  six-byte Unicode escape sequences.
+
+## [0.6.0] - 2026-08-14
+
+### Added
+
 - Added authenticated per-user delivery and read acknowledgements with monotonic SQL Server cursor
   updates, committed-history bounds, stale-retry idempotency, and atomic read-implies-delivery
   behavior.
@@ -38,14 +123,20 @@ project intentionally performs a release under the current policy.
 - Added delivery-specific problem responses, post-commit safe audit metadata, bounded fresh-
   transaction deadlock retries, schema/permission checks, concurrency/privacy coverage, and an
   executable Postman reconnect-reconciliation journey.
-- Added the implementation-ready Milestone 6 plan for explicit per-user delivery/read
-  acknowledgements, derived unread counts, sender-only aggregate status, reconnect reconciliation,
-  authorization, auditing, and SQL Server concurrency coverage.
 - Added ADR-0014 to establish per-user rather than per-device cursors, explicit acknowledgement as
   the only proof of delivery/read state, and aggregate-only group receipt visibility.
-- Added the implementation-ready Milestone 5 plan for durable message send, deterministic history
-  retrieval, idempotency, editing, soft deletion, authorization, auditing, and concurrency tests.
-- Added repository-wide semantic-versioning and changelog-management guardrails.
+
+### Fixed
+
+- Rejected fractional, string, and out-of-range delivery acknowledgement sequences instead of
+  allowing Jackson to coerce them into signed integers; retained delivery targets and committed
+  high-water context in failure audits, and avoided exclusive-style locks for read-only status
+  queries.
+
+## [0.5.0] - 2026-08-13
+
+### Added
+
 - Added durable authenticated text-message persistence with server-owned IDs, sender identity,
   timestamps, and per-conversation sequence numbers.
 - Added sender-scoped client-message idempotency with concurrency-safe duplicate recovery and
@@ -57,28 +148,19 @@ project intentionally performs a release under the current policy.
 - Added SQL Server schema, least-privilege, rollback, API authorization, pagination, moderation,
   audit-redaction, and synchronized concurrency tests.
 - Added executable Postman send, retry, history, edit, delete, and tombstone workflows.
+- Added repository-wide semantic-versioning and changelog-management guardrails.
 
 ### Changed
 
-- Changed Postman discovery from source-regex inventory to the committed generated OpenAPI contract.
-- Advanced the Maven development version to `0.7.0-SNAPSHOT` for Milestone 7 development.
-- Advanced the Maven development version to `0.6.0-SNAPSHOT` for Milestone 6 development.
-- Advanced the Maven development version to `0.5.0-SNAPSHOT` for Milestone 5 development.
 - Replaced the unsafe client-supplied sender message stub and standalone `/api/v1/messages` route
   with authenticated conversation-scoped message APIs.
 
 ### Fixed
 
-- Rejected fractional, string, and out-of-range delivery acknowledgement sequences instead of
-  allowing Jackson to coerce them into signed integers; retained delivery targets and committed
-  high-water context in failure audits, and avoided exclusive-style locks for read-only status
-  queries.
 - Normalized Postman Cloud's omitted empty response arrays and implicit default environment-variable
   types during drift checks, while reporting the first differing field for actionable failures.
 - Corrected generated and curated Postman message contracts to use bearer authentication, valid
   request bodies, accurate response examples, and executable status assertions.
-- Raised the HTTP request-body cap so the maximum valid message remains accepted when JSON uses
-  six-byte Unicode escape sequences.
 - Corrected exhausted deadlock telemetry to report two performed retries and distinguish exhaustion
   from an active retry.
 - Added deterministic coverage for duplicate-winner recovery, bounded deadlock retries, membership

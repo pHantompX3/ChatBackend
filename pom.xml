@@ -7,7 +7,7 @@
 
     <groupId>com.wayden.messenger</groupId>
     <artifactId>chat-backend</artifactId>
-    <version>0.7.0-SNAPSHOT</version>
+    <version>0.8.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Chat Backend</name>
@@ -72,6 +72,10 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-logging-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-websockets-next</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

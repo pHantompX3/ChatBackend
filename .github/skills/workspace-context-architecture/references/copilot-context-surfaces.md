@@ -47,3 +47,8 @@ Create only for clear specialization that cannot be solved by routing + scoped i
 Use for reusable capabilities that are procedural and likely to recur.
 
 A skill should not become a dumping ground for general project facts.
+
+## Multi-Agent Parity
+
+Whenever editing files in `.github/`, ensure corresponding rules and skills in `.agents/` (`.agents/rules/`, `.agents/skills/`) and `AGENTS.md` are updated to maintain complete parity across all agent ecosystems.
+
