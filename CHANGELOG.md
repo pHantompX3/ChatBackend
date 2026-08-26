@@ -17,6 +17,11 @@ release tags begin when the project intentionally performs a production release 
 
 ### Added
 
+- Advanced Maven project version to `0.9.0-SNAPSHOT` for active Milestone 9 development.
+- Added the implementation-ready Milestone 9 operational-hardening guide covering a hardened
+  single-instance container deployment, NGINX TLS/WebSocket ingress, database-principal separation,
+  verified SQL Server backup restoration, supply-chain evidence, a reproducible load baseline, and a
+  threat-model review.
 - Advanced Maven project version to `0.8.0-SNAPSHOT` for active Milestone 8 development.
 - Added the implementation-ready Milestone 8 development guide (`docs/development-guide/milestone-8-websockets-step-by-step.md`)
   for Quarkus WebSockets Next real-time event signaling, connection management, post-commit transactional

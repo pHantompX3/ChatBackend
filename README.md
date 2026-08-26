@@ -445,7 +445,7 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 ## Authoritative Documentation
 
-Current application development version: `0.8.0-SNAPSHOT`. Application releases follow Semantic
+Current application development version: `0.9.0-SNAPSHOT`. Application releases follow Semantic
 Versioning; API generations and Flyway migration versions remain independent.
 
 Milestone 3 status snapshot (2026-08-11): session schema, login/logout/filter behavior, and the administrative revoke-all-sessions API are implemented and validated.
@@ -498,6 +498,8 @@ never treated as durable delivery proof.
   - `docs/architecture/decision/ADR-0015-harden-http-contracts-and-authentication-throttling.md`
 - Milestone 8 WebSockets and real-time signaling runbook:
   - `docs/development-guide/milestone-8-websockets-step-by-step.md`
+- Milestone 9 operational-hardening implementation plan:
+  - `docs/development-guide/milestone-9-operational-hardening-step-by-step.md`
 - Canonical client responsibility, offline behavior, and recovery guide:
   - `docs/client-integration/client-responsibility-and-recovery-guide.md`
 - Human-run two-participant WebSocket/Postman integration guide:
