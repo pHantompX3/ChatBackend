@@ -4,9 +4,9 @@
 
 **Document version:** 1.0  
 **Status:** Proposed target architecture  
-**Last reviewed:** 2026-08-09
+**Last reviewed:** 2026-08-26
 **Repository:** `pHantompX3/ChatBackend`  
-**Current branch baseline:** `init`  
+**Current implementation baseline:** Milestone 9 planning
 **Primary deployment model:** One remotely accessible x86-64 Linux host running Docker Compose  
 **Architecture purpose:** Production-oriented technical learning environment, not performance-driven scaling
 
@@ -35,6 +35,16 @@ The architecture intentionally introduces multiple application instances and two
 - backup, recovery, and operational discipline.
 
 The expected production usage is small, approximately five to ten concurrent users. The proposed topology therefore optimizes for learning value, operational clarity, portability, and production-grade engineering practices rather than raw throughput.
+
+### Milestone 9 implementation boundary
+
+This document describes a later layered target, not the topology implemented by Milestone 9. The
+Milestone 9 operational-hardening reference deliberately deploys one edge NGINX instance and one
+ChatBackend instance because the current WebSocket registry and event dispatch are process-local. It
+does not introduce the frontend/midlayer, internal proxy, duplicate backend instances, affinity, or
+cross-instance realtime distribution. Those components require a later ADR and implementation
+increment. The executable Milestone 9 scope is defined by
+`docs/development-guide/milestone-9-operational-hardening-step-by-step.md`.
 
 This document is intended to be stored at:
 

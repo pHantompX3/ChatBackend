@@ -1,7 +1,7 @@
 # Client Responsibility and Recovery Guide
 
 **Status:** Current implementation audit  
-**Last reviewed:** 2026-08-22  
+**Last reviewed:** 2026-08-26
 **Applies to:** ChatBackend `0.8.0-SNAPSHOT`
 
 ## 1. Purpose
@@ -98,6 +98,14 @@ backend tracks receipts per user, not per device, and does not expose receipt ti
 
 Connect to `/api/v1/ws`. Supported token transports are `token.<token>` or `bearer.<token>` as a
 WebSocket subprotocol, `?token=<token>`, or an `Authorization` header for clients that can set one.
+
+**Planned Milestone 9 hardened-profile contract:** public deployment will disable query-string token
+authentication because URLs can be retained by intermediaries. Browser clients must use the
+subprotocol form and send an Origin from the deployment allowlist. Non-browser clients may use the
+subprotocol or Authorization header and may omit Origin. This is a planned profile policy until the
+Milestone 9 implementation and transport tests are complete; the current endpoint capabilities above
+remain authoritative in the meantime.
+
 Prefer a subprotocol over a query parameter where the client platform supports it because URLs are
 more commonly retained in diagnostics and intermediary logs.
 

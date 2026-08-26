@@ -34,7 +34,9 @@ This repository currently standardizes three environments:
 3. Production
    - Future hosted target (not provisioned yet)
 
-- Future remote machine fronted by an API gateway/load balancer, with Apache APISIX as the preferred edge layer
+- Milestone 9 reference: one NGINX HTTPS/WSS edge in front of one ChatBackend instance
+- Apache APISIX remains an optional later replacement if multi-service gateway or load-balancing needs
+  justify it through a later architecture decision
 - Deployment automation is intentionally deferred until a persistent remote environment exists
 
 ## Shared Remote Queue Server (Docker, Optional Audit Transport)

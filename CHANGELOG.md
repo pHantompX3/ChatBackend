@@ -22,6 +22,11 @@ release tags begin when the project intentionally performs a production release 
   single-instance container deployment, NGINX TLS/WebSocket ingress, database-principal separation,
   verified SQL Server backup restoration, supply-chain evidence, a reproducible load baseline, and a
   threat-model review.
+- Revised the Milestone 9 plan after a repository-backed pre-implementation audit: threat modelling
+  and audit-query redaction now precede ingress work; database provisioning covers clean and upgrade
+  paths with distinct operator/migrator/runtime/backup/restore authorities; SQL TLS, encrypted backups,
+  least-privilege RabbitMQ degradation, monitoring, CI replacement, two-stage load validation, and
+  exact acceptance commands are explicit.
 - Advanced Maven project version to `0.8.0-SNAPSHOT` for active Milestone 8 development.
 - Added the implementation-ready Milestone 8 development guide (`docs/development-guide/milestone-8-websockets-step-by-step.md`)
   for Quarkus WebSockets Next real-time event signaling, connection management, post-commit transactional

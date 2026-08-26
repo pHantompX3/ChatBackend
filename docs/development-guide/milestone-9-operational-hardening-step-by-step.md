@@ -208,7 +208,8 @@ them explicitly after the host, storage destination, dataset size, and operation
 - Maven dependencies: OWASP Dependency-Check, with a deliberately documented CVSS failure threshold
   and suppression file requiring justification and expiry/review metadata.
 - Java component SBOM: CycloneDX Maven plugin producing JSON and XML.
-- repository/image/misconfiguration/secret scanning: Trivy, pinned in CI.
+- image operating-system packages, misconfiguration, and secret scanning: Trivy, pinned in CI. Do not
+  add a second Java dependency gate that merely duplicates OWASP results without a distinct purpose.
 - GitHub pull requests: dependency-review action where the event supports it.
 
 Reports are uploaded even on failure. Scanner unavailability is distinguishable from a clean scan and
@@ -307,10 +308,14 @@ deploy/
     └── README.md
 
 scripts/
+├── database/
+│   ├── provision-hardened-principals.sh
+│   └── verify-hardened-permissions.sh
 ├── ci/
 │   ├── build-image.sh
 │   ├── generate-sbom.sh
-│   └── scan.sh
+│   ├── scan.sh
+│   └── run-load-test.sh
 ├── deploy/
 │   ├── validate-environment.sh
 │   ├── deploy.sh
@@ -347,7 +352,7 @@ it.
 Before infrastructure implementation:
 
 1. Create the first reviewed version of `docs/security/threat-model.md` using Section 2.8.
-2. Add regression tests that demonstrate the current raw-query exposure, then redact query values
+2. Add regression tests that fail against the current raw-query exposure, then redact query values
    before both the structured log and durable audit paths. Preserve parameter names only when useful.
 3. Implement/configure the hardened WebSocket token-transport and Origin policy from Section 2.9.
 4. Decide and document proxy-owned versus application-owned forwarding and correlation headers.
@@ -377,7 +382,7 @@ Acceptance:
 
 ---
 
-## 5. Step 4 - Harden and Prove the Application Image
+## 5. Application Image Work Package
 
 Refine the `Dockerfile` rather than adding competing production Dockerfiles.
 
@@ -411,7 +416,7 @@ required client. Compose/orchestrator health probes may call the application fro
 
 ---
 
-## 6. Step 5 - Add Hardened Services, Compose, and Network Boundaries
+## 6. Hardened Services, Compose, and Network Work Package
 
 Create an overlay or separate hardened Compose definition that reuses the proven service settings
 without turning `compose.devdocker.yaml` into a production-secrets template.
@@ -446,7 +451,7 @@ available without exposing the management port publicly.
 
 ---
 
-## 7. Step 6 - Configure HTTPS and WebSocket Proxying
+## 7. HTTPS and WebSocket Proxy Work Package
 
 The NGINX reference must:
 
@@ -486,7 +491,7 @@ Automated proxy tests:
 
 ---
 
-## 8. Step 3 - Implement Two-Phase Database Provisioning and Least Privilege
+## 8. Database Provisioning and Least-Privilege Work Package
 
 Update `docs/database/sql-server-principals-and-permissions.md` to the implemented Milestone 9 model.
 Add idempotent operational provisioning/rotation scripts. Do not edit applied Flyway migrations.
@@ -533,7 +538,7 @@ and deployment must never silently fall back to `sa`.
 
 ---
 
-## 9. Step 7 - Implement Encrypted Backup, Verification, and Isolated Restore
+## 9. Encrypted Backup and Restore Work Package
 
 ### 9.1 Backup command
 
@@ -583,7 +588,7 @@ Those settings remain parameters until a destination is selected.
 
 ---
 
-## 10. Step 8 - Add Dependency, Image, and Supply-Chain Evidence
+## 10. Dependency, Image, and Supply-Chain Work Package
 
 Add pinned build/CI integration for:
 
@@ -611,7 +616,7 @@ not made nondeterministic by transient scanner services.
 
 ---
 
-## 11. Step 9 - Characterize and Then Gate the Load Baseline
+## 11. Load Characterization and Regression Work Package
 
 ### 11.1 Scenario
 
@@ -690,7 +695,7 @@ closing, deferring with an owner, or explicitly accepting every identified findi
 
 ---
 
-## 13. Step 10 - Add Operational Runbooks and Thin CI/CD Orchestration
+## 13. Operational Runbooks and Thin CI/CD Work Package
 
 ### 13.1 Fresh-host deployment runbook
 
@@ -705,7 +710,12 @@ Document:
 - bootstrap, principal provisioning, migration, and application startup order;
 - health, HTTPS, WebSocket, logging, and database-access verification;
 - backup schedule and first mandatory restore drill;
-- rollback and diagnostics collection.
+- rollback and diagnostics collection;
+- schema-aware rollback rules: an older application image is used only when compatibility with the
+  current Flyway state is proven; otherwise recover by forward fix or the guarded restore procedure;
+- minimum checks, thresholds, owners, and escalation actions for certificate expiry, backup age,
+  restore-drill age, disk use, container restart loops, RabbitMQ degradation, queue/DLQ depth, and
+  deployment/scanner failure.
 
 ### 13.2 Repository scripts
 
@@ -728,6 +738,17 @@ Heavy SQL Server/image jobs should use concurrency controls and artifact retenti
 Remote deployment remains gated behind an explicitly configured environment and approval. Missing
 production secrets must not turn a required production deployment into a misleading success.
 
+The existing workflows are part of this change, not an untouched parallel path:
+
+- replace automatic remote `sa` bootstrap/migration on pushes to `main` with an explicitly approved,
+  environment-protected operator/migrator workflow;
+- remove `sa` and migrator credentials from application deployment/container environments;
+- keep PR validation free of production secrets and use ephemeral fixtures;
+- stop treating a missing required deployment secret as a successful deployment;
+- deploy an immutable image digest rather than a mutable `latest` tag;
+- keep the self-hosted DevDocker workflow clearly labelled as rehearsal unless it is deliberately
+  converted to the hardened stack and validated as such.
+
 ---
 
 ## 14. Verification Matrix
@@ -738,36 +759,87 @@ production secrets must not turn a required production deployment into a mislead
 | Image | Build, non-root assertion, labels, health, clean stop | Registry pull by digest |
 | Compose/network | Config validation, exposed-port inspection, service health | Host firewall inspection |
 | TLS/proxy | Config test, redirect, trusted test CA, REST and WebSocket path | Public DNS/certificate check |
-| DB principals | Runtime positive DML and negative DDL/privilege tests | Production principal inventory |
-| Backup | Native backup and `VERIFYONLY` | Encrypted off-host artifact check |
+| Audit privacy | Log and RabbitMQ/SQL audit redaction tests | Sanitized production evidence sample |
+| WebSocket policy | Origin/token-transport positive and negative tests | Supported client-library handshake |
+| DB principals | Clean/upgrade paths, runtime positive DML, negative DDL/security/Flyway tests | Production principal inventory |
+| SQL transport | Untrusted-certificate rejection and trusted-chain success | Production certificate rotation check |
+| RabbitMQ | Least-privilege negatives, fail-open degradation, backlog/DLQ recovery | Production broker inventory and alert routing |
+| Backup | Encrypted native backup, key recovery, and `VERIFYONLY` | Encrypted off-host artifact check |
 | Restore | Clean isolated restore plus application smoke journey | Timed recovery drill from off-host copy |
 | Supply chain | Dependency review, SBOM, Trivy, OWASP reports | Finding disposition review |
 | Load | Reproducible k6 run and durable-state assertions | Production-like baseline when host exists |
 | Threat model | Required sections/findings linter where practical | Human sign-off and risk acceptance |
+| Operations | Scripted certificate/backup/restore/queue/disk/restart checks | Alert delivery and operator exercise |
 
 All automated checks must be reproducible from documented local commands. Expected negative tests may
 log failures but must assert the intended outcome.
+
+### 14.1 Canonical verification commands
+
+Implementation may place stable argument sets behind the planned repository scripts, but the final
+guide/runbooks must make these commands work from the repository root:
+
+```bash
+./mvnw clean verify
+./scripts/database/validate-flyway-naming.sh
+./scripts/database/verify-hardened-permissions.sh --scenario clean
+./scripts/database/verify-hardened-permissions.sh --scenario upgrade-milestone-8
+
+node --test scripts/postman/discover-postman.test.mjs
+./scripts/postman/discover-postman.sh
+./scripts/postman/validate-postman.sh
+
+docker build --pull --no-cache -t wl-chat:milestone-9 .
+docker inspect wl-chat:milestone-9
+docker compose -f deploy/compose.hardened.yaml config --quiet
+./scripts/deploy/validate-environment.sh
+./scripts/deploy/smoke-test.sh
+
+./scripts/operations/backup-database.sh --environment rehearsal
+./scripts/operations/verify-backup.sh --environment rehearsal
+./scripts/operations/restore-database.sh --environment rehearsal --isolated-target wl_chat_restore_drill
+
+./scripts/ci/generate-sbom.sh
+./scripts/ci/scan.sh
+
+./scripts/ci/run-load-test.sh --phase characterization
+./scripts/ci/run-load-test.sh --phase regression
+
+git diff --check
+git status --short
+```
+
+`run-load-test.sh` owns the reviewed k6 image digest and identical scenario mounting/network arguments
+for both phases. Tests must also inspect the running application container to prove that
+bootstrap/migrator/restore secrets are absent and that the effective UID is non-zero.
 
 ---
 
 ## 15. Ordered Implementation Sequence
 
-1. Advance the active development version and record the planning contract.
-2. Create ADR-0017 and reconcile NGINX/APISIX and single/multi-instance documentation.
-3. Harden the Docker image and add `.dockerignore`.
-4. Add the hardened Compose/network layout.
-5. Add NGINX TLS/HTTP/WebSocket configuration and proxy integration tests.
-6. Implement and validate database principal separation.
-7. Implement backup, preliminary verification, and isolated restore scripts.
-8. Add SBOM generation and security scanning with explicit policies.
-9. Implement the k6 scenario and record the first baseline.
-10. Complete the threat model and resolve its blocking findings.
-11. Complete deployment, backup/restore, rollback, and diagnostics runbooks.
-12. Wire repository scripts into CI.
-13. Run the full verification matrix, update authoritative status snapshots, and audit client-facing
-    operational implications.
+1. Advance the active development version and record the audited planning contract.
+2. Create the initial threat model; resolve public WebSocket auth/Origin, query-redaction, proxy trust,
+   RabbitMQ degradation, database authority, and backup-security decisions.
+3. Add audit/query-redaction regression coverage and implement the hardened WebSocket profile policy.
+4. Create ADR-0017 and reconcile NGINX/APISIX, single/multi-instance, credential, backup, and degraded
+   service documentation.
+5. Implement two-phase database provisioning, the forward-only runtime permission migration, verified
+   SQL TLS, and independent clean-install/upgrade permission tests.
+6. Harden the Docker image and add `.dockerignore`.
+7. Provision least-privilege RabbitMQ topology/credentials and add the hardened Compose/network layout.
+8. Add NGINX TLS/HTTP/WebSocket configuration and public-boundary integration tests.
+9. Implement encrypted backup, preliminary verification, key recovery, and isolated restore scripts.
+10. Add SBOM generation and application/infrastructure image scanning with explicit policies.
+11. Run non-gating load characterization, approve thresholds, reset the environment, and pass the
+    gating regression run.
+12. Complete deployment, backup/restore, rollback, monitoring, and diagnostics runbooks.
+13. Replace/refine the existing migration/deployment workflows and wire repository scripts into thin,
+    environment-protected CI/CD orchestration.
+14. Re-review the threat model, resolve or explicitly accept residual risk, run the full verification
+    matrix, update authoritative status snapshots, and audit the client integration guide.
 
-This order establishes the deployable boundary before recovery/load/security evidence depends on it.
+This order makes security and authority decisions before infrastructure depends on them, proves both
+database histories before deployment, and establishes performance gates only after characterization.
 
 ---
 
@@ -782,7 +854,8 @@ actual production deployment until they are supplied:
 4. production SQL Server placement and licence/edition;
 5. secret store or host secret-delivery mechanism;
 6. encrypted off-host backup destination and access policy;
-7. accepted RPO, RTO, backup schedule, and retention;
+7. production acceptance or replacement of the 24-hour rehearsal RPO and 60-minute rehearsal restore
+   objective, plus backup schedule and retention;
 8. alert destination and on-call/incident owner;
 9. public network/firewall/SSH access policy;
 10. accepted production load thresholds and maintenance window.
@@ -803,17 +876,24 @@ Milestone 9 is complete only when all applicable boxes are evidenced:
 - [ ] Only the TLS proxy exposes application host ports; SQL Server/RabbitMQ remain private.
 - [ ] HTTPS REST and `wss://` signaling work through the proxy.
 - [ ] HTTP redirect, trusted forwarding headers, request limits, and health exposure are verified.
+- [ ] Hardened WebSocket Origin/token-transport rules pass positive and negative proxy tests.
+- [ ] Raw query values and credentials are absent from proxy, application, and durable audit evidence.
 
 ### Database and recovery
 
-- [ ] The application uses only the runtime principal and automated negative privilege tests pass.
+- [ ] Clean-install and Milestone 8 upgrade database paths pass without editing applied migrations.
+- [ ] The application uses only enumerated runtime grants and automated DDL/security/Flyway-history
+      negative privilege tests pass.
 - [ ] Migration/bootstrap credentials are not present in the running application container.
-- [ ] A native checksum backup is produced and passes `RESTORE VERIFYONLY`.
+- [ ] Application and migrator connections validate the SQL Server certificate and reject an untrusted
+      certificate.
+- [ ] A native encrypted checksum backup is produced, its key is recoverable, and it passes
+      `RESTORE VERIFYONLY`.
 - [ ] That backup is restored into an isolated clean target.
 - [ ] Flyway integrity, application startup, authentication, messages, and cursor state pass after
       restore.
 - [ ] Drill duration and RPO/RTO assessment are recorded.
-- [ ] The off-host/encryption/retention boundary is implemented for a selected environment or clearly
+- [ ] The off-host/retention boundary is implemented for a selected environment or clearly
       recorded as the remaining production-activation prerequisite.
 
 ### Security and performance
@@ -822,8 +902,12 @@ Milestone 9 is complete only when all applicable boxes are evidenced:
 - [ ] Findings and suppressions have documented dispositions; no unaccepted high/critical finding
       remains.
 - [ ] The threat model is reviewed and its blocking controls are verified.
-- [ ] A basic load scenario completes without durable-state corruption.
-- [ ] The first environment-labelled performance baseline and regression thresholds are recorded.
+- [ ] RabbitMQ topology/runtime permissions are least privilege and ready-but-degraded recovery,
+      backlog, and DLQ checks pass.
+- [ ] Characterization and threshold-gated load runs complete without durable-state corruption.
+- [ ] The environment-labelled performance baseline and regression thresholds are recorded.
+- [ ] Minimum operational checks cover certificates, backups, restore age, disk, restart loops,
+      RabbitMQ degradation/backlog/DLQ, and CI/deployment failures.
 
 ### Documentation and validation
 
@@ -833,6 +917,8 @@ Milestone 9 is complete only when all applicable boxes are evidenced:
 - [ ] Client-facing TLS, proxy, reconnect, outage, or recovery responsibilities discovered during the
       milestone are reflected in the client integration guide.
 - [ ] `./mvnw clean verify` passes.
+- [ ] Flyway naming validation, clean/upgrade migration tests, Postman discovery tests, discovery, and
+      strict Postman validation pass.
 - [ ] Compose, proxy, security, backup/restore, and load-test validation commands pass.
 - [ ] `git diff --check` passes and no generated secrets, certificates, backups, reports, or build
       artifacts are tracked.

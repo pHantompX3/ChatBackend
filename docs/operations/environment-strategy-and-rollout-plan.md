@@ -20,7 +20,9 @@ This document formalizes the environment model and rollout sequence for ChatBack
 3. Production (future)
    - Persistent hosted environment
    - API reachable by real clients
-   - Fronted by an API gateway/load balancer on the remote host, with Apache APISIX as the preferred future-state edge layer
+   - Fronted by the Milestone 9 NGINX HTTPS/WSS reference on the remote host
+   - Apache APISIX remains an optional later replacement if multi-service gateway or load-balancing
+     requirements justify the added component
    - Deployment automation enabled only after provisioning
 
 ## Database Initialization Strategy
@@ -49,8 +51,11 @@ Two-phase model:
 
 2. Remote workflow scaffold
    - File: `.github/workflows/db-remote-bootstrap-migrate.yml`
-   - Manual-only and deferred
-   - Intended for activation when persistent hosted infrastructure exists
+   - Current workflow is an automatic push-to-`main` scaffold that uses a remote bootstrap credential
+     and skips successfully when required secrets are absent
+   - It is not an accepted production deployment path
+   - Milestone 9 replaces it with an explicitly approved, environment-protected operator/migrator job
+     before persistent hosted deployment is activated
 
 ## Documentation Source-of-Truth
 
@@ -96,8 +101,9 @@ Exit criteria:
 
 1. Provision persistent hosted runtime and database.
 2. Add secure secrets management and network policy.
-3. Add Apache APISIX on the remote machine as the API gateway/load balancer in front of the application.
-4. Route public traffic through APISIX and keep the application on an internal-only port.
+3. Add the Milestone 9 NGINX reference on the remote machine as the TLS reverse proxy in front of the
+   single ChatBackend instance.
+4. Route public HTTPS/WSS traffic through NGINX and keep the application on an internal-only port.
 5. Activate remote migration workflow with production safeguards.
 6. Add deployment + post-deploy health checks.
 
@@ -106,7 +112,8 @@ Exit criteria:
 - Merged `main` changes can migrate and deploy to persistent environment.
 - Rollback and recovery procedures are documented.
 - Observability and alerting are in place.
-- APISIX handles edge routing and load balancing for the remote machine before traffic reaches the app.
+- NGINX handles TLS termination, edge routing, safe forwarding, and WebSocket upgrades before traffic
+  reaches the single application instance.
 
 ## Guardrails
 
@@ -125,5 +132,6 @@ Exit criteria:
 
 1. Final hosting target for Production.
 2. Whether Production database is containerized SQL Server or managed SQL.
-3. Whether migration execution should be a dedicated job before app rollout.
-4. Whether APISIX should terminate TLS on the remote machine or sit behind another external proxy layer.
+3. Production acceptance or replacement of the Milestone 9 rehearsal RPO/RTO objectives.
+4. Whether future multi-service or multi-instance requirements justify replacing NGINX with APISIX or
+   another gateway through a later ADR.
