@@ -46,6 +46,7 @@ keytool -importcert -noprompt -alias wl-chat-rehearsal-ca \
   -storepass "${TRUSTSTORE_PASSWORD}"
 
 install -m 0644 "${work_dir}/ca.crt" "${OUTPUT_DIR}/ca.crt"
+install -m 0644 "${work_dir}/ca.crt" "${OUTPUT_DIR}/ca.pem"
 install -m 0644 "${work_dir}/proxy.crt" "${OUTPUT_DIR}/proxy.crt"
 # Bind-mounted rehearsal files must be readable by the non-root container UIDs. The host directory is
 # owner-only, while the individual files are read-only and mounted into only their intended service.

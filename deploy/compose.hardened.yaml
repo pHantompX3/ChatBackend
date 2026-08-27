@@ -94,7 +94,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp:size=64m,mode=1777
+      - /app/native-tmp:size=16m,mode=0700,uid=10001,gid=10001,exec
     environment:
+      JAVA_TOOL_OPTIONS: -Djna.tmpdir=/app/native-tmp
       QUARKUS_PROFILE: hardened
       QUARKUS_HTTP_HOST: 0.0.0.0
       WL_CHAT_DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=wl_chat;encrypt=true;trustServerCertificate=false;trustStore=/app/tls/sql-truststore.p12;trustStorePassword=${WL_CHAT_SQL_TRUSTSTORE_PASSWORD:?WL_CHAT_SQL_TRUSTSTORE_PASSWORD is required}

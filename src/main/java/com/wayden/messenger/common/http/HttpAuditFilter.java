@@ -68,6 +68,17 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
 
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {
+    captureRequestMetadata(requestContext);
+
+    LOG.debugf(
+        "AUDIT FILTER: Step 1/3 - Captured request metadata (requestId=%s)",
+        requestAuditContext.getRequestId());
+    LOG.debugf(
+        "AUDIT FILTER: Step 2/3 - Classified operation and client context (operation=%s)",
+        requestAuditContext.getOperation());
+  }
+
+  private void captureRequestMetadata(ContainerRequestContext requestContext) {
     String requestId = getRequestId(requestContext);
     String method = requestContext.getMethod();
     String path = requestContext.getUriInfo().getRequestUri().getPath();
@@ -102,13 +113,6 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     requestAuditContext.setOperation(resolveOperationName());
     requestAuditContext.putCustomAttribute("metadata.clientIpSource", clientIpResolution.source());
     requestAuditContext.putCustomAttribute("metadata.deviceTypeSource", deviceDetection.source());
-
-    LOG.debugf(
-        "AUDIT FILTER: Step 1/3 - Captured request metadata (requestId=%s)",
-        requestAuditContext.getRequestId());
-    LOG.debugf(
-        "AUDIT FILTER: Step 2/3 - Classified operation and client context (operation=%s)",
-        requestAuditContext.getOperation());
   }
 
   @Override
@@ -176,11 +180,11 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
   }
 
   private void ensureRequestMetadata(ContainerRequestContext requestContext) {
-    if (requestAuditContext.getMethod() == null || requestAuditContext.getMethod().isBlank()) {
-      requestAuditContext.setMethod(requestContext.getMethod());
-    }
-    if (requestAuditContext.getPath() == null || requestAuditContext.getPath().isBlank()) {
-      requestAuditContext.setPath(requestContext.getUriInfo().getRequestUri().getPath());
+    if (requestAuditContext.getMethod() == null
+        || requestAuditContext.getMethod().isBlank()
+        || requestAuditContext.getPath() == null
+        || requestAuditContext.getPath().isBlank()) {
+      captureRequestMetadata(requestContext);
     }
     if (requestAuditContext.getQuery() == null) {
       requestAuditContext.setQuery(

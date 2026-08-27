@@ -190,7 +190,10 @@ export WL_CHAT_MIGRATOR_DB_URL="jdbc:sqlserver://sqlserver:1433;databaseName=${T
 "${REPO_ROOT}/scripts/database/migrate-hardened.sh"
 
 docker run -d --name "${app_container}" --network "${network}" -p 127.0.0.1::8080 \
-  --read-only --tmpfs /tmp:size=64m,mode=1777 --user 10001:10001 --cap-drop ALL \
+  --read-only --tmpfs /tmp:size=64m,mode=1777 \
+  --tmpfs /app/native-tmp:size=16m,mode=0700,uid=10001,gid=10001,exec \
+  --user 10001:10001 --cap-drop ALL --security-opt no-new-privileges \
+  -e JAVA_TOOL_OPTIONS=-Djna.tmpdir=/app/native-tmp \
   -e QUARKUS_PROFILE=hardened -e QUARKUS_HTTP_HOST=0.0.0.0 \
   -e "WL_CHAT_DB_URL=jdbc:sqlserver://sqlserver:1433;databaseName=${TARGET_DATABASE};encrypt=true;trustServerCertificate=false;trustStore=/app/tls/sql-truststore.p12;trustStorePassword=${WL_CHAT_SQL_TRUSTSTORE_PASSWORD}" \
   -e "WL_CHAT_DB_USERNAME=${WL_CHAT_DB_USERNAME:-wl_chat_app}" \
@@ -213,6 +216,53 @@ for attempt in {1..45}; do
   sleep 2
 done
 
+restore_smoke_variables=(
+  WL_CHAT_RESTORE_SMOKE_USERNAME WL_CHAT_RESTORE_SMOKE_PASSWORD
+  WL_CHAT_RESTORE_SMOKE_CONVERSATION_ID WL_CHAT_RESTORE_SMOKE_MESSAGE_ID
+  WL_CHAT_RESTORE_SMOKE_SEQUENCE
+)
+configured_restore_smoke_variables=0
+for variable_name in "${restore_smoke_variables[@]}"; do
+  if [[ -n "${!variable_name:-}" ]]; then
+    configured_restore_smoke_variables="$((configured_restore_smoke_variables + 1))"
+  fi
+done
+if (( configured_restore_smoke_variables != 0 \
+  && configured_restore_smoke_variables != ${#restore_smoke_variables[@]} )); then
+  echo "Supply all restore smoke variables or none of them." >&2
+  exit 1
+fi
+
+if (( configured_restore_smoke_variables == ${#restore_smoke_variables[@]} )); then
+  if [[ ! "${WL_CHAT_RESTORE_SMOKE_SEQUENCE}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "WL_CHAT_RESTORE_SMOKE_SEQUENCE must be a positive integer." >&2
+    exit 1
+  fi
+  login_body="$(jq -cn \
+    --arg username "${WL_CHAT_RESTORE_SMOKE_USERNAME}" \
+    --arg password "${WL_CHAT_RESTORE_SMOKE_PASSWORD}" \
+    '{username:$username,password:$password}')"
+  restored_token="$(curl --fail --silent --show-error \
+    -H 'Content-Type: application/json' \
+    --data "${login_body}" \
+    "http://127.0.0.1:${host_port}/api/v1/sessions" | jq -er '.token')"
+  restored_history="$(curl --fail --silent --show-error \
+    -H "Authorization: Bearer ${restored_token}" \
+    "http://127.0.0.1:${host_port}/api/v1/conversations/${WL_CHAT_RESTORE_SMOKE_CONVERSATION_ID}/messages?afterSequence=0&limit=50")"
+  printf '%s' "${restored_history}" | jq -e \
+    --arg message_id "${WL_CHAT_RESTORE_SMOKE_MESSAGE_ID}" \
+    --argjson sequence "${WL_CHAT_RESTORE_SMOKE_SEQUENCE}" \
+    '.items | any(.messageId == $message_id and .sequenceNumber == $sequence)' >/dev/null
+  restored_position="$(curl --fail --silent --show-error \
+    -H "Authorization: Bearer ${restored_token}" \
+    "http://127.0.0.1:${host_port}/api/v1/conversations/${WL_CHAT_RESTORE_SMOKE_CONVERSATION_ID}/position")"
+  printf '%s' "${restored_position}" | jq -e \
+    --argjson sequence "${WL_CHAT_RESTORE_SMOKE_SEQUENCE}" \
+    '.latestSequence >= $sequence
+      and .lastDeliveredSequence >= $sequence
+      and .lastReadSequence >= $sequence' >/dev/null
+fi
+
 evidence_dir="${REPO_ROOT}/backups/${ENVIRONMENT}/restore-evidence"
 mkdir -p "${evidence_dir}"
 evidence_file="${evidence_dir}/$(date -u +%Y%m%dT%H%M%SZ).txt"
@@ -223,6 +273,14 @@ docker exec "${sql_container}" /opt/mssql-tools18/bin/sqlcmd \
 elapsed_seconds="$(( $(date +%s) - started_at ))"
 printf '\nrestore_elapsed_seconds=%s\nrestore_objective_seconds=3600\n' \
   "${elapsed_seconds}" >>"${evidence_file}"
+if (( configured_restore_smoke_variables == ${#restore_smoke_variables[@]} )); then
+  printf 'authentication_message_cursor_smoke=passed\n' >>"${evidence_file}"
+else
+  printf 'authentication_message_cursor_smoke=not_configured\n' >>"${evidence_file}"
+fi
 
 echo "Isolated restore, DBCC, current migration, data invariants, and application readiness passed."
+if (( configured_restore_smoke_variables == ${#restore_smoke_variables[@]} )); then
+  echo "Restored authentication, message history, and delivery/read cursor smoke passed."
+fi
 echo "Evidence: ${evidence_file}"

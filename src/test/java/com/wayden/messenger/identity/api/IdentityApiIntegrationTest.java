@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.wayden.messenger.bootstrap.IdentitySqlServerTestResource;
@@ -100,7 +101,7 @@ final class IdentityApiIntegrationTest {
                 IdentitySqlServerTestResource.saPassword());
         var statement =
             connection.prepareStatement(
-                "SELECT method, path, [query], response_status "
+                "SELECT method, path, [query], response_status, source_ip, ip_resolution_source "
                     + "FROM [audit].[http_audit_event] WHERE request_id = ?")) {
       statement.setString(1, requestId);
       try (var resultSet = statement.executeQuery()) {
@@ -109,6 +110,8 @@ final class IdentityApiIntegrationTest {
         assertEquals("/api/v1/users", resultSet.getString("path"));
         assertEquals("REDACTED", resultSet.getString("query"));
         assertEquals(401, resultSet.getInt("response_status"));
+        assertNotNull(resultSet.getString("source_ip"));
+        assertNotNull(resultSet.getString("ip_resolution_source"));
       }
     }
   }

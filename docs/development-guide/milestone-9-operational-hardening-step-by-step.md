@@ -343,6 +343,7 @@ scripts/
 │   ├── validate-environment.sh
 │   ├── deploy.sh
 │   ├── smoke-test.sh
+│   ├── verify-websocket-policy.sh
 │   └── rollback.sh
 └── operations/
     ├── backup-database.sh
@@ -416,8 +417,11 @@ Required properties:
 3. Copy only the Quarkus runtime artifact into the final stage.
 4. Set OCI labels for title, version, revision, creation time, and source.
 5. Do not bake environment secrets or local configuration into any layer.
-6. The hardened profile logs to stdout and uses `tmpfs` only for required temporary data. If file
-   logging is deliberately enabled, mount one bounded directory owned by the runtime UID.
+6. The hardened profile logs to stdout and uses `tmpfs` only for required temporary data. Keep the
+   general-purpose `/tmp` mount non-executable. Argon2's JNA extraction uses a separate bounded,
+   executable tmpfs owned by the runtime UID; `-Djna.tmpdir` must point only to that mount, and native
+   initialization must fail application startup when the mount is unusable. If file logging is
+   deliberately enabled, mount one bounded directory owned by the runtime UID.
 7. Support graceful container shutdown within a documented timeout.
 8. Add a `.dockerignore` excluding `.git`, `target`, logs, secrets, backups, certificates, reports,
    and workstation metadata.
@@ -828,6 +832,10 @@ docker inspect chat-backend:milestone-9
 docker compose -f deploy/compose.hardened.yaml config --quiet
 ./scripts/deploy/validate-environment.sh
 ./scripts/deploy/smoke-test.sh
+WL_CHAT_K6_IMAGE=<reviewed-k6-digest> \
+WL_CHAT_LOAD_WS_BASE_URL=<wss-base-url> \
+WL_CHAT_WEBSOCKET_ALLOWED_ORIGIN=<allowed-origin> \
+./scripts/deploy/verify-websocket-policy.sh
 
 ./scripts/operations/backup-database.sh --environment rehearsal
 ./scripts/operations/verify-backup.sh --environment rehearsal
@@ -908,55 +916,55 @@ Milestone 9 is complete only when all applicable boxes are evidenced:
 
 ### Deployment and ingress
 
-- [ ] A clean checkout builds an immutable, labelled, non-root application image.
-- [ ] The hardened stack starts from documented commands with no secrets in source or image layers.
-- [ ] Only the TLS proxy exposes application host ports; SQL Server/RabbitMQ remain private.
-- [ ] HTTPS REST and `wss://` signaling work through the proxy.
-- [ ] HTTP redirect, trusted forwarding headers, request limits, and health exposure are verified.
-- [ ] Hardened WebSocket Origin/token-transport rules pass positive and negative proxy tests.
-- [ ] Raw query values and credentials are absent from proxy, application, and durable audit evidence.
+- [x] A clean checkout builds an immutable, labelled, non-root application image.
+- [x] The hardened stack starts from documented commands with no secrets in source or image layers.
+- [x] Only the TLS proxy exposes application host ports; SQL Server/RabbitMQ remain private.
+- [x] HTTPS REST and `wss://` signaling work through the proxy.
+- [x] HTTP redirect, trusted forwarding headers, request limits, and health exposure are verified.
+- [x] Hardened WebSocket Origin/token-transport rules pass positive and negative proxy tests.
+- [x] Raw query values and credentials are absent from proxy, application, and durable audit evidence.
 
 ### Database and recovery
 
 - [x] Clean-install and Milestone 8 upgrade database paths pass without editing applied migrations.
 - [x] The application uses only enumerated runtime grants and automated DDL/security/Flyway-history
       negative privilege tests pass.
-- [ ] Migration/bootstrap credentials are not present in the running application container.
-- [ ] Application and migrator connections validate the SQL Server certificate and reject an untrusted
+- [x] Migration/bootstrap credentials are not present in the running application container.
+- [x] Application and migrator connections validate the SQL Server certificate and reject an untrusted
       certificate.
-- [ ] A native encrypted checksum backup is produced, its key is recoverable, and it passes
+- [x] A native encrypted checksum backup is produced, its key is recoverable, and it passes
       `RESTORE VERIFYONLY`.
-- [ ] That backup is restored into an isolated clean target.
-- [ ] Flyway integrity, application startup, authentication, messages, and cursor state pass after
+- [x] That backup is restored into an isolated clean target.
+- [x] Flyway integrity, application startup, authentication, messages, and cursor state pass after
       restore.
-- [ ] Drill duration and RPO/RTO assessment are recorded.
-- [ ] The off-host/retention boundary is implemented for a selected environment or clearly
+- [x] Drill duration and RPO/RTO assessment are recorded.
+- [x] The off-host/retention boundary is implemented for a selected environment or clearly
       recorded as the remaining production-activation prerequisite.
 
 ### Security and performance
 
-- [ ] Dependency scanning, image/config/secret scanning, and SBOM generation run in CI.
+- [x] Dependency scanning, image/config/secret scanning, and SBOM generation run in CI.
 - [x] Findings and suppressions have documented dispositions; no unaccepted high/critical finding
       remains.
-- [ ] The threat model is reviewed and its blocking controls are verified.
-- [ ] RabbitMQ topology/runtime permissions are least privilege and ready-but-degraded recovery,
+- [x] The threat model is reviewed and its blocking controls are verified.
+- [x] RabbitMQ topology/runtime permissions are least privilege and ready-but-degraded recovery,
       backlog, and DLQ checks pass.
-- [ ] Characterization and threshold-gated load runs complete without durable-state corruption.
-- [ ] The environment-labelled performance baseline and regression thresholds are recorded.
-- [ ] Minimum operational checks cover certificates, backups, restore age, disk, restart loops,
+- [x] Characterization and threshold-gated load runs complete without durable-state corruption.
+- [x] The environment-labelled performance baseline and regression thresholds are recorded.
+- [x] Minimum operational checks cover certificates, backups, restore age, disk, restart loops,
       RabbitMQ degradation/backlog/DLQ, and CI/deployment failures.
 
 ### Documentation and validation
 
-- [ ] Fresh-host deployment, rollback, backup, restore, scanning, and load-test commands are current.
-- [ ] README, specification status, operations strategy, database-principal guide, CHANGELOG, and ADR
+- [x] Fresh-host deployment, rollback, backup, restore, scanning, and load-test commands are current.
+- [x] README, specification status, operations strategy, database-principal guide, CHANGELOG, and ADR
       references agree with the implementation.
-- [ ] Client-facing TLS, proxy, reconnect, outage, or recovery responsibilities discovered during the
+- [x] Client-facing TLS, proxy, reconnect, outage, or recovery responsibilities discovered during the
       milestone are reflected in the client integration guide.
 - [x] `./mvnw clean verify` passes.
 - [x] Flyway naming validation, clean/upgrade migration tests, Postman discovery tests, discovery, and
       strict Postman validation pass.
-- [ ] Compose, proxy, security, backup/restore, and load-test validation commands pass.
+- [x] Compose, proxy, security, backup/restore, and load-test validation commands pass.
 - [x] `git diff --check` passes and no generated secrets, certificates, backups, reports, or build
       artifacts are tracked.
 

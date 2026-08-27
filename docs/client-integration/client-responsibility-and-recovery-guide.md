@@ -1,8 +1,8 @@
 # Client Responsibility and Recovery Guide
 
 **Status:** Current implementation audit  
-**Last reviewed:** 2026-08-26
-**Applies to:** ChatBackend `0.8.0-SNAPSHOT`
+**Last reviewed:** 2026-08-27
+**Applies to:** ChatBackend `0.9.0-SNAPSHOT`
 
 ## 1. Purpose
 

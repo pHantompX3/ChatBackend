@@ -1,6 +1,6 @@
 # ChatBackend Single-Instance Deployment Threat Model
 
-**Status:** Initial Milestone 9 model; final control review pending
+**Status:** Milestone 9 local hardened-rehearsal review complete; production activation review pending
 
 **Last reviewed:** 2026-08-26
 
@@ -55,22 +55,22 @@ ChatBackend and RabbitMQ runtime users are not privileged operators.
 
 | ID | Category | Threat and impact | Required control and evidence | Owner | Status |
 |---|---|---|---|---|---|
-| T01 | Spoofing | Stolen or replayed session token permits REST/socket access | Opaque token hashing, session expiry/revocation, TLS, no credential logging, socket close `4401`, integration tests | Backend | Partly implemented |
-| T02 | Spoofing | Cross-site browser opens an authenticated socket | Hardened Origin allowlist; reject unknown present Origin with `4403`; proxy/endpoint tests | Backend/Operations | Endpoint implemented; proxy pending |
-| T03 | Information disclosure | Query token appears in logs, audit queue, SQL audit, or intermediaries | Redact all non-empty query strings before both audit paths; hardened profile rejects query tokens; proxy logs `$uri` only | Backend/Operations | Backend implemented; proxy pending |
-| T04 | Tampering | Untrusted forwarded headers spoof source/trace identity | Exact trusted-proxy range, overwrite forwarded headers, preserve/generate `X-Trace-Id`, retain app-owned `X-Request-Id`, negative tests | Backend/Operations | Pending |
-| T05 | Elevation | Application or migrator uses `sa` or broad fixed roles | Two-phase provisioning, forward-only permission migration, container secret inspection, clean/upgrade negative tests | Database | Clean/upgrade and negative tests verified; live container inspection pending |
-| T06 | Information disclosure | SQL TLS encryption accepts an attacker certificate | Trusted SQL certificate and `trustServerCertificate=false`; positive/negative connection tests | Database/Operations | Pending; completion blocker |
-| T07 | Elevation | RabbitMQ runtime account administers broker or unrelated resources | Operator-provisioned vhost/topology, no administrator tag, regex-scoped permissions, private ports, negative tests | Operations | Pending |
-| T08 | Repudiation | Broker outage silently loses durable audit evidence | Ready-but-degraded signal, local fallback diagnostics, queue/DLQ/oldest-age/drain checks and alerts | Backend/Operations | Pending |
-| T09 | Information disclosure | Backup theft reveals messages, sessions, or identity data | Encrypted backup, restrictive ownership, recoverable key held separately, future off-host policy | Operations | Pending; completion blocker |
-| T10 | Tampering/DoS | Restore overwrites the active database or starts incompatible schema/image | Isolated target requirement, explicit `MOVE`, Flyway validation/migration, compatibility check, guarded DR mode | Operations/Database | Pending |
-| T11 | DoS | Login abuse, oversized requests, socket exhaustion, or reconnect storms exhaust resources | Existing SQL throttling/body/frame limits plus edge rate/connection limits and bounded idle timeouts | Backend/Operations | Partly implemented |
+| T01 | Spoofing | Stolen or replayed session token permits REST/socket access | Opaque token hashing, session expiry/revocation, TLS, no credential logging, socket close `4401`, integration tests | Backend | Verified for local rehearsal |
+| T02 | Spoofing | Cross-site browser opens an authenticated socket | Hardened Origin allowlist; reject unknown present Origin with `4403`; proxy/endpoint tests | Backend/Operations | Verified through TLS proxy and endpoint tests |
+| T03 | Information disclosure | Query token appears in logs, audit queue, SQL audit, or intermediaries | Redact all non-empty query strings before both audit paths; hardened profile rejects query tokens; proxy logs `$uri` only | Backend/Operations | Verified with sentinel inspection |
+| T04 | Tampering | Untrusted forwarded headers spoof source/trace identity | Exact trusted-proxy range, overwrite forwarded headers, preserve/generate `X-Trace-Id`, retain app-owned `X-Request-Id`, negative tests | Backend/Operations | Verified through proxy and durable audit |
+| T05 | Elevation | Application or migrator uses `sa` or broad fixed roles | Two-phase provisioning, forward-only permission migration, container secret inspection, clean/upgrade negative tests | Database | Verified for clean/upgrade and live containers |
+| T06 | Information disclosure | SQL TLS encryption accepts an attacker certificate | Trusted SQL certificate and `trustServerCertificate=false`; positive/negative connection tests | Database/Operations | Verified; untrusted certificate rejected |
+| T07 | Elevation | RabbitMQ runtime account administers broker or unrelated resources | Operator-provisioned vhost/topology, no administrator tag, regex-scoped permissions, private ports, negative tests | Operations | Verified for local rehearsal |
+| T08 | Repudiation | Broker outage silently loses durable audit evidence | Ready-but-degraded signal, local fallback diagnostics, queue/DLQ/oldest-age/drain checks and alerts | Backend/Operations | Outage, availability, persistence, recovery, backlog, and DLQ verified locally |
+| T09 | Information disclosure | Backup theft reveals messages, sessions, or identity data | Encrypted backup, restrictive ownership, recoverable key held separately, future off-host policy | Operations | Encrypted local recovery verified; off-host production store pending |
+| T10 | Tampering/DoS | Restore overwrites the active database or starts incompatible schema/image | Isolated target requirement, explicit `MOVE`, Flyway validation/migration, compatibility check, guarded DR mode | Operations/Database | Verified with isolated application/data restore smoke |
+| T11 | DoS | Login abuse, oversized requests, socket exhaustion, or reconnect storms exhaust resources | Existing SQL throttling/body/frame limits plus edge rate/connection limits and bounded idle timeouts | Backend/Operations | Limits and local regression baseline verified |
 | T12 | Tampering | Malicious/compromised dependency, action, base image, or mutable tag enters deployment | Pinned dependencies/actions/images, SBOM, dependency/image/config/secret scans, immutable digest deployment | CI/Operations | Application, RabbitMQ, NGINX, and migration images verified; SQL Server vendor-image residual risk accepted through 2026-11-26 |
 | T13 | Information disclosure | Local ignored secrets are sent to a remote image builder | `.dockerignore`, narrow build context, clean-checkout image test, secret scan | CI | Repository-owned build context and Git-filtered secret scan verified locally; hosted CI evidence pending |
-| T14 | DoS | Disk fills with logs, backups, SQL/Rabbit data, or DLQ records | Stdout logging/read-only root, bounded backup retention, disk/queue thresholds, diagnostics and runbook | Operations | Pending |
-| T15 | Tampering | Concurrent deployment or failed migration leaves incompatible schema/application | One-shot migrator, environment concurrency, migration-before-rollout, immutable image, schema-aware rollback | CI/Database | Pending |
-| T16 | Information disclosure | Error/audit diagnostics expose message content or credentials | Safe client problems, bounded diagnostic fields, query/header/body redaction, access control and retention | Backend/Operations | Partly implemented |
+| T14 | DoS | Disk fills with logs, backups, SQL/Rabbit data, or DLQ records | Stdout logging/read-only root, bounded backup retention, disk/queue thresholds, diagnostics and runbook | Operations | Local checks verified; production alert delivery pending |
+| T15 | Tampering | Concurrent deployment or failed migration leaves incompatible schema/application | One-shot migrator, environment concurrency, migration-before-rollout, immutable image, schema-aware rollback | CI/Database | Repository workflow and local deployment paths verified; hosted rollout pending |
+| T16 | Information disclosure | Error/audit diagnostics expose message content or credentials | Safe client problems, bounded diagnostic fields, query/header/body redaction, access control and retention | Backend/Operations | Verified with privacy sentinels and scans |
 | T17 | DoS | One slow/failing socket delays recipients or request completion | Existing independent asynchronous fan-out; bounded connection limits; REST recovery remains authoritative | Backend | Implemented |
 | T18 | Repudiation | Missed/duplicated/reordered socket frame produces incorrect client state | Client idempotency/gap detection and REST reconciliation; canonical client guide and transport tests | Client/Backend | Implemented contract |
 

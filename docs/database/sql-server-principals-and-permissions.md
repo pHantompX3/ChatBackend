@@ -2,7 +2,7 @@
 
 **Scope:** Milestone 9 hardened single-instance deployment
 
-**Last reviewed:** 2026-08-26
+**Last reviewed:** 2026-08-27
 
 ## Authority model
 
@@ -60,7 +60,8 @@ kept for as long as any dependent backup is retained and stored separately from 
 The automated permission script proves runtime reads while rejecting runtime DDL, Flyway-history
 mutation, and audit deletion. It also proves the migrator can create a transactional DDL probe and
 read Flyway history. Backup creation, `RESTORE VERIFYONLY`, and an isolated clean restore are covered by
-the operations scripts and runbook.
+the operations scripts and runbook; the 2026-08-27 rehearsal additionally proved restored
+authentication, message history, and delivery/read cursors through the application.
 
 The local CI workflow exercises the clean two-stage path. Remote migration is manual,
 environment-protected, and migrator-only; it does not accept or use `sa`.

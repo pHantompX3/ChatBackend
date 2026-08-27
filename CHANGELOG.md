@@ -46,6 +46,15 @@ release tags begin when the project intentionally performs a production release 
   JDBC driver.
 - Added hardened deployment, rollback, monitoring, backup/restore, and load-test runbooks plus a
   current database-principal authority reference.
+- Added an executable WebSocket policy probe that verifies disallowed Origin, missing credential,
+  and disabled query-token close codes through the hardened TLS proxy.
+- Added the `WL-Chat-HardDocker` Postman environment template for the local hardened HTTPS/WSS stack,
+  including deterministic validation and optional cloud synchronization support.
+- Generated an identical `ca.pem` alias for the public rehearsal CA so Postman can import the trusted
+  authority without disabling certificate verification or receiving a private key.
+- Added the Milestone X production-activation backlog so public hosting, managed certificates and
+  secrets, off-host recovery, alert delivery, and production capacity evidence remain explicitly
+  tracked without reopening Milestone 9.
 
 - Advanced Maven project version to `0.8.0-SNAPSHOT` for active Milestone 8 development.
 - Added the implementation-ready Milestone 8 development guide (`docs/development-guide/milestone-8-websockets-step-by-step.md`)
@@ -100,6 +109,12 @@ release tags begin when the project intentionally performs a production release 
   `RESTORE VERIFYONLY` can read them without a privileged ownership repair.
 - Ensured requests rejected before the normal audit request filter still persist valid method/path
   metadata with fully redacted query values instead of falling into the audit dead-letter path.
+- Ensured those early-rejected requests also recover canonical source-address, forwarding, user-agent,
+  and device metadata in the response audit pass, preserving spoof-resistant network evidence for
+  authentication failures.
+- Completed the Milestone 9 client-responsibility review; the existing hardened TLS, Origin,
+  credential-transport, reconnect, and REST-reconciliation guidance already covers the verified
+  client-facing behavior, so only its review date and applicable development version changed.
 - Pinned GitHub Actions, CI database/migration images, application build bases, and scanner tooling to
   immutable reviewed digests or commit SHAs, and made filesystem/image/secret scanning a required CI
   job. The local database gate now addresses GitHub's exact service-container ID rather than
@@ -119,13 +134,21 @@ release tags begin when the project intentionally performs a production release 
   vendor-helper findings for the private local Milestone 9 rehearsal through 2026-11-26. SQL Server
   remains internal-only, the findings remain unsuppressed, and production use requires separate
   review.
-- Verified the final Milestone 9 source with the canonical 137-test build, clean SpotBugs analysis,
+- Verified the final Milestone 9 source with the canonical 138-test build, clean SpotBugs analysis,
   CycloneDX JSON/XML generation, refreshed Postman discovery and strict collection/environment
   validation, Flyway naming checks, Compose/YAML/shell validation, and a rebuilt non-root application
   image that passes the repository's High/Critical scan gate.
 
 ### Fixed
 
+- Made the DevDocker shutdown helper load the same ignored secrets file as startup so Compose can
+  interpolate required configuration while retiring containers without deleting named volumes.
+- Gave Argon2/JNA a dedicated, bounded executable tmpfs in the otherwise read-only hardened
+  application container and made native-library initialization fail startup, preventing health-only
+  smoke checks from reporting a deployment as usable when authentication cannot hash passwords.
+- Extended the isolated restore drill to use the hardened native-runtime mount and, when supplied a
+  complete synthetic fixture, prove restored authentication, message history, and delivery/read
+  cursor behavior through the application API instead of relying only on row counts.
 - Isolated filesystem scans to a temporary Git-filtered snapshot and image scans to a read-only
   exported archive so ignored local secrets and the Docker daemon socket are never mounted into the
   scanner container; dependency identification now runs offline after vulnerability databases are

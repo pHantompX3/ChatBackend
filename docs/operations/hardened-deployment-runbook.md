@@ -51,9 +51,9 @@ before returning failure. This makes every upstream image's state visible in a s
 High/Critical result still blocks deployment unless it is upgraded or receives an explicit,
 time-limited disposition under the threat-model policy.
 
-As of 2026-08-26, the selected RabbitMQ, NGINX, application, and repository-owned migration images
-pass. SQL Server 2022 CU26 retains the unaccepted vendor-binary findings recorded in the threat model;
-do not interpret the example digest placeholder as an approved production image.
+As of 2026-08-27, the selected RabbitMQ, NGINX, application, and repository-owned migration images
+pass. SQL Server 2022 CU26 retains the visible, time-limited local-rehearsal risk acceptance recorded
+in the threat model; that acceptance does not approve the image for production.
 
 ## Deploy
 
@@ -68,6 +68,10 @@ Verify:
 
 ```text
 scripts/deploy/smoke-test.sh
+WL_CHAT_K6_IMAGE=<reviewed-k6-image@sha256:...> \
+WL_CHAT_LOAD_WS_BASE_URL=<wss-base-url> \
+WL_CHAT_WEBSOCKET_ALLOWED_ORIGIN=<allowed-origin> \
+scripts/deploy/verify-websocket-policy.sh
 docker compose --env-file deploy/hardened.env -f deploy/compose.hardened.yaml ps
 docker inspect wl-chat-app-hardened --format '{{.Config.User}}'
 ```

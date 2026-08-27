@@ -1789,7 +1789,7 @@ Exit criteria:
 
 ## Milestone 9 — Operational hardening
 
-Implementation status snapshot (2026-08-26, validation in progress):
+Implementation status snapshot (2026-08-27, local rehearsal complete):
 
 - the repository-audited implementation plan is defined in
   `docs/development-guide/milestone-9-operational-hardening-step-by-step.md`,
@@ -1801,10 +1801,14 @@ Implementation status snapshot (2026-08-26, validation in progress):
   independent clean-install and Milestone 8 upgrade evidence,
 - repository completion demonstrates an encrypted backup/restore and deployment rehearsal; public
   hosting, off-host storage, production alerts, and production SLA evidence remain activation work.
-- implemented repository assets now cover the hardened profile and audit privacy, forward-only
+- implemented repository assets cover the hardened profile and audit privacy, forward-only
   database permissions, principal provisioning, NGINX/Compose/RabbitMQ isolation, encrypted
-  backup/restore tooling, SBOM/security automation, and a bounded load harness; the exit criteria
-  below remain authoritative until the full evidence matrix passes.
+  backup/restore tooling, SBOM/security automation, and a bounded load harness,
+- the local hardened evidence matrix passed deployment, TLS/WSS policy, privacy, least-privilege,
+  broker outage/recovery, encrypted isolated restore with application/data checks, security scanning,
+  operational status, and characterization/regression checks,
+- public hosting, off-host backup storage, external alert delivery, and production load/SLA evidence
+  remain production-activation work rather than repository Milestone 9 implementation gaps.
 
 Deliver:
 
@@ -1825,6 +1829,29 @@ Exit criteria:
 - HTTP/WSS, audit privacy, SQL/RabbitMQ privilege, and degraded/recovery security checks pass
 - characterization evidence and repeatable regression thresholds are recorded
 - the client integration guide is audited for new transport and recovery responsibilities
+
+## Milestone X — Production activation
+
+Milestone X is the deferred environment-specific production work tracked in
+`docs/development-guide/milestone-x-production-activation.md`. It does not add new messaging-domain
+behavior or reopen Milestone 9. Its scope begins only after a target environment and accountable
+owners are selected.
+
+Deliver:
+
+- provisioned production hosting, domain/DNS, firewall, and patch ownership
+- publicly trusted HTTPS/WSS certificates with automated renewal
+- managed secret delivery and immutable image promotion
+- encrypted off-host backup scheduling, retention, retrieval, and restore evidence
+- external monitoring, alert delivery, on-call ownership, and incident procedures
+- production-representative load evidence and accepted service objectives
+
+Exit criteria:
+
+- the production environment passes the hardened deployment and security gates
+- backup recovery is proven from the selected off-host store
+- certificate renewal, alerts, rollback, and incident ownership are exercised
+- production thresholds and release approval are recorded before a `1.0.0` decision
 
 ---
 

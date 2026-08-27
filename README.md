@@ -477,17 +477,21 @@ delivery/read acknowledgements, heartbeat support, session-revocation disconnect
 reconciliation are implemented under ADR-0016. SQL Server remains authoritative; socket delivery is
 never treated as durable delivery proof.
 
-Milestone 9 implementation snapshot (2026-08-26): security boundary controls, query redaction,
+Milestone 9 implementation snapshot (2026-08-27): security boundary controls, query redaction,
 hardened WebSocket policy, forward-only runtime database permissions, distinct database principals,
 verified SQL TLS configuration, a non-root image, private-network NGINX/SQL/RabbitMQ rehearsal,
 encrypted backup/isolated restore automation, SBOM/security gates, and a reproducible load harness are
-implemented. Full hardened-stack, recovery-drill, SQL Server image disposition, and load evidence
-remain required before the milestone is declared complete or production activation is claimed.
+implemented and validated in the local hardened rehearsal. The encrypted restore proved application
+startup, authentication, durable message history, and delivery/read cursors; characterization and
+threshold-gated load runs passed; and proxy, audit privacy, privilege, outage/recovery, and container
+boundary checks passed.
 Git-filtered source, the rebuilt application image, RabbitMQ, unprivileged NGINX, and the
 repository-owned migration image pass the local High/Critical security gate. Microsoft SQL Server
 2022 CU26 retains visible High findings in vendor helper binaries; the project owner accepted that
 narrowly scoped risk for a private local rehearsal through 2026-11-26 without suppressing it. The
-remaining live operational drills keep Milestone 9 open.
+milestone's repository-owned implementation and local rehearsal are complete. Public hosting,
+off-host backup storage, external alert delivery, and production load/SLA evidence remain explicit
+production-activation prerequisites and are not claimed.
 
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
@@ -518,6 +522,8 @@ remaining live operational drills keep Milestone 9 open.
 - Milestone 9 single-instance hardening decision and threat model:
   - `docs/architecture/decision/ADR-0017-harden-single-instance-deployment.md`
   - `docs/security/threat-model.md`
+- Deferred production activation backlog (Milestone X):
+  - `docs/development-guide/milestone-x-production-activation.md`
 - Canonical client responsibility, offline behavior, and recovery guide:
   - `docs/client-integration/client-responsibility-and-recovery-guide.md`
 - Human-run two-participant WebSocket/Postman integration guide:
@@ -554,6 +560,7 @@ Committed artifacts:
 - `postman/collections/chat-backend-user-flows.postman_collection.json`
 - `postman/environments/local.example.postman_environment.json`
 - `postman/environments/devdocker.example.postman_environment.json`
+- `postman/environments/harddocker.example.postman_environment.json`
 - `postman/environments/production.example.postman_environment.json`
 
 Local-only Postman Cloud config:

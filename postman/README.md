@@ -19,6 +19,7 @@ The contract direction is Java resources and DTOs to generated OpenAPI to Postma
 - postman/collections/chat-backend-websocket-participants-down.postman_collection.json
 - postman/environments/local.example.postman_environment.json
 - postman/environments/devdocker.example.postman_environment.json
+- postman/environments/harddocker.example.postman_environment.json
 - postman/environments/production.example.postman_environment.json
 - postman/config.properties.example
 - scripts/postman/validate-postman.sh
@@ -51,6 +52,7 @@ Create local config for Postman Cloud sync:
    - optional postman-websocket-teardown-collection-id
    - optional postman-local-environment-id
    - optional postman-dev-environment-id
+   - optional postman-harddocker-environment-id
    - optional postman-prod-environment-id
 
 Backward compatibility:
@@ -70,6 +72,7 @@ You can also override by environment variables:
 - POSTMAN_ENVIRONMENT_ID
 - POSTMAN_LOCAL_ENVIRONMENT_ID
 - POSTMAN_DEV_ENVIRONMENT_ID
+- POSTMAN_HARDDOCKER_ENVIRONMENT_ID
 - POSTMAN_PROD_ENVIRONMENT_ID
 - POSTMAN_CONFIG_FILE (optional custom properties file path)
 
@@ -98,10 +101,11 @@ Validation covers:
 - required Quarkus health requests (`/q/health/live`, `/q/health/ready`) so discovery cannot accidentally remove them
 - Run-all smoke guardrails: every request under Run-all API smoke journey must include a test assertion named with `Expected:` and an explicit HTTP status assertion
 
-By default validation runs against all three committed environment templates:
+By default validation runs against all four committed environment templates:
 
 - postman/environments/local.example.postman_environment.json
 - postman/environments/devdocker.example.postman_environment.json
+- postman/environments/harddocker.example.postman_environment.json
 - postman/environments/production.example.postman_environment.json
 
 ## WebSocket Signaling Validation
@@ -133,8 +137,9 @@ The runner also persists `socket_participant_1_bearer_token` and
 headers; the raw token variables intentionally do not include the required `Bearer ` prefix.
 
 Every committed environment defines `ws_base_url` separately from the HTTP `base_url`: Local uses
-`ws://localhost:8080`, DevDocker uses `ws://localhost:8081`, and Production requires its deployed
-`wss://` host. Saved WebSocket tabs should use `{{ws_base_url}}/api/v1/ws`.
+`ws://localhost:8080`, legacy DevDocker uses `ws://localhost:8081`, HardDocker uses
+`wss://localhost`, and Production requires its deployed `wss://` host. Saved WebSocket tabs should use
+`{{ws_base_url}}/api/v1/ws`.
 
 The companion `postman/collections/chat-backend-websocket-participants-down.postman_collection.json`
 runner logs W and L out, verifies both revoked tokens receive `401`, and clears the two raw token
@@ -207,6 +212,7 @@ Environment sync targets:
 
 - Local artifact: postman/environments/local.example.postman_environment.json
 - DevDocker artifact: postman/environments/devdocker.example.postman_environment.json
+- HardDocker artifact: postman/environments/harddocker.example.postman_environment.json
 - Production artifact: postman/environments/production.example.postman_environment.json
 
 ## GitHub Actions Workflows
@@ -218,12 +224,15 @@ Environment sync targets:
 - postman-sync.yml runs discovery first and fails when generated collection updates are not committed.
 - postman-sync.yml fails early if required secrets are missing for the selected mode.
 
-## Running Collections Across Local And DevDocker
+## Running Collections Across Local, DevDocker, And HardDocker
 
 Collections are shared across environments. Use the same collection files with different environment files:
 
 - Local host-run app environment: postman/environments/local.example.postman_environment.json (base_url http://localhost:8080)
 - DevDocker app environment: postman/environments/devdocker.example.postman_environment.json (base_url http://localhost:8081)
+- Hardened rehearsal environment: postman/environments/harddocker.example.postman_environment.json
+  (`base_url=https://localhost`, `ws_base_url=wss://localhost`). Import the generated rehearsal CA as
+  a trusted PEM CA in Postman; do not disable certificate verification as the normal workflow.
 
 This keeps request generation/discovery identical while allowing runtime-specific targets via base_url only.
 
@@ -233,6 +242,9 @@ Credential and identity defaults should be namespaced by environment and referen
 
 - Local globals: `WLAdminUser_Local`, `WLAdminPass_Local`, `WLMemberUser_Local`, `WLMemberPass_Local`, `WLAuthUser_Local`, `WLAuthPass_Local`, `WLActorUserId_Local`, `WLTargetUserId_Local`
 - Dev globals: `WLAdminUser_Dev`, `WLAdminPass_Dev`, `WLMemberUser_Dev`, `WLMemberPass_Dev`, `WLAuthUser_Dev`, `WLAuthPass_Dev`, `WLActorUserId_Dev`, `WLTargetUserId_Dev`
+- HardDocker globals: `WLAdminUser_HardDocker`, `WLAdminPass_HardDocker`,
+  `WLMemberUser_HardDocker`, `WLMemberPass_HardDocker`, `WLAuthUser_HardDocker`,
+  `WLAuthPass_HardDocker`, `WLActorUserId_HardDocker`, `WLTargetUserId_HardDocker`
 - Prod globals: `WLAdminUser_Prod`, `WLAdminPass_Prod`, `WLMemberUser_Prod`, `WLMemberPass_Prod`, `WLAuthUser_Prod`, `WLAuthPass_Prod`, `WLActorUserId_Prod`, `WLTargetUserId_Prod`
 
 `WLTargetUserId_<Env>` must contain the UUID of the user whose sessions an administrator intends to revoke; it is distinct from the member username stored in `WLMemberUser_<Env>`.
