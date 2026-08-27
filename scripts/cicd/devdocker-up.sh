@@ -86,9 +86,12 @@ if [[ "${ENABLE_QUEUE}" == "true" ]]; then
   fi
 
   docker compose -f "${COMPOSE_FILE}" exec -T queue-dev \
-    rabbitmqctl set_user_tags "${WL_CHAT_QUEUE_USERNAME}" administrator
+    rabbitmqctl set_user_tags "${WL_CHAT_QUEUE_USERNAME}"
   docker compose -f "${COMPOSE_FILE}" exec -T queue-dev \
-    rabbitmqctl set_permissions -p "${WL_CHAT_QUEUE_VHOST:-/}" "${WL_CHAT_QUEUE_USERNAME}" ".*" ".*" ".*"
+    rabbitmqctl set_permissions -p "${WL_CHAT_QUEUE_VHOST:-/}" "${WL_CHAT_QUEUE_USERNAME}" \
+      '^(audit\.events|audit\.events\.dlx|audit\.events\.dlq)$' \
+      '^audit\.events$' \
+      '^(audit\.events|audit\.events\.dlq)$'
 fi
 
 if ! docker compose -f "${COMPOSE_FILE}" up -d --wait sqlserver-dev >/tmp/wl_chat_sql_up.log 2>&1; then

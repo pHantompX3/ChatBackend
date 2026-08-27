@@ -1,0 +1,70 @@
+{
+  "vhosts": [{ "name": "/wl-chat" }],
+  "policies": [
+    {
+      "vhost": "/wl-chat",
+      "name": "audit-events-dlq-policy",
+      "pattern": "^audit\\.events$",
+      "apply-to": "queues",
+      "definition": {
+        "dead-letter-exchange": "audit.events.dlx",
+        "dead-letter-routing-key": "audit.dead"
+      },
+      "priority": 0
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "audit.events",
+      "vhost": "/wl-chat",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "audit.events.dlx",
+      "vhost": "/wl-chat",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "audit.events",
+      "vhost": "/wl-chat",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "audit.events.dlq",
+      "vhost": "/wl-chat",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "audit.events",
+      "vhost": "/wl-chat",
+      "destination": "audit.events",
+      "destination_type": "queue",
+      "routing_key": "audit.#",
+      "arguments": {}
+    },
+    {
+      "source": "audit.events.dlx",
+      "vhost": "/wl-chat",
+      "destination": "audit.events.dlq",
+      "destination_type": "queue",
+      "routing_key": "audit.dead",
+      "arguments": {}
+    }
+  ]
+}

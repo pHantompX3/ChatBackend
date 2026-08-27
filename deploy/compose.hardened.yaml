@@ -1,0 +1,186 @@
+name: wl-chat-hardened
+
+services:
+  sql-volume-init:
+    image: ${WL_CHAT_SQL_IMAGE:?Set WL_CHAT_SQL_IMAGE to a reviewed digest-pinned SQL Server image}
+    container_name: wl-chat-sql-volume-init-hardened
+    user: "0:0"
+    entrypoint: ["/bin/bash", "-ceu"]
+    command:
+      - |
+        chown -R 10001:10001 /var/opt/mssql/data /var/opt/mssql/log /var/opt/mssql/backup /var/opt/mssql/secrets
+        chmod -R u+rwX,g+rwX,o-rwx /var/opt/mssql/data /var/opt/mssql/log /var/opt/mssql/backup /var/opt/mssql/secrets
+        install -o 10001 -g 10001 -m 0640 /source-tls/sqlserver.crt /var/opt/mssql/secrets/sqlserver.crt
+        install -o 10001 -g 10001 -m 0640 /source-tls/sqlserver.key /var/opt/mssql/secrets/sqlserver.key
+    volumes:
+      - sql-data:/var/opt/mssql/data
+      - sql-logs:/var/opt/mssql/log
+      - sql-backups:/var/opt/mssql/backup
+      - sql-secrets:/var/opt/mssql/secrets
+      - ./tls/generated:/source-tls:ro
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  sqlserver:
+    image: ${WL_CHAT_SQL_IMAGE:?Set WL_CHAT_SQL_IMAGE to a reviewed digest-pinned SQL Server image}
+    container_name: wl-chat-sqlserver-hardened
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: ${WL_CHAT_SQL_EDITION:-Developer}
+      MSSQL_SA_PASSWORD: ${WL_CHAT_DB_OPERATOR_PASSWORD:?WL_CHAT_DB_OPERATOR_PASSWORD is required}
+    volumes:
+      - sql-data:/var/opt/mssql/data
+      - sql-logs:/var/opt/mssql/log
+      - sql-backups:/var/opt/mssql/backup
+      - sql-secrets:/var/opt/mssql/secrets
+      - ./sql/mssql.conf:/var/opt/mssql/mssql.conf:ro
+    networks:
+      data:
+        ipv4_address: 172.31.91.10
+    depends_on:
+      sql-volume-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" >/dev/null || exit 1',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 25s
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  queue:
+    image: ${WL_CHAT_RABBITMQ_IMAGE:?Set WL_CHAT_RABBITMQ_IMAGE to a reviewed digest-pinned RabbitMQ image}
+    container_name: wl-chat-queue-hardened
+    environment:
+      RABBITMQ_DEFAULT_USER: ${WL_CHAT_QUEUE_OPERATOR_USERNAME:?WL_CHAT_QUEUE_OPERATOR_USERNAME is required}
+      RABBITMQ_DEFAULT_PASS: ${WL_CHAT_QUEUE_OPERATOR_PASSWORD:?WL_CHAT_QUEUE_OPERATOR_PASSWORD is required}
+      RABBITMQ_DEFAULT_VHOST: /wl-chat
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: >-
+        -rabbitmq_management load_definitions "/etc/rabbitmq/definitions.json"
+    volumes:
+      - rabbit-data:/var/lib/rabbitmq
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    networks:
+      audit:
+        ipv4_address: 172.31.92.10
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  app:
+    image: ${WL_CHAT_APP_IMAGE:?Set WL_CHAT_APP_IMAGE to a reviewed digest-pinned ChatBackend image}
+    container_name: wl-chat-app-hardened
+    user: "10001:10001"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    environment:
+      QUARKUS_PROFILE: hardened
+      QUARKUS_HTTP_HOST: 0.0.0.0
+      WL_CHAT_DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=wl_chat;encrypt=true;trustServerCertificate=false;trustStore=/app/tls/sql-truststore.p12;trustStorePassword=${WL_CHAT_SQL_TRUSTSTORE_PASSWORD:?WL_CHAT_SQL_TRUSTSTORE_PASSWORD is required}
+      WL_CHAT_DB_USERNAME: ${WL_CHAT_DB_USERNAME:-wl_chat_app}
+      WL_CHAT_DB_PASSWORD: ${WL_CHAT_DB_PASSWORD:?WL_CHAT_DB_PASSWORD is required}
+      WL_CHAT_FLYWAY_MIGRATE_AT_START: "false"
+      WL_CHAT_AUDIT_RABBITMQ_ENABLED: "true"
+      WL_CHAT_AUDIT_RABBITMQ_HOST: queue
+      WL_CHAT_AUDIT_RABBITMQ_PORT: "5672"
+      WL_CHAT_AUDIT_RABBITMQ_USERNAME: ${WL_CHAT_QUEUE_USERNAME:-wl_chat_queue}
+      WL_CHAT_AUDIT_RABBITMQ_PASSWORD: ${WL_CHAT_QUEUE_PASSWORD:?WL_CHAT_QUEUE_PASSWORD is required}
+      WL_CHAT_AUDIT_RABBITMQ_VHOST: /wl-chat
+      WL_CHAT_AUDIT_RABBITMQ_EXCHANGE: audit.events
+      WL_CHAT_AUDIT_RABBITMQ_ROUTING_KEY: audit.completed
+      WL_CHAT_AUDIT_RABBITMQ_QUEUE: audit.events
+      WL_CHAT_AUDIT_RABBITMQ_CONSUMER_ENABLED: "true"
+      WL_CHAT_AUDIT_RABBITMQ_PROVISION_TOPOLOGY: "false"
+      WL_CHAT_WEBSOCKET_ALLOWED_ORIGINS: ${WL_CHAT_WEBSOCKET_ALLOWED_ORIGINS:?WL_CHAT_WEBSOCKET_ALLOWED_ORIGINS is required}
+      CHAT_HTTP_TRUSTED_PROXIES: 172.31.90.10/32
+    volumes:
+      - ./tls/generated/sql-truststore.p12:/app/tls/sql-truststore.p12:ro
+    networks:
+      edge:
+        ipv4_address: 172.31.90.20
+      data:
+        ipv4_address: 172.31.91.20
+      audit:
+        ipv4_address: 172.31.92.20
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      queue:
+        condition: service_healthy
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  proxy:
+    image: ${WL_CHAT_NGINX_IMAGE:?Set WL_CHAT_NGINX_IMAGE to a reviewed digest-pinned NGINX image}
+    container_name: wl-chat-proxy-hardened
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d/chat-backend.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/proxy_params:/etc/nginx/proxy_params:ro
+      - ./tls/generated/proxy.crt:/etc/nginx/tls/proxy.crt:ro
+      - ./tls/generated/proxy.key:/etc/nginx/tls/proxy.key:ro
+    ports:
+      - "${WL_CHAT_HTTP_BIND_ADDRESS:-127.0.0.1}:80:8080"
+      - "${WL_CHAT_HTTPS_BIND_ADDRESS:-127.0.0.1}:443:8443"
+    networks:
+      edge:
+        ipv4_address: 172.31.90.10
+    depends_on:
+      app:
+        condition: service_started
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+networks:
+  edge:
+    internal: false
+    ipam:
+      config:
+        - subnet: 172.31.90.0/24
+  data:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.31.91.0/24
+  audit:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.31.92.0/24
+
+volumes:
+  sql-data:
+  sql-logs:
+  sql-backups:
+  sql-secrets:
+  rabbit-data:

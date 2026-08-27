@@ -27,6 +27,26 @@ release tags begin when the project intentionally performs a production release 
   paths with distinct operator/migrator/runtime/backup/restore authorities; SQL TLS, encrypted backups,
   least-privilege RabbitMQ degradation, monitoring, CI replacement, two-stage load validation, and
   exact acceptance commands are explicit.
+- Added ADR-0017 and the initial system-specific STRIDE threat model for the hardened single-instance
+  NGINX, ChatBackend, SQL Server, RabbitMQ, CI, and recovery boundary.
+- Added a non-root, labelled application image and an executable hardened Compose rehearsal where
+  NGINX is the only public service, SQL Server uses verified TLS, RabbitMQ topology is operator-owned,
+  and application/data/audit networks are separated.
+- Added operator, migrator, runtime, backup, and guarded restore SQL Server provisioning; forward-only
+  runtime permission migrations; and automated clean-install, upgrade, and negative authority checks.
+- Added SQL Server AES-256 certificate-encrypted backup creation, checksum/`RESTORE VERIFYONLY`
+  validation, and a guarded isolated restore drill that runs DBCC, forward migrations, application
+  readiness, and durable-data evidence checks.
+- Added CycloneDX SBOM generation, opt-in OWASP dependency review, digest-pinned Trivy scan tooling,
+  a security-gates workflow, and reproducible HTTP/WebSocket k6 characterization/regression harness.
+  The OWASP gate reads its NVD API key from a masked CI environment variable so advisory refreshes
+  do not depend on unauthenticated public-feed throughput.
+- Added a non-root, SQL Server-only migration image derived from Flyway 13.3.0, removing vulnerable
+  unused database drivers from the hardened migration boundary while retaining the fixed Microsoft
+  JDBC driver.
+- Added hardened deployment, rollback, monitoring, backup/restore, and load-test runbooks plus a
+  current database-principal authority reference.
+
 - Advanced Maven project version to `0.8.0-SNAPSHOT` for active Milestone 8 development.
 - Added the implementation-ready Milestone 8 development guide (`docs/development-guide/milestone-8-websockets-step-by-step.md`)
   for Quarkus WebSockets Next real-time event signaling, connection management, post-commit transactional
@@ -62,7 +82,78 @@ release tags begin when the project intentionally performs a production release 
 - Added an environment-specific `ws_base_url` variable for reusable Local, DevDocker, and Production
   WebSocket connections in Postman Desktop.
 
+### Changed
+
+- Added a least-capability, one-shot SQL Server volume initializer so fresh hardened named volumes are
+  owned by the image's `10001:10001` account before the non-root database process starts. SQL Server's
+  writable secrets directory is durable and initialized with the generated TLS identity so Service
+  Master Key material survives container replacement.
+- Replaced padded base64 password transport in hardened SQL principal, backup-certificate, and
+  isolated-restore provisioning with hexadecimal UTF-16 transport because `sqlcmd -v` removes trailing
+  `=` padding; decode failures now fail explicitly.
+- Made the hardened readiness smoke assertion accept standards-compliant pretty-printed JSON rather
+  than requiring a minified health payload, and made its WebSocket boundary check send an actual
+  HTTP/1.1 upgrade request.
+- Mounted the hardened NGINX virtual host over the image's bundled default server so port 80 reliably
+  performs the documented HTTPS redirect instead of returning the base image's `404` response.
+- Streamed backup artifacts into SQL Server verification as the container's non-root account so
+  `RESTORE VERIFYONLY` can read them without a privileged ownership repair.
+- Ensured requests rejected before the normal audit request filter still persist valid method/path
+  metadata with fully redacted query values instead of falling into the audit dead-letter path.
+- Pinned GitHub Actions, CI database/migration images, application build bases, and scanner tooling to
+  immutable reviewed digests or commit SHAs, and made filesystem/image/secret scanning a required CI
+  job. The local database gate now addresses GitHub's exact service-container ID rather than
+  rediscovering it through a mutable image tag.
+- Upgraded the RabbitMQ Java client from `5.21.0` to `5.33.1` to remediate three High findings reported
+  by the Milestone 9 Trivy gate.
+- Upgraded the supported Quarkus 3.33 LTS patch line from `3.33.2.1` to `3.33.3.1`, moved the runtime
+  image to the explicit Temurin Java 25 Ubuntu 22.04 variant, and upgraded Trivy to `0.74.0` in response
+  to High dependency/base-tool findings from the first hardened image scan.
+- Updated hardened rehearsal candidates to SQL Server 2022 CU26, RabbitMQ 4.3.4, current stable
+  unprivileged NGINX, and the repository-owned Flyway 13.3.0 migration image; all promoted references
+  remain digest-pinned.
+- Recorded the clean RabbitMQ, NGINX, application, and SQL Server-only migration image scans and
+  surfaced Microsoft SQL Server 2022 CU26's remaining vendor-binary High findings explicitly rather
+  than adding a broad suppression.
+- Recorded the project owner's time-limited acceptance of the visible SQL Server 2022 CU26
+  vendor-helper findings for the private local Milestone 9 rehearsal through 2026-11-26. SQL Server
+  remains internal-only, the findings remain unsuppressed, and production use requires separate
+  review.
+- Verified the final Milestone 9 source with the canonical 137-test build, clean SpotBugs analysis,
+  CycloneDX JSON/XML generation, refreshed Postman discovery and strict collection/environment
+  validation, Flyway naming checks, Compose/YAML/shell validation, and a rebuilt non-root application
+  image that passes the repository's High/Critical scan gate.
+
 ### Fixed
+
+- Isolated filesystem scans to a temporary Git-filtered snapshot and image scans to a read-only
+  exported archive so ignored local secrets and the Docker daemon socket are never mounted into the
+  scanner container; dependency identification now runs offline after vulnerability databases are
+  cached to remove Maven Central from the verification path. Added a time-limited, PURL-scoped,
+  evidence-backed disposition for Trivy's normalization of the fixed SQL Server JDBC `13.2.1.jre11`
+  artifact to its internal `13.2.1` bundle version.
+- Infrastructure scanning now collects evidence for every selected digest before failing the gate,
+  preventing an early upstream image finding from hiding later image results.
+- Made generated rehearsal TLS mounts readable by the non-root application and proxy containers while
+  retaining an owner-only host directory and read-only, service-specific mounts.
+- Moved NGINX PID and temporary request/proxy state into its bounded writable `/tmp` mount so the
+  custom configuration remains compatible with the unprivileged, read-only proxy container.
+- Quoted the bounded trace-header regular expression so NGINX parses its repetition braces as part of
+  the pattern rather than configuration-block syntax.
+- Hardened startup now parses SQL Server JDBC properties exactly and honors the effective last value,
+  preventing malformed or duplicate parameters from bypassing verified-TLS enforcement.
+- Redacted every non-empty HTTP query before structured logging and RabbitMQ/SQL durable audit
+  publication, preventing WebSocket query tokens and other parameter values from entering audit
+  evidence.
+- Added a hardened WebSocket handshake policy that disables query-token authentication, enforces an
+  explicit browser-Origin allowlist, preserves non-browser no-Origin support, and rejects policy
+  violations before session authentication.
+- Made RabbitMQ audit loss visible through ready-but-degraded health data and switched an established
+  broker failure back to bounded local durable persistence while the connection retry loop continues.
+- Removed remote push-triggered `sa` database mutation; remote migration is now manual,
+  environment-protected, and accepts only a dedicated migrator credential.
+- Hardened migration now refuses a missing or mutable migration image reference instead of falling
+  back to an upstream tag.
 
 - Made per-user registry registration/removal atomic, isolated failures while closing revoked
   sessions, and changed realtime fan-out to independent asynchronous sends so one socket cannot

@@ -6,7 +6,7 @@
 **Status:** Proposed target architecture  
 **Last reviewed:** 2026-08-26
 **Repository:** `pHantompX3/ChatBackend`  
-**Current implementation baseline:** Milestone 9 planning
+**Current implementation baseline:** Milestone 9 implementation in progress
 **Primary deployment model:** One remotely accessible x86-64 Linux host running Docker Compose  
 **Architecture purpose:** Production-oriented technical learning environment, not performance-driven scaling
 
@@ -59,7 +59,7 @@ docs/architecture/single-host-layered-container-architecture.md
 The current repository baseline contains:
 
 - Java 25;
-- Quarkus 3.33.2.1;
+- Quarkus 3.33.3.1;
 - Maven Wrapper builds;
 - Microsoft SQL Server 2022;
 - Quarkus Agroal and the Microsoft SQL Server JDBC driver;
@@ -80,7 +80,7 @@ The following components are future scope and are intentionally abstracted in th
 - browser frontend;
 - mobile applications;
 - Node.js frontend/midlayer or backend-for-frontend, abbreviated as BFF;
-- real-time WebSocket delivery;
+- cross-instance real-time WebSocket distribution;
 - shared cross-instance event distribution.
 
 The target deployment architecture includes those future components so that present backend decisions do not prevent later horizontal deployment.

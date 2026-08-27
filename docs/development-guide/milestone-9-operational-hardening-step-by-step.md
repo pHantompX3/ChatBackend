@@ -10,14 +10,28 @@
 
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven, Docker Compose
 
-**Status:** Planning complete after pre-implementation audit / implementation not started
+**Status:** Implementation in progress / repository verification and live hardened-rehearsal evidence
+pending
 
 **Last reviewed:** 2026-08-26
 
-**Implementation snapshot:** This guide defines a repeatable, security-conscious deployment rehearsal
-for one ChatBackend application instance, SQL Server, RabbitMQ, and an HTTPS reverse proxy. It adds
-least-privilege runtime verification, native SQL Server backup and restore automation, dependency and
-container scanning, a CycloneDX SBOM, a reproducible load baseline, and a reviewed threat model.
+**Implementation snapshot:** The repository now contains the application hardening, least-privilege
+principal model, NGINX/Compose rehearsal, encrypted backup/restore tooling, SBOM/security gates, load
+harness, threat model, and supporting tests described by this guide. Canonical application tests,
+clean/upgrade migration paths, Postman checks, Flyway naming, Compose rendering, and static script
+validation have been exercised. The Git-filtered source, rebuilt application image, RabbitMQ image,
+unprivileged NGINX image, and repository-owned migration image pass the isolated High/Critical scan
+with one evidenced, time-limited scanner-normalization disposition. The current Microsoft SQL Server
+image does not pass that gate, and its visible findings now have the bounded rehearsal-only acceptance
+recorded below. A complete hardened-stack proxy/TLS run, encrypted restore drill, RabbitMQ
+outage/recovery exercise, and load baseline remain required before this milestone is declared
+complete.
+
+Infrastructure scan status is explicit: the current RabbitMQ, unprivileged NGINX, application, and
+repository-owned SQL Server-only migration images pass the High/Critical gate. Microsoft's SQL Server
+2022 CU26 image still reports High findings in vendor-built Go helper binaries. The project owner
+accepted that visible, narrowly scoped residual risk for the private local rehearsal through
+2026-11-26; no scanner suppression was added, and production use requires a separate review.
 
 ---
 
@@ -176,15 +190,24 @@ Database authority is split by operation rather than hidden behind one shared ad
    isolated restore workflow or a deliberately authorized disaster-recovery procedure.
 
 The operator first pre-creates the database and principals so the immutable historical migrations
-that conditionally create them become no-ops on a clean hardened installation. Flyway then runs as the
-migrator. A new forward-only migration removes the existing runtime principal from `db_datareader` and
-`db_datawriter`, revokes broad database-wide grants, and applies the required object-level grants.
+that conditionally create them become no-ops on a clean hardened installation. The operator also
+removes the historical runtime membership from `db_datareader` and `db_datawriter`; the migrator is
+not granted role-management authority. Flyway then runs as the migrator. A new forward-only migration
+refuses to proceed if broad runtime membership remains, revokes broad database-wide grants, and applies
+the required object-level grants.
 Previously applied Flyway migrations remain immutable.
 
 Both a clean installation and an upgrade from the Milestone 8 permission state are mandatory test
 paths. The application container receives only runtime credentials. The migration one-shot job
 receives only migrator credentials. Bootstrap, backup, and restore credentials are injected only into
 their short-lived operator commands and are absent from the application and migration containers.
+
+Because the immutable `V20260808111000__grant_app_permissions.sql` migration adds the runtime user to
+the historical broad roles, a clean installation has an explicit compatibility phase: the operator
+pre-creates the principals and temporarily establishes the historical memberships, Flyway migrates to
+the Milestone 8 target, the operator removes those memberships, and Flyway then applies the current
+forward migrations. An upgrade starts at the operator-removal step. The migrator never receives role-
+management authority merely to replay that historical transition.
 
 ### 2.5 SQL Server-native backups are the recovery artifact
 
@@ -433,6 +456,9 @@ Required behavior:
 - application, proxy, and queue use `no-new-privileges` where supported;
 - read-only filesystems, `tmpfs`, dropped capabilities, and explicit resource limits are applied where
   compatible;
+- a one-shot initializer grants fresh SQL Server named volumes, including its durable writable secrets
+  directory, to the image's documented non-root `10001:10001` account and installs the generated TLS
+  identity before database startup; the long-running SQL Server process remains non-root;
 - SQL Server data, SQL backups, and RabbitMQ data use durable volumes;
 - startup dependencies use readiness/health conditions, while the migration job is one-shot;
 - restart policies do not create an endless failed-migration loop;
@@ -501,12 +527,16 @@ Required implementation sequence:
 1. The operator pre-creates `wl_chat`, the migrator/runtime/backup logins, and matching database users.
    Existing conditional historical migrations therefore remain valid and skip login/user creation on
    a clean hardened installation.
-2. Flyway validates and migrates as the migrator against the pre-created database.
-3. Add a new forward-only migration that removes `wl_chat_app` from `db_datareader` and
-   `db_datawriter`, revokes broad database-wide `EXECUTE`/`VIEW DEFINITION` where not required, and
-   grants only enumerated schema/object access.
-4. Keep permission changes for future objects in the same migration change set as those objects.
-5. Start ChatBackend only after migration success, with runtime credentials only.
+2. On a clean install, the operator temporarily pre-establishes the two historical runtime role
+   memberships and Flyway migrates only through the Milestone 8 target. This is a compatibility step,
+   not the final runtime authority.
+3. The operator removes `wl_chat_app` from `db_datareader` and `db_datawriter`. Flyway then continues
+   as the migrator against the pre-created database. Add a new forward-only
+   migration that refuses to run if those memberships remain, revokes broad database-wide
+   `EXECUTE`/`VIEW DEFINITION` where not required, and grants only enumerated schema/object access.
+4. An upgrade begins at step 3; it does not replay or edit historical migrations.
+5. Keep permission changes for future objects in the same migration change set as those objects.
+6. Start ChatBackend only after migration success, with runtime credentials only.
 
 Test two database histories independently:
 
@@ -607,6 +637,8 @@ Requirements:
 - severity thresholds and allowed suppressions are version controlled;
 - every suppression names the vulnerability, reason, scope, owner, and review/expiry date;
 - scanner database/download failures fail or explicitly mark the job inconclusive;
+- the protected CI environment supplies `NVD_API_KEY` to the OWASP check; local runs without the key
+  are valid but can spend substantial time downloading the public vulnerability feed;
 - secrets are masked and no scanner command echoes them;
 - the guide records how to reproduce scans locally.
 
@@ -789,8 +821,10 @@ node --test scripts/postman/discover-postman.test.mjs
 ./scripts/postman/discover-postman.sh
 ./scripts/postman/validate-postman.sh
 
-docker build --pull --no-cache -t wl-chat:milestone-9 .
-docker inspect wl-chat:milestone-9
+WL_CHAT_TEMURIN_JDK_IMAGE=<reviewed-jdk-digest> \
+WL_CHAT_TEMURIN_JRE_IMAGE=<reviewed-jre-digest> \
+WL_CHAT_BUILD_IMAGE_TAG=chat-backend:milestone-9 ./scripts/ci/build-image.sh
+docker inspect chat-backend:milestone-9
 docker compose -f deploy/compose.hardened.yaml config --quiet
 ./scripts/deploy/validate-environment.sh
 ./scripts/deploy/smoke-test.sh
@@ -800,7 +834,10 @@ docker compose -f deploy/compose.hardened.yaml config --quiet
 ./scripts/operations/restore-database.sh --environment rehearsal --isolated-target wl_chat_restore_drill
 
 ./scripts/ci/generate-sbom.sh
-./scripts/ci/scan.sh
+WL_CHAT_TRIVY_IMAGE=<reviewed-trivy-digest> \
+WL_CHAT_SCAN_IMAGE=chat-backend:milestone-9 \
+WL_CHAT_SCAN_MIGRATION_IMAGE=chat-backend-flyway:milestone-9 ./scripts/ci/scan.sh
+NVD_API_KEY=<local-key> ./mvnw -DskipTests -Psecurity-scan verify
 
 ./scripts/ci/run-load-test.sh --phase characterization
 ./scripts/ci/run-load-test.sh --phase regression
@@ -881,8 +918,8 @@ Milestone 9 is complete only when all applicable boxes are evidenced:
 
 ### Database and recovery
 
-- [ ] Clean-install and Milestone 8 upgrade database paths pass without editing applied migrations.
-- [ ] The application uses only enumerated runtime grants and automated DDL/security/Flyway-history
+- [x] Clean-install and Milestone 8 upgrade database paths pass without editing applied migrations.
+- [x] The application uses only enumerated runtime grants and automated DDL/security/Flyway-history
       negative privilege tests pass.
 - [ ] Migration/bootstrap credentials are not present in the running application container.
 - [ ] Application and migrator connections validate the SQL Server certificate and reject an untrusted
@@ -899,7 +936,7 @@ Milestone 9 is complete only when all applicable boxes are evidenced:
 ### Security and performance
 
 - [ ] Dependency scanning, image/config/secret scanning, and SBOM generation run in CI.
-- [ ] Findings and suppressions have documented dispositions; no unaccepted high/critical finding
+- [x] Findings and suppressions have documented dispositions; no unaccepted high/critical finding
       remains.
 - [ ] The threat model is reviewed and its blocking controls are verified.
 - [ ] RabbitMQ topology/runtime permissions are least privilege and ready-but-degraded recovery,
@@ -916,11 +953,11 @@ Milestone 9 is complete only when all applicable boxes are evidenced:
       references agree with the implementation.
 - [ ] Client-facing TLS, proxy, reconnect, outage, or recovery responsibilities discovered during the
       milestone are reflected in the client integration guide.
-- [ ] `./mvnw clean verify` passes.
-- [ ] Flyway naming validation, clean/upgrade migration tests, Postman discovery tests, discovery, and
+- [x] `./mvnw clean verify` passes.
+- [x] Flyway naming validation, clean/upgrade migration tests, Postman discovery tests, discovery, and
       strict Postman validation pass.
 - [ ] Compose, proxy, security, backup/restore, and load-test validation commands pass.
-- [ ] `git diff --check` passes and no generated secrets, certificates, backups, reports, or build
+- [x] `git diff --check` passes and no generated secrets, certificates, backups, reports, or build
       artifacts are tracked.
 
 ---

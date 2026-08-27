@@ -51,11 +51,10 @@ Two-phase model:
 
 2. Remote workflow scaffold
    - File: `.github/workflows/db-remote-bootstrap-migrate.yml`
-   - Current workflow is an automatic push-to-`main` scaffold that uses a remote bootstrap credential
-     and skips successfully when required secrets are absent
-   - It is not an accepted production deployment path
-   - Milestone 9 replaces it with an explicitly approved, environment-protected operator/migrator job
-     before persistent hosted deployment is activated
+   - Manual, environment-protected migration only
+   - Uses a dedicated migrator URL/credential and refuses missing configuration
+   - Does not bootstrap a server, receive `sa`, or run automatically on pushes
+   - It remains disabled in practice until a persistent environment and approval policy exist
 
 ## Documentation Source-of-Truth
 

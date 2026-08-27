@@ -1789,7 +1789,7 @@ Exit criteria:
 
 ## Milestone 9 — Operational hardening
 
-Planning status snapshot (2026-08-26):
+Implementation status snapshot (2026-08-26, validation in progress):
 
 - the repository-audited implementation plan is defined in
   `docs/development-guide/milestone-9-operational-hardening-step-by-step.md`,
@@ -1801,6 +1801,10 @@ Planning status snapshot (2026-08-26):
   independent clean-install and Milestone 8 upgrade evidence,
 - repository completion demonstrates an encrypted backup/restore and deployment rehearsal; public
   hosting, off-host storage, production alerts, and production SLA evidence remain activation work.
+- implemented repository assets now cover the hardened profile and audit privacy, forward-only
+  database permissions, principal provisioning, NGINX/Compose/RabbitMQ isolation, encrypted
+  backup/restore tooling, SBOM/security automation, and a bounded load harness; the exit criteria
+  below remain authoritative until the full evidence matrix passes.
 
 Deliver:
 

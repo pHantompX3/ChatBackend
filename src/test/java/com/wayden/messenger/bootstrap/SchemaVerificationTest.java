@@ -388,17 +388,6 @@ final class SchemaVerificationTest {
   private static void migrateApplicationSchemas() {
     final String jdbcUrl =
         TestSqlSupport.jdbcUrl(SQL_SERVER.getHost(), SQL_SERVER.getMappedPort(1433), "wl_chat");
-    final String location =
-        Path.of("scripts", "database", "flyway", "wl_chat").toAbsolutePath().toString();
-
-    Flyway.configure()
-        .dataSource(jdbcUrl, "sa", DB_PASSWORD)
-        .locations("filesystem:" + location)
-        .defaultSchema("platform")
-        .schemas("platform", "identity", "messaging", "audit")
-        .table("flyway_schema_history")
-        .placeholders(TestSqlSupport.placeholders(APP_LOGIN, APP_PASSWORD))
-        .load()
-        .migrate();
+    TestSqlSupport.migrateApplicationSchemas(jdbcUrl, "sa", DB_PASSWORD, APP_LOGIN, APP_PASSWORD);
   }
 }

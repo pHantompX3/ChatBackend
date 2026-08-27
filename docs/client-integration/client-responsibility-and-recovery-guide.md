@@ -99,12 +99,12 @@ backend tracks receipts per user, not per device, and does not expose receipt ti
 Connect to `/api/v1/ws`. Supported token transports are `token.<token>` or `bearer.<token>` as a
 WebSocket subprotocol, `?token=<token>`, or an `Authorization` header for clients that can set one.
 
-**Planned Milestone 9 hardened-profile contract:** public deployment will disable query-string token
-authentication because URLs can be retained by intermediaries. Browser clients must use the
-subprotocol form and send an Origin from the deployment allowlist. Non-browser clients may use the
-subprotocol or Authorization header and may omit Origin. This is a planned profile policy until the
-Milestone 9 implementation and transport tests are complete; the current endpoint capabilities above
-remain authoritative in the meantime.
+**Hardened-profile contract:** public deployment disables query-string token authentication because
+URLs can be retained by intermediaries. Browser clients must use the subprotocol form and send an
+Origin from the deployment allowlist. Non-browser clients may use the subprotocol or Authorization
+header and may omit Origin. A `4403` close indicates a disallowed browser Origin; `4401` indicates a
+missing, rejected, expired, or revoked credential. Local/default-profile tooling retains query-token
+support for compatibility, but clients should not depend on it for a hardened deployment.
 
 Prefer a subprotocol over a query parameter where the client platform supports it because URLs are
 more commonly retained in diagnostics and intermediary logs.

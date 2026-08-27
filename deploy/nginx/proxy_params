@@ -1,0 +1,7 @@
+proxy_set_header Host $host;
+proxy_set_header X-Trace-Id $wl_trace_id;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $remote_addr;
+proxy_set_header X-Forwarded-Proto https;
+proxy_set_header Forwarded "for=$remote_addr;proto=https;host=$host";
+proxy_hide_header X-Powered-By;

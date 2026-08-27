@@ -82,6 +82,38 @@ final class IdentityApiIntegrationTest {
   }
 
   @Test
+  void unauthenticatedRequestShouldPersistRedactedAuditMetadata() throws Exception {
+    String requestId =
+        given()
+            .queryParam("access_token", "must-not-be-persisted")
+            .when()
+            .get("/api/v1/users")
+            .then()
+            .statusCode(401)
+            .extract()
+            .header("X-Request-Id");
+
+    try (var connection =
+            DriverManager.getConnection(
+                IdentitySqlServerTestResource.jdbcUrl("wl_chat"),
+                "sa",
+                IdentitySqlServerTestResource.saPassword());
+        var statement =
+            connection.prepareStatement(
+                "SELECT method, path, [query], response_status "
+                    + "FROM [audit].[http_audit_event] WHERE request_id = ?")) {
+      statement.setString(1, requestId);
+      try (var resultSet = statement.executeQuery()) {
+        assertTrue(resultSet.next());
+        assertEquals("GET", resultSet.getString("method"));
+        assertEquals("/api/v1/users", resultSet.getString("path"));
+        assertEquals("REDACTED", resultSet.getString("query"));
+        assertEquals(401, resultSet.getInt("response_status"));
+      }
+    }
+  }
+
+  @Test
   void bootstrapAdminShouldPersistActorAuditFields() {
     String requestId =
         given()

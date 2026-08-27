@@ -10,7 +10,7 @@
 ## Current Baseline
 
 - Java: 25
-- Quarkus: 3.33.2.1
+- Quarkus: 3.33.3.1
 - Build: Maven Wrapper (`./mvnw`)
 - Database: Microsoft SQL Server 2022
 - Active local database name: `wl_chat`
@@ -34,7 +34,8 @@ This repository currently standardizes three environments:
 3. Production
    - Future hosted target (not provisioned yet)
 
-- Milestone 9 reference: one NGINX HTTPS/WSS edge in front of one ChatBackend instance
+- Milestone 9 rehearsal: one NGINX HTTPS/WSS edge in front of one private ChatBackend instance, SQL
+  Server, and RabbitMQ using `deploy/compose.hardened.yaml`
 - Apache APISIX remains an optional later replacement if multi-service gateway or load-balancing needs
   justify it through a later architecture decision
 - Deployment automation is intentionally deferred until a persistent remote environment exists
@@ -377,7 +378,7 @@ Workflows in `.github/workflows` currently include both DB validation and a self
   - Validates bootstrap + migration flow in an ephemeral SQL Server container inside GitHub Actions runner
 
 - `db-remote-bootstrap-migrate.yml`
-  - Manual workflow scaffold for remote SQL bootstrap/migration
+  - Manual, environment-protected remote migration using only the dedicated migrator credential
   - Kept as deferred guidance until a persistent hosted environment is available
 
 - `flow-smoke-gate.yml`
@@ -476,6 +477,18 @@ delivery/read acknowledgements, heartbeat support, session-revocation disconnect
 reconciliation are implemented under ADR-0016. SQL Server remains authoritative; socket delivery is
 never treated as durable delivery proof.
 
+Milestone 9 implementation snapshot (2026-08-26): security boundary controls, query redaction,
+hardened WebSocket policy, forward-only runtime database permissions, distinct database principals,
+verified SQL TLS configuration, a non-root image, private-network NGINX/SQL/RabbitMQ rehearsal,
+encrypted backup/isolated restore automation, SBOM/security gates, and a reproducible load harness are
+implemented. Full hardened-stack, recovery-drill, SQL Server image disposition, and load evidence
+remain required before the milestone is declared complete or production activation is claimed.
+Git-filtered source, the rebuilt application image, RabbitMQ, unprivileged NGINX, and the
+repository-owned migration image pass the local High/Critical security gate. Microsoft SQL Server
+2022 CU26 retains visible High findings in vendor helper binaries; the project owner accepted that
+narrowly scoped risk for a private local rehearsal through 2026-11-26 without suppressing it. The
+remaining live operational drills keep Milestone 9 open.
+
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
 - Milestone 1 database foundation runbook:
@@ -502,6 +515,9 @@ never treated as durable delivery proof.
   - `docs/development-guide/milestone-8-websockets-step-by-step.md`
 - Milestone 9 operational-hardening implementation plan:
   - `docs/development-guide/milestone-9-operational-hardening-step-by-step.md`
+- Milestone 9 single-instance hardening decision and threat model:
+  - `docs/architecture/decision/ADR-0017-harden-single-instance-deployment.md`
+  - `docs/security/threat-model.md`
 - Canonical client responsibility, offline behavior, and recovery guide:
   - `docs/client-integration/client-responsibility-and-recovery-guide.md`
 - Human-run two-participant WebSocket/Postman integration guide:
@@ -514,6 +530,10 @@ never treated as durable delivery proof.
   - `docs/private-instant-messaging-platform-spec-v0.2-sql-server.md`
 - Environment lifecycle and rollout plan:
   - `docs/operations/environment-strategy-and-rollout-plan.md`
+- Hardened deployment, backup/restore, and load-test runbooks:
+  - `docs/operations/hardened-deployment-runbook.md`
+  - `docs/operations/backup-and-restore-runbook.md`
+  - `docs/operations/load-test-baseline.md`
 - SQL Server principal and permission baseline:
   - `docs/database/sql-server-principals-and-permissions.md`
 - Postman artifact workflow:

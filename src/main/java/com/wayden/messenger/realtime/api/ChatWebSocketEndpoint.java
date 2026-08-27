@@ -34,12 +34,14 @@ import org.jboss.logging.Logger;
  * </ol>
  *
  * <p>Unauthenticated or expired handshakes are closed immediately with code {@code 4401}.
+ * Query-token and browser-Origin behavior are controlled by {@link WebSocketHandshakePolicy}.
  */
 @WebSocket(path = "/api/v1/ws")
 public class ChatWebSocketEndpoint {
 
   private static final Logger LOG = Logger.getLogger(ChatWebSocketEndpoint.class);
   private static final int CLOSE_UNAUTHORIZED = 4401;
+  private static final int CLOSE_FORBIDDEN = 4403;
   private static final String BEARER_PREFIX = "bearer.";
   private static final String TOKEN_PREFIX = "token.";
 
@@ -47,6 +49,7 @@ public class ChatWebSocketEndpoint {
   private final ConnectionRegistry registry;
   private final ObjectMapper objectMapper;
   private final DeliveryService deliveryService;
+  private final WebSocketHandshakePolicy handshakePolicy;
 
   @Inject
   @SuppressFBWarnings(
@@ -56,16 +59,30 @@ public class ChatWebSocketEndpoint {
       WebSocketSessionAuthenticator authenticator,
       ConnectionRegistry registry,
       ObjectMapper objectMapper,
-      DeliveryService deliveryService) {
+      DeliveryService deliveryService,
+      WebSocketHandshakePolicy handshakePolicy) {
     this.authenticator = authenticator;
     this.registry = registry;
     this.objectMapper = objectMapper;
     this.deliveryService = deliveryService;
+    this.handshakePolicy = handshakePolicy;
   }
 
   @OnOpen
   public void onOpen(WebSocketConnection connection) {
     HandshakeRequest handshake = connection.handshakeRequest();
+    if (!handshakePolicy.allowsOrigin(handshake.header("Origin"))) {
+      LOG.debugf("WebSocket rejected — Origin not allowed: connectionId=%s", connection.id());
+      connection.closeAndAwait(new CloseReason(CLOSE_FORBIDDEN, "Origin not allowed"));
+      return;
+    }
+    if (!handshakePolicy.queryTokenEnabled() && hasQueryParameter(handshake.query(), "token")) {
+      LOG.debugf(
+          "WebSocket rejected — query token transport disabled: connectionId=%s", connection.id());
+      connection.closeAndAwait(
+          new CloseReason(CLOSE_UNAUTHORIZED, "Query token authentication disabled"));
+      return;
+    }
     Optional<String> rawToken = extractToken(handshake, connection.subprotocol());
     if (rawToken.isEmpty()) {
       LOG.debugf("WebSocket rejected — no token: connectionId=%s", connection.id());
@@ -161,7 +178,7 @@ public class ChatWebSocketEndpoint {
   private Optional<String> extractToken(HandshakeRequest handshake, String subprotocol) {
     // 1. Try query parameter (?token=<raw>) — parse from raw query string
     String query = handshake.query();
-    if (query != null && !query.isBlank()) {
+    if (handshakePolicy.queryTokenEnabled() && query != null && !query.isBlank()) {
       String tokenValue = parseQueryParam(query, "token");
       if (tokenValue != null) {
         return Optional.of(tokenValue);
@@ -218,5 +235,19 @@ public class ChatWebSocketEndpoint {
       }
     }
     return null;
+  }
+
+  private static boolean hasQueryParameter(String query, String paramName) {
+    if (query == null || query.isBlank()) {
+      return false;
+    }
+    for (String part : query.split("&")) {
+      int separator = part.indexOf('=');
+      String key = separator < 0 ? part : part.substring(0, separator);
+      if (paramName.equals(key)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

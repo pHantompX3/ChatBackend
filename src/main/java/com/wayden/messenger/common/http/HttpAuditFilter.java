@@ -88,7 +88,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     requestAuditContext.setRequestId(requestId);
     requestAuditContext.setMethod(method);
     requestAuditContext.setPath(path);
-    requestAuditContext.setQuery(query == null ? "-" : query);
+    requestAuditContext.setQuery(redactQuery(query));
     requestAuditContext.setUserAgent(userAgent);
     requestAuditContext.setForwardedFor(forwardedFor);
     requestAuditContext.setXRealIp(xRealIp);
@@ -115,6 +115,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
   public void filter(
       ContainerRequestContext requestContext, ContainerResponseContext responseContext)
       throws IOException {
+    ensureRequestMetadata(requestContext);
     int status = responseContext.getStatus();
     int length = responseContext.getLength();
 
@@ -171,6 +172,23 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
     } catch (RuntimeException exception) {
       // Fail-open behavior for request serving even if audit pipeline encounters runtime issues.
       LOG.warn("HTTP audit submission failed; request flow remains open", exception);
+    }
+  }
+
+  private void ensureRequestMetadata(ContainerRequestContext requestContext) {
+    if (requestAuditContext.getMethod() == null || requestAuditContext.getMethod().isBlank()) {
+      requestAuditContext.setMethod(requestContext.getMethod());
+    }
+    if (requestAuditContext.getPath() == null || requestAuditContext.getPath().isBlank()) {
+      requestAuditContext.setPath(requestContext.getUriInfo().getRequestUri().getPath());
+    }
+    if (requestAuditContext.getQuery() == null) {
+      requestAuditContext.setQuery(
+          redactQuery(requestContext.getUriInfo().getRequestUri().getQuery()));
+    }
+    if (requestAuditContext.getOperation() == null
+        || requestAuditContext.getOperation().isBlank()) {
+      requestAuditContext.setOperation("unknown.operation");
     }
   }
 
@@ -259,6 +277,10 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
   private String getRequestId(ContainerRequestContext requestContext) {
     Object requestId = requestContext.getProperty(RequestIdFilter.REQUEST_ID_PROPERTY);
     return requestId == null ? "-" : requestId.toString();
+  }
+
+  static String redactQuery(String query) {
+    return query == null || query.isBlank() ? "-" : "REDACTED";
   }
 
   private String resolveOperationName() {

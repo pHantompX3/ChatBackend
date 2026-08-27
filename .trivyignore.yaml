@@ -1,0 +1,9 @@
+vulnerabilities:
+  - id: CVE-2025-59250
+    purls:
+      - "pkg:maven/com.microsoft.sqlserver/mssql-jdbc@13.2.1"
+    expired_at: 2026-11-26
+    statement: >-
+      Trivy normalizes the resolved 13.2.1.jre11 artifact to its internal Bundle-Version 13.2.1.
+      The Quarkus dependency manifest, CycloneDX SBOM, and packaged JAR filename all prove that the
+      application contains 13.2.1.jre11, which Trivy lists as fixed. Owner: Backend/Supply Chain.
