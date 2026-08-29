@@ -100,6 +100,8 @@ release tags begin when the project intentionally performs a production release 
 - Disabled OWASP Dependency-Check's unauthenticated Sonatype OSS Index analyzer after that service
   began rejecting anonymous component-report requests, while retaining the NVD-backed CVSS gate and
   the separate SBOM, filesystem, image, and repository scans.
+- Upgraded OWASP Dependency-Check from 12.1.0 to 12.2.2 so the security gate uses the corrected NVD
+  timestamp parser while continuing to obtain its API key from the masked `NVD_API_KEY` Actions secret.
 - Replaced committed CI fallback passwords with run-scoped GitHub expression values so ephemeral
   database and flow-test credentials are not mistaken for reusable secrets.
 - Added a least-capability, one-shot SQL Server volume initializer so fresh hardened named volumes are
