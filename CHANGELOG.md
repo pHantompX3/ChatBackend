@@ -102,6 +102,8 @@ release tags begin when the project intentionally performs a production release 
   the separate SBOM, filesystem, image, and repository scans.
 - Upgraded OWASP Dependency-Check from 12.1.0 to 12.2.2 so the security gate uses the corrected NVD
   timestamp parser while continuing to obtain its API key from the masked `NVD_API_KEY` Actions secret.
+- Aligned the resolved Netty family on 4.1.137.Final to remediate the SOCKS encoder injection flaw
+  reported as CVE-2026-62380 without mixing versions across Vert.x and RabbitMQ transitive dependencies.
 - Replaced committed CI fallback passwords with run-scoped GitHub expression values so ephemeral
   database and flow-test credentials are not mistaken for reusable secrets.
 - Added a least-capability, one-shot SQL Server volume initializer so fresh hardened named volumes are

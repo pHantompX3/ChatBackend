@@ -17,6 +17,7 @@
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.version>3.33.3.1</quarkus.platform.version>
+        <netty.version>4.1.137.Final</netty.version>
         <lombok.version>1.18.38</lombok.version>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -32,6 +33,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>${quarkus.platform.artifact-id}</artifactId>
@@ -266,7 +274,7 @@
                         <configuration>
                             <failBuildOnCVSS>7</failBuildOnCVSS>
                             <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
-                            <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
+                            <ossIndexAnalyzerEnabled>false</ossIndexAnalyzerEnabled>
                             <formats>
                                 <format>HTML</format>
                                 <format>JSON</format>
