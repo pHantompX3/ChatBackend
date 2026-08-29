@@ -14,9 +14,10 @@ These are concise repository-wide rules. Keep them stable and avoid duplicating 
 - New application migrations under [scripts/database/flyway/wl_chat](../scripts/database/flyway/wl_chat) must use `VYYYYMMDDHHMMSS__description_in_snake_case.sql`; existing `V1`-`V3` files are grandfathered history and must not be renamed.
 - Treat [README.md](../README.md) and [docs/development-guide](../docs/development-guide) as operational references and keep them aligned with evidence-based behavior.
 - Update [CHANGELOG.md](../CHANGELOG.md) for every notable change in the same change set. Follow the canonical [versioning and changelog policy](../docs/development-guide/versioning-and-changelog-policy.md); changes requiring release notes are incomplete without them.
-- Record every verified client-facing responsibility, recovery rule, UX implication, or backend capability gap in the canonical [client integration and recovery guide](../docs/client-integration/client-responsibility-and-recovery-guide.md) when it is learned. Before declaring any milestone complete, audit the milestone against that guide and update it, or explicitly report that the review found no client-facing changes.
+- Keep the canonical [platform evolution specification](../docs/platform-evolution-specification.md) current when an Evolution Track is added, re-scoped, promoted, deferred, rejected, superseded, or verified.
+- Record every verified client-facing responsibility, recovery rule, UX implication, or backend capability gap in the canonical [client integration and recovery guide](../docs/client-integration/client-responsibility-and-recovery-guide.md) when it is learned. Before declaring any milestone or Evolution Track complete, audit the work against that guide and update it, or explicitly report that the review found no client-facing changes.
 - Maintain multi-agent guardrail synchronization: Whenever rules, instructions, or skills are modified in `.github/`, update the corresponding files in `.agents/` and [AGENTS.md](../AGENTS.md) in the same change set so that all agents (Copilot, Antigravity, Codex, etc.) operate under identical, synchronized constraints.
-- When creating development branches, use the agent's recognized identifier prefix (e.g. `codex/<feature>`, `antigravity/<feature>`) or clean milestone branch names (`milestone-<number>`).
+- When creating development branches, use the agent's recognized identifier prefix (e.g. `codex/<feature>`, `antigravity/<feature>`). Milestone branch names are reserved for the original Milestones 0–9 and deferred Milestone X roadmap.
 
 ## Postman maintenance
 
@@ -30,7 +31,7 @@ Whenever an API endpoint is added, removed, renamed, or materially changed:
 - Run `./scripts/postman/validate-postman.sh` before concluding API-related changes.
 - State Postman artifact updates in the completion report.
 
-When a milestone introduces a new user-facing capability or a new combination of APIs that forms a user journey, also review or extend [postman/collections/chat-backend-user-flows.postman_collection.json](../postman/collections/chat-backend-user-flows.postman_collection.json) so the flow-oriented collection reflects the new experience.
+When a milestone or Evolution Track introduces a new user-facing capability or a new combination of APIs that forms a user journey, also review or extend [postman/collections/chat-backend-user-flows.postman_collection.json](../postman/collections/chat-backend-user-flows.postman_collection.json) so the flow-oriented collection reflects the new experience.
 
 - Capture the flow as a named scenario with ordered requests and the variables needed to pass state between steps.
 - Prefer adding the flow during milestone wrap-up rather than treating it as a separate cleanup task later.
@@ -52,5 +53,6 @@ An API implementation change is incomplete when corresponding Postman artifacts 
 - Decision records: [docs/architecture/decision](../docs/architecture/decision)
 - Release ledger: [CHANGELOG.md](../CHANGELOG.md)
 - Versioning and changelog policy: [docs/development-guide/versioning-and-changelog-policy.md](../docs/development-guide/versioning-and-changelog-policy.md)
+- Post-Milestone enhancement planning and Evolution Track register: [docs/platform-evolution-specification.md](../docs/platform-evolution-specification.md)
 - Client integration and recovery contract: [docs/client-integration/client-responsibility-and-recovery-guide.md](../docs/client-integration/client-responsibility-and-recovery-guide.md)
 - Context architecture skill: [skills/workspace-context-architecture/SKILL.md](skills/workspace-context-architecture/SKILL.md)

@@ -119,8 +119,13 @@ Do not create retroactive tags for the reconstructed `0.0.1` through `0.4.0` cha
 - Milestone 6 development baseline: `0.6.0-SNAPSHOT`
 - Completed Milestone 7 development: `0.7.0-SNAPSHOT`
 - Completed Milestone 8 development: `0.8.0-SNAPSHOT`
-- Active Milestone 9 development: `0.9.0-SNAPSHOT`
+- Completed Milestone 9 development baseline: `0.9.0-SNAPSHOT`
 - First production-ready release: `1.0.0`
 
 The reconstructed versions document logical historical boundaries only. Repository history remains
 the authority for the commits that actually existed before formal release management began.
+
+Post-Milestone enhancements are organized as Evolution Tracks under
+`docs/platform-evolution-specification.md`. Track identifiers such as `ET-01` are planning identifiers,
+not versions. Choose application versions from compatibility and release intent; do not derive a
+version number from an Evolution Track number.

@@ -1,7 +1,7 @@
 # Client Responsibility and Recovery Guide
 
 **Status:** Current implementation audit  
-**Last reviewed:** 2026-08-27
+**Last reviewed:** 2026-08-29
 **Applies to:** ChatBackend `0.9.0-SNAPSHOT`
 
 ## 1. Purpose
@@ -25,16 +25,18 @@ This guide is a living, release-controlled contract rather than a one-time clien
 - During implementation, investigation, testing, review, or incident analysis, record every verified
   new client-facing responsibility, recovery rule, UX implication, transport limitation, security
   consideration, or backend capability gap here in the same change set that establishes the learning.
-- Do not defer a known learning solely because the current milestone does not build a client. If the
-  learning is tentative, label it as an open question instead of presenting it as implemented fact.
-- Before declaring any milestone complete, audit its code, migrations, API/OpenAPI changes,
-  WebSocket behavior, ADRs, development guide, tests, and operational findings against this guide.
+- Do not defer a known learning solely because the current milestone or Evolution Track does not
+  build a client. If the learning is tentative, label it as an open question instead of presenting it
+  as implemented fact.
+- Before declaring any milestone or Evolution Track complete, audit its code, migrations,
+  API/OpenAPI changes, WebSocket behavior, ADRs, development guide, tests, and operational findings
+  against this guide.
 - Update affected responsibility tables, workflows, acceptance checks, limitations, and canonical
   references. Remove or revise superseded workarounds when the backend gains a stronger contract.
 - Add a corresponding `CHANGELOG.md` entry when the review produces a notable addition or correction.
-- A milestone is not documentation-complete until this review has been performed and either the guide
-  is updated or the completion report explicitly states that no client-facing responsibilities or
-  recovery behavior changed.
+- A milestone or Evolution Track is not documentation-complete until this review has been performed
+  and either the guide is updated or the completion report explicitly states that no client-facing
+  responsibilities or recovery behavior changed.
 
 ## 2. Responsibility Boundary
 

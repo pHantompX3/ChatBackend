@@ -17,6 +17,14 @@ release tags begin when the project intentionally performs a production release 
 
 ### Added
 
+- Added the canonical post-Milestone Platform Evolution specification and initial Evolution Track
+  register for platform-focused enhancements, including conversation synchronization, durable media,
+  voice-note semantics, rich messaging, search, ephemeral signals, self-hosted calls, notifications,
+  proportional performance work, and explicitly deferred advanced encryption.
+- Established Evolution Tracks as the bounded planning units that may produce audited development
+  guides, while preserving Milestone X as the paused endpoint of the original production roadmap.
+- Extended the repository-wide client-responsibility review cycle and synchronized agent guardrails
+  from milestones to Evolution Tracks.
 - Advanced Maven project version to `0.9.0-SNAPSHOT` for active Milestone 9 development.
 - Added the implementation-ready Milestone 9 operational-hardening guide covering a hardened
   single-instance container deployment, NGINX TLS/WebSocket ingress, database-principal separation,

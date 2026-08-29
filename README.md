@@ -16,6 +16,9 @@
 - Active local database name: `wl_chat`
 - Active app login: `wl_chat_app`
 - Audit transport: RabbitMQ-backed delivery is optional; if the audit transport is not configured, the app falls back to local async persistence and still boots cleanly
+- Original roadmap status: Milestones 0–9 complete; Milestone X production activation paused
+- Post-roadmap enhancements: tracked as Evolution Tracks in
+  `docs/platform-evolution-specification.md`
 
 ## Environment Model
 
@@ -534,6 +537,8 @@ production-activation prerequisites and are not claimed.
   - `docs/development-guide/versioning-and-changelog-policy.md`
 - System specification and architecture baseline:
   - `docs/private-instant-messaging-platform-spec-v0.2-sql-server.md`
+- Platform evolution specification and Evolution Track register:
+  - `docs/platform-evolution-specification.md`
 - Environment lifecycle and rollout plan:
   - `docs/operations/environment-strategy-and-rollout-plan.md`
 - Hardened deployment, backup/restore, and load-test runbooks:

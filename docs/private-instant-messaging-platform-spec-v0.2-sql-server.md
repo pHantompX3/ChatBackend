@@ -3,13 +3,17 @@
 ## System Specification, Development Plan, and Coding Guide
 
 **Document version:** 0.2  
-**Status:** Draft baseline  
+**Status:** Implemented baseline through Milestone 9; Milestone X deferred
 **Date:** 2026-07-05  
-**Last reviewed:** 2026-08-09
+**Last reviewed:** 2026-08-29
 **Architecture style:** API-first modular monolith  
 **Primary deployment target:** Local development workstation  
 **Secondary deployment target:** DevDocker rehearsal environment on local workstation  
 **Future deployment target:** Hosted production environment
+
+**Post-roadmap successor:** New platform enhancements are governed as Evolution Tracks in
+`docs/platform-evolution-specification.md`. This document remains authoritative for the original
+system baseline and Milestones 0–9/X; it must not be extended with additional numbered milestones.
 
 ## Revision 0.2 summary
 
