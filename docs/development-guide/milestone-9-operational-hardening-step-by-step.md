@@ -10,22 +10,21 @@
 
 **Application stack:** Java 25, Quarkus 3.33 LTS, Maven, Docker Compose
 
-**Status:** Implementation in progress / repository verification and live hardened-rehearsal evidence
-pending
+**Status:** Complete — repository implementation and local hardened deployment/recovery rehearsal
+verified
 
-**Last reviewed:** 2026-08-26
+**Last reviewed:** 2026-08-29
 
 **Implementation snapshot:** The repository now contains the application hardening, least-privilege
 principal model, NGINX/Compose rehearsal, encrypted backup/restore tooling, SBOM/security gates, load
-harness, threat model, and supporting tests described by this guide. Canonical application tests,
-clean/upgrade migration paths, Postman checks, Flyway naming, Compose rendering, and static script
-validation have been exercised. The Git-filtered source, rebuilt application image, RabbitMQ image,
-unprivileged NGINX image, and repository-owned migration image pass the isolated High/Critical scan
-with one evidenced, time-limited scanner-normalization disposition. The current Microsoft SQL Server
-image does not pass that gate, and its visible findings now have the bounded rehearsal-only acceptance
-recorded below. A complete hardened-stack proxy/TLS run, encrypted restore drill, RabbitMQ
-outage/recovery exercise, and load baseline remain required before this milestone is declared
-complete.
+harness, threat model, and supporting tests described by this guide. The hardened HTTPS/WSS stack,
+encrypted isolated restore, RabbitMQ outage/recovery behavior, characterization and threshold load
+runs, clean/upgrade migrations, Postman contracts, privacy checks, and runtime privilege boundaries
+have been exercised successfully. The canonical 138-test build, SpotBugs analysis, CycloneDX SBOM,
+dependency review, image/config/secret scans, Flow Smoke, database bootstrap/migration, and Postman
+CI gates pass. Netty is aligned on 4.1.137.Final to remediate CVE-2026-62380. The repository-owned
+Milestone 9 implementation and local rehearsal are complete; the external production-activation
+requirements in Section 16 remain intentionally outside this milestone.
 
 Infrastructure scan status is explicit: the current RabbitMQ, unprivileged NGINX, application, and
 repository-owned SQL Server-only migration images pass the High/Critical gate. Microsoft's SQL Server

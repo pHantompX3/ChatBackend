@@ -4,9 +4,10 @@
 
 **Document version:** 1.0  
 **Status:** Proposed target architecture  
-**Last reviewed:** 2026-08-26
+**Last reviewed:** 2026-08-29
 **Repository:** `pHantompX3/ChatBackend`  
-**Current implementation baseline:** Milestone 9 implementation in progress
+**Current implementation baseline:** Milestone 9 repository implementation and local hardened
+deployment/recovery rehearsal complete
 **Primary deployment model:** One remotely accessible x86-64 Linux host running Docker Compose  
 **Architecture purpose:** Production-oriented technical learning environment, not performance-driven scaling
 
