@@ -10,7 +10,7 @@
 ## Current Baseline
 
 - Java: 25
-- Quarkus: 3.33.2.1
+- Quarkus: 3.33.3.1
 - Build: Maven Wrapper (`./mvnw`)
 - Database: Microsoft SQL Server 2022
 - Active local database name: `wl_chat`
@@ -34,7 +34,10 @@ This repository currently standardizes three environments:
 3. Production
    - Future hosted target (not provisioned yet)
 
-- Future remote machine fronted by an API gateway/load balancer, with Apache APISIX as the preferred edge layer
+- Milestone 9 rehearsal: one NGINX HTTPS/WSS edge in front of one private ChatBackend instance, SQL
+  Server, and RabbitMQ using `deploy/compose.hardened.yaml`
+- Apache APISIX remains an optional later replacement if multi-service gateway or load-balancing needs
+  justify it through a later architecture decision
 - Deployment automation is intentionally deferred until a persistent remote environment exists
 
 ## Shared Remote Queue Server (Docker, Optional Audit Transport)
@@ -375,7 +378,7 @@ Workflows in `.github/workflows` currently include both DB validation and a self
   - Validates bootstrap + migration flow in an ephemeral SQL Server container inside GitHub Actions runner
 
 - `db-remote-bootstrap-migrate.yml`
-  - Manual workflow scaffold for remote SQL bootstrap/migration
+  - Manual, environment-protected remote migration using only the dedicated migrator credential
   - Kept as deferred guidance until a persistent hosted environment is available
 
 - `flow-smoke-gate.yml`
@@ -445,7 +448,7 @@ WL_CHAT_SKIP_LOCAL_TRIGGERS=1 git push
 
 ## Authoritative Documentation
 
-Current application development version: `0.8.0-SNAPSHOT`. Application releases follow Semantic
+Current application development version: `0.9.0-SNAPSHOT`. Application releases follow Semantic
 Versioning; API generations and Flyway migration versions remain independent.
 
 Milestone 3 status snapshot (2026-08-11): session schema, login/logout/filter behavior, and the administrative revoke-all-sessions API are implemented and validated.
@@ -474,6 +477,22 @@ delivery/read acknowledgements, heartbeat support, session-revocation disconnect
 reconciliation are implemented under ADR-0016. SQL Server remains authoritative; socket delivery is
 never treated as durable delivery proof.
 
+Milestone 9 implementation snapshot (2026-08-27): security boundary controls, query redaction,
+hardened WebSocket policy, forward-only runtime database permissions, distinct database principals,
+verified SQL TLS configuration, a non-root image, private-network NGINX/SQL/RabbitMQ rehearsal,
+encrypted backup/isolated restore automation, SBOM/security gates, and a reproducible load harness are
+implemented and validated in the local hardened rehearsal. The encrypted restore proved application
+startup, authentication, durable message history, and delivery/read cursors; characterization and
+threshold-gated load runs passed; and proxy, audit privacy, privilege, outage/recovery, and container
+boundary checks passed.
+Git-filtered source, the rebuilt application image, RabbitMQ, unprivileged NGINX, and the
+repository-owned migration image pass the local High/Critical security gate. Microsoft SQL Server
+2022 CU26 retains visible High findings in vendor helper binaries; the project owner accepted that
+narrowly scoped risk for a private local rehearsal through 2026-11-26 without suppressing it. The
+milestone's repository-owned implementation and local rehearsal are complete. Public hosting,
+off-host backup storage, external alert delivery, and production load/SLA evidence remain explicit
+production-activation prerequisites and are not claimed.
+
 - Detailed implementation runbook:
   - `docs/development-guide/milestone-0-sql-server-step-by-step.md`
 - Milestone 1 database foundation runbook:
@@ -498,6 +517,13 @@ never treated as durable delivery proof.
   - `docs/architecture/decision/ADR-0015-harden-http-contracts-and-authentication-throttling.md`
 - Milestone 8 WebSockets and real-time signaling runbook:
   - `docs/development-guide/milestone-8-websockets-step-by-step.md`
+- Milestone 9 operational-hardening implementation plan:
+  - `docs/development-guide/milestone-9-operational-hardening-step-by-step.md`
+- Milestone 9 single-instance hardening decision and threat model:
+  - `docs/architecture/decision/ADR-0017-harden-single-instance-deployment.md`
+  - `docs/security/threat-model.md`
+- Deferred production activation backlog (Milestone X):
+  - `docs/development-guide/milestone-x-production-activation.md`
 - Canonical client responsibility, offline behavior, and recovery guide:
   - `docs/client-integration/client-responsibility-and-recovery-guide.md`
 - Human-run two-participant WebSocket/Postman integration guide:
@@ -510,6 +536,10 @@ never treated as durable delivery proof.
   - `docs/private-instant-messaging-platform-spec-v0.2-sql-server.md`
 - Environment lifecycle and rollout plan:
   - `docs/operations/environment-strategy-and-rollout-plan.md`
+- Hardened deployment, backup/restore, and load-test runbooks:
+  - `docs/operations/hardened-deployment-runbook.md`
+  - `docs/operations/backup-and-restore-runbook.md`
+  - `docs/operations/load-test-baseline.md`
 - SQL Server principal and permission baseline:
   - `docs/database/sql-server-principals-and-permissions.md`
 - Postman artifact workflow:
@@ -530,6 +560,7 @@ Committed artifacts:
 - `postman/collections/chat-backend-user-flows.postman_collection.json`
 - `postman/environments/local.example.postman_environment.json`
 - `postman/environments/devdocker.example.postman_environment.json`
+- `postman/environments/harddocker.example.postman_environment.json`
 - `postman/environments/production.example.postman_environment.json`
 
 Local-only Postman Cloud config:

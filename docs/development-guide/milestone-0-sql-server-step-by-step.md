@@ -191,7 +191,7 @@ The build must use a pinned Maven version, start against SQL Server, expose heal
 | Component               | Baseline                                    |
 | ----------------------- | ------------------------------------------- |
 | Java                    | 25                                          |
-| Quarkus                 | 3.33.2.1 LTS                                |
+| Quarkus                 | 3.33.3.1 LTS                                |
 | Maven                   | 3.9.16 through Maven Wrapper                |
 | SQL Server              | SQL Server 2022 Developer Edition container |
 | Formatter               | Spotless Maven Plugin 3.6.0                 |
@@ -258,7 +258,7 @@ docker ps --format "table {{.Names}}\t{{.Ports}}"
 From the parent directory in which the repository should live:
 
 ```bash
-mvn io.quarkus.platform:quarkus-maven-plugin:3.33.2.1:create \
+mvn io.quarkus.platform:quarkus-maven-plugin:3.33.3.1:create \
   -DprojectGroupId=com.wayden.messenger \
   -DprojectArtifactId=private-messenger \
   -Dextensions='rest-jackson,jdbc-mssql,smallrye-health' \
@@ -1322,7 +1322,7 @@ No IDE settings, global Maven version, hand-created database, or uncommitted sou
 
 ### Quarkus skeleton
 
-- [x] Quarkus 3.33.2.1 LTS is used.
+- [x] Quarkus 3.33.3.1 LTS is used.
 - [x] REST Jackson, SQL Server JDBC, and SmallRye Health extensions are present.
 - [x] No sample greeting endpoint remains.
 

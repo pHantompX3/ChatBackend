@@ -18,4 +18,5 @@ postman-websocket-teardown-collection-id=<POSTMAN_WEBSOCKET_TEARDOWN_COLLECTION_
 postman-environment-id=<POSTMAN_ENVIRONMENT_ID_OR_UID>
 postman-local-environment-id=<POSTMAN_LOCAL_ENVIRONMENT_ID_OR_UID>
 postman-dev-environment-id=<POSTMAN_DEV_ENVIRONMENT_ID_OR_UID>
+postman-harddocker-environment-id=<POSTMAN_HARDDOCKER_ENVIRONMENT_ID_OR_UID>
 postman-prod-environment-id=<POSTMAN_PROD_ENVIRONMENT_ID_OR_UID>

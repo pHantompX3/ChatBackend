@@ -42,6 +42,7 @@ public class HttpAuditQueueDispatcher {
   private final String rabbitExchange;
   private final String rabbitRoutingKey;
   private final String rabbitQueue;
+  private final boolean rabbitProvisionTopology;
   private final boolean rabbitConsumerEnabled;
   private final int rabbitPrefetch;
 
@@ -84,6 +85,8 @@ public class HttpAuditQueueDispatcher {
           String rabbitRoutingKey,
       @ConfigProperty(name = "chat.audit.rabbitmq.queue", defaultValue = "audit.events")
           String rabbitQueue,
+      @ConfigProperty(name = "chat.audit.rabbitmq.provision-topology", defaultValue = "true")
+          boolean rabbitProvisionTopology,
       @ConfigProperty(name = "chat.audit.rabbitmq.consumer.enabled", defaultValue = "true")
           boolean rabbitConsumerEnabled,
       @ConfigProperty(name = "chat.audit.rabbitmq.consumer.prefetch", defaultValue = "25")
@@ -104,6 +107,7 @@ public class HttpAuditQueueDispatcher {
         rabbitExchange,
         rabbitRoutingKey,
         rabbitQueue,
+        rabbitProvisionTopology,
         rabbitConsumerEnabled,
         rabbitPrefetch,
         null);
@@ -125,6 +129,7 @@ public class HttpAuditQueueDispatcher {
       String rabbitExchange,
       String rabbitRoutingKey,
       String rabbitQueue,
+      boolean rabbitProvisionTopology,
       boolean rabbitConsumerEnabled,
       int rabbitPrefetch,
       BooleanSupplier rabbitInitializer) {
@@ -143,6 +148,7 @@ public class HttpAuditQueueDispatcher {
     this.rabbitExchange = rabbitExchange;
     this.rabbitRoutingKey = rabbitRoutingKey;
     this.rabbitQueue = rabbitQueue;
+    this.rabbitProvisionTopology = rabbitProvisionTopology;
     this.rabbitConsumerEnabled = rabbitConsumerEnabled;
     this.rabbitPrefetch = rabbitPrefetch;
     this.rabbitInitializer = rabbitInitializer == null ? this::initializeRabbit : rabbitInitializer;
@@ -169,6 +175,7 @@ public class HttpAuditQueueDispatcher {
         "audit.events",
         "audit.completed",
         "audit.events",
+        true,
         false,
         25,
         null);
@@ -196,6 +203,7 @@ public class HttpAuditQueueDispatcher {
         "audit.events",
         "audit.completed",
         "audit.events",
+        true,
         false,
         25,
         rabbitInitializer);
@@ -207,9 +215,8 @@ public class HttpAuditQueueDispatcher {
     if (rabbitEnabled) {
       if (rabbitInitializer.getAsBoolean()) {
         activateRabbitTransport();
-      } else {
-        startRabbitRetryLoop();
       }
+      startRabbitRetryLoop();
     }
 
     if (asyncEnabled) {
@@ -234,6 +241,10 @@ public class HttpAuditQueueDispatcher {
       return;
     }
 
+    submitToLocalFallback(event);
+  }
+
+  private void submitToLocalFallback(HttpAuditEvent event) {
     if (!asyncEnabled) {
       persistWithFailOpen(event);
       return;
@@ -242,6 +253,16 @@ public class HttpAuditQueueDispatcher {
     if (localQueue == null || !localQueue.offer(event)) {
       handleDeadLetter(event, new IllegalStateException("Audit queue is full or unavailable"));
     }
+  }
+
+  AuditTransportStatus status() {
+    int queuedEvents = localQueue == null ? 0 : localQueue.size();
+    String mode = rabbitActive ? "rabbitmq" : asyncEnabled ? "local-async" : "local-sync";
+    return new AuditTransportStatus(
+        mode,
+        rabbitEnabled && !rabbitActive,
+        queuedEvents,
+        activeRabbitHost == null ? "-" : activeRabbitHost);
   }
 
   @PreDestroy
@@ -307,11 +328,15 @@ public class HttpAuditQueueDispatcher {
   }
 
   private void runRabbitRetryLoop() {
-    while (running && rabbitEnabled && !rabbitActive) {
+    while (running && rabbitEnabled) {
       try {
+        if (rabbitActive) {
+          TimeUnit.SECONDS.sleep(2L);
+          continue;
+        }
         if (rabbitInitializer.getAsBoolean()) {
           activateRabbitTransport();
-          return;
+          continue;
         }
         TimeUnit.SECONDS.sleep(2L);
       } catch (InterruptedException interruptedException) {
@@ -352,9 +377,11 @@ public class HttpAuditQueueDispatcher {
         rabbitPublishChannel = rabbitConnection.createChannel();
         rabbitConsumeChannel = rabbitConnection.createChannel();
 
-        rabbitPublishChannel.exchangeDeclare(rabbitExchange, "topic", true);
-        rabbitPublishChannel.queueDeclare(rabbitQueue, true, false, false, null);
-        rabbitPublishChannel.queueBind(rabbitQueue, rabbitExchange, rabbitRoutingKey);
+        if (rabbitProvisionTopology) {
+          rabbitPublishChannel.exchangeDeclare(rabbitExchange, "topic", true);
+          rabbitPublishChannel.queueDeclare(rabbitQueue, true, false, false, null);
+          rabbitPublishChannel.queueBind(rabbitQueue, rabbitExchange, rabbitRoutingKey);
+        }
         rabbitConsumeChannel.basicQos(Math.max(1, rabbitPrefetch));
         activeRabbitHost = candidateHost;
 
@@ -446,6 +473,8 @@ public class HttpAuditQueueDispatcher {
         return;
       } catch (Exception exception) {
         LOG.warn("RabbitMQ audit consumer loop failure", exception);
+        deactivateRabbitAndRetry();
+        return;
       }
     }
   }
@@ -468,8 +497,16 @@ public class HttpAuditQueueDispatcher {
           "AUDIT QUEUE publish requestId=%s eventType=%s exchange=%s routingKey=%s",
           event.requestId(), event.eventType(), rabbitExchange, rabbitRoutingKey);
     } catch (Exception exception) {
-      handleDeadLetter(
-          event, new IllegalStateException("Failed to publish audit event", exception));
+      LOG.warn("Failed to publish audit event; switching to local fallback", exception);
+      deactivateRabbitAndRetry();
+      submitToLocalFallback(event);
+    }
+  }
+
+  private synchronized void deactivateRabbitAndRetry() {
+    closeRabbitResources();
+    if (running) {
+      startRabbitRetryLoop();
     }
   }
 
@@ -530,4 +567,7 @@ public class HttpAuditQueueDispatcher {
       LOG.error("HTTP audit dead-letter handler failed", deadLetterException);
     }
   }
+
+  record AuditTransportStatus(
+      String mode, boolean degraded, int localQueueDepth, String activeRabbitHost) {}
 }

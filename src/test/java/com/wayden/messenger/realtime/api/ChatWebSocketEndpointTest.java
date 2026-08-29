@@ -55,6 +55,71 @@ final class ChatWebSocketEndpointTest {
   }
 
   @Test
+  void shouldRejectDisallowedBrowserOriginBeforeAuthentication() {
+    AtomicInteger attempts = new AtomicInteger();
+    ChatWebSocketEndpoint endpoint =
+        endpoint(
+            token -> {
+              attempts.incrementAndGet();
+              return Optional.of(PRINCIPAL);
+            },
+            new ConnectionRegistry(),
+            noOpDeliveryService(),
+            hardenedPolicy());
+    SocketProbe socket =
+        socket("disallowed-origin", "Bearer valid-token", null, "https://attacker.example", null);
+
+    endpoint.onOpen(socket.connection());
+
+    assertEquals(0, attempts.get());
+    assertEquals(4403, socket.closeReasons().getFirst().getCode());
+  }
+
+  @Test
+  void shouldRejectQueryTokenWhenHardenedProfileDisablesIt() {
+    AtomicInteger attempts = new AtomicInteger();
+    ChatWebSocketEndpoint endpoint =
+        endpoint(
+            token -> {
+              attempts.incrementAndGet();
+              return Optional.of(PRINCIPAL);
+            },
+            new ConnectionRegistry(),
+            noOpDeliveryService(),
+            hardenedPolicy());
+    SocketProbe socket =
+        socket("query-token", null, "token=private-session-token", "https://chat.example", null);
+
+    endpoint.onOpen(socket.connection());
+
+    assertEquals(0, attempts.get());
+    assertEquals(4401, socket.closeReasons().getFirst().getCode());
+  }
+
+  @Test
+  void shouldAcceptAllowedBrowserOriginWithSubprotocolToken() {
+    ConnectionRegistry registry = new ConnectionRegistry();
+    List<String> tokens = new ArrayList<>();
+    ChatWebSocketEndpoint endpoint =
+        endpoint(
+            token -> {
+              tokens.add(token);
+              return Optional.of(PRINCIPAL);
+            },
+            registry,
+            noOpDeliveryService(),
+            hardenedPolicy());
+    SocketProbe socket =
+        socket("allowed-origin", null, null, "https://CHAT.example/", "token.valid-token");
+
+    endpoint.onOpen(socket.connection());
+
+    assertEquals(List.of("valid-token", "valid-token"), tokens);
+    assertTrue(registry.metadataFor(socket.connection()).isPresent());
+    assertTrue(socket.closeReasons().isEmpty());
+  }
+
+  @Test
   void shouldRejectSessionRevokedBetweenAuthenticationAndRegistration() {
     ConnectionRegistry registry = new ConnectionRegistry();
     AtomicInteger attempts = new AtomicInteger();
@@ -135,6 +200,15 @@ final class ChatWebSocketEndpointTest {
 
   private static ChatWebSocketEndpoint endpoint(
       Authentication authentication, ConnectionRegistry registry, DeliveryService deliveryService) {
+    return endpoint(
+        authentication, registry, deliveryService, new WebSocketHandshakePolicy(true, false, ""));
+  }
+
+  private static ChatWebSocketEndpoint endpoint(
+      Authentication authentication,
+      ConnectionRegistry registry,
+      DeliveryService deliveryService,
+      WebSocketHandshakePolicy handshakePolicy) {
     WebSocketSessionAuthenticator authenticator =
         new WebSocketSessionAuthenticator(null, null, Clock.systemUTC()) {
           @Override
@@ -143,7 +217,15 @@ final class ChatWebSocketEndpointTest {
           }
         };
     return new ChatWebSocketEndpoint(
-        authenticator, registry, new ObjectMapper().findAndRegisterModules(), deliveryService);
+        authenticator,
+        registry,
+        new ObjectMapper().findAndRegisterModules(),
+        deliveryService,
+        handshakePolicy);
+  }
+
+  private static WebSocketHandshakePolicy hardenedPolicy() {
+    return new WebSocketHandshakePolicy(false, true, "https://chat.example");
   }
 
   private static DeliveryService noOpDeliveryService() {
@@ -164,6 +246,11 @@ final class ChatWebSocketEndpointTest {
   }
 
   private static SocketProbe socket(String id, String authorization) {
+    return socket(id, authorization, null, null, null);
+  }
+
+  private static SocketProbe socket(
+      String id, String authorization, String query, String origin, String subprotocol) {
     List<String> frames = new ArrayList<>();
     List<CloseReason> closeReasons = new ArrayList<>();
     HandshakeRequest handshake =
@@ -173,8 +260,14 @@ final class ChatWebSocketEndpointTest {
                 new Class<?>[] {HandshakeRequest.class},
                 (proxy, method, arguments) ->
                     switch (method.getName()) {
-                      case "query" -> null;
-                      case "header" -> "Authorization".equals(arguments[0]) ? authorization : null;
+                      case "query" -> query;
+                      case "header" ->
+                          switch ((String) arguments[0]) {
+                            case "Authorization" -> authorization;
+                            case "Origin" -> origin;
+                            case HandshakeRequest.SEC_WEBSOCKET_PROTOCOL -> subprotocol;
+                            default -> null;
+                          };
                       case "headers" ->
                           arguments == null || arguments.length == 0 ? Map.of() : List.of();
                       default -> defaultValue(method.getReturnType());
@@ -189,7 +282,7 @@ final class ChatWebSocketEndpointTest {
                     switch (method.getName()) {
                       case "id" -> id;
                       case "handshakeRequest" -> handshake;
-                      case "subprotocol" -> null;
+                      case "subprotocol" -> subprotocol;
                       case "sendTextAndAwait" -> {
                         frames.add((String) arguments[0]);
                         yield null;

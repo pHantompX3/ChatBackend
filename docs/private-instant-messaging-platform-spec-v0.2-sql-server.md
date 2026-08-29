@@ -87,7 +87,9 @@ The delivery lifecycle is currently organized into three environments:
 
 3. **Production (future)**
    - Persistent hosted environment with externally reachable API.
-   - Future remote host fronted by an API gateway/load balancer, with Apache APISIX as the preferred edge layer.
+   - Milestone 9 reference uses one NGINX HTTPS/WSS edge in front of one ChatBackend instance.
+   - Apache APISIX remains an optional later replacement if gateway or multi-instance requirements
+     justify it through a later architecture decision.
    - Activated only after infrastructure provisioning and operational controls are in place.
 
 ### Current automation boundary
@@ -1787,25 +1789,69 @@ Exit criteria:
 
 ## Milestone 9 — Operational hardening
 
+Implementation status snapshot (2026-08-27, local rehearsal complete):
+
+- the repository-audited implementation plan is defined in
+  `docs/development-guide/milestone-9-operational-hardening-step-by-step.md`,
+- the milestone hardens one backend instance behind NGINX; the later multi-instance target remains
+  deferred until cross-instance realtime distribution is designed,
+- threat modelling, raw-query audit redaction, public WebSocket authentication/Origin policy, and
+  architecture decisions precede ingress implementation,
+- database hardening uses explicit operator, migrator, runtime, backup, and restore boundaries with
+  independent clean-install and Milestone 8 upgrade evidence,
+- repository completion demonstrates an encrypted backup/restore and deployment rehearsal; public
+  hosting, off-host storage, production alerts, and production SLA evidence remain activation work.
+- implemented repository assets cover the hardened profile and audit privacy, forward-only
+  database permissions, principal provisioning, NGINX/Compose/RabbitMQ isolation, encrypted
+  backup/restore tooling, SBOM/security automation, and a bounded load harness,
+- the local hardened evidence matrix passed deployment, TLS/WSS policy, privacy, least-privilege,
+  broker outage/recovery, encrypted isolated restore with application/data checks, security scanning,
+  operational status, and characterization/regression checks,
+- public hosting, off-host backup storage, external alert delivery, and production load/SLA evidence
+  remain production-activation work rather than repository Milestone 9 implementation gaps.
+
 Deliver:
 
-- container image
-- reverse proxy configuration
-- TLS
-- runtime database role
-- automated backup script
-- restore procedure
-- dependency scanning
-- SBOM
-- basic load test
-- threat model review
+- pinned, non-root, read-only-capable application image and hardened Compose boundary
+- NGINX HTTPS/WSS reference with safe forwarding, correlation, Origin, and token-transport behavior
+- verified SQL TLS and two-phase principal provisioning with a forward-only least-privilege migration
+- least-privilege RabbitMQ topology/runtime access with ready-but-degraded operational evidence
+- encrypted automated backup, key recovery, preliminary verification, and isolated restore procedure
+- dependency and infrastructure-image scanning plus Java SBOM
+- non-gating load characterization followed by a threshold-gated regression run
+- initial and final threat-model reviews, minimum operational checks, and deployment/recovery runbooks
 
 Exit criteria:
 
-- fresh server deployment is documented
-- backup restoration is demonstrated
-- security checklist passes
-- load-test baseline is recorded
+- clean and Milestone 8 upgrade database paths pass without changing applied migrations
+- fresh-host deployment and schema-aware rollback are documented
+- encrypted backup restoration and application/data validation are demonstrated
+- HTTP/WSS, audit privacy, SQL/RabbitMQ privilege, and degraded/recovery security checks pass
+- characterization evidence and repeatable regression thresholds are recorded
+- the client integration guide is audited for new transport and recovery responsibilities
+
+## Milestone X — Production activation
+
+Milestone X is the deferred environment-specific production work tracked in
+`docs/development-guide/milestone-x-production-activation.md`. It does not add new messaging-domain
+behavior or reopen Milestone 9. Its scope begins only after a target environment and accountable
+owners are selected.
+
+Deliver:
+
+- provisioned production hosting, domain/DNS, firewall, and patch ownership
+- publicly trusted HTTPS/WSS certificates with automated renewal
+- managed secret delivery and immutable image promotion
+- encrypted off-host backup scheduling, retention, retrieval, and restore evidence
+- external monitoring, alert delivery, on-call ownership, and incident procedures
+- production-representative load evidence and accepted service objectives
+
+Exit criteria:
+
+- the production environment passes the hardened deployment and security gates
+- backup recovery is proven from the selected off-host store
+- certificate renewal, alerts, rollback, and incident ownership are exercised
+- production thresholds and release approval are recorded before a `1.0.0` decision
 
 ---
 

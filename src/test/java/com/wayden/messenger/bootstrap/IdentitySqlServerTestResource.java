@@ -136,17 +136,8 @@ public class IdentitySqlServerTestResource implements QuarkusTestResourceLifecyc
   }
 
   private void migrateApplicationSchemas() {
-    String location =
-        Path.of("scripts", "database", "flyway", "wl_chat").toAbsolutePath().toString();
-    Flyway.configure()
-        .dataSource(jdbcUrl("wl_chat"), "sa", DB_PASSWORD)
-        .locations("filesystem:" + location)
-        .defaultSchema("platform")
-        .schemas("platform", "identity", "messaging", "audit")
-        .table("flyway_schema_history")
-        .placeholders(TestSqlSupport.placeholders(APP_LOGIN, APP_PASSWORD))
-        .load()
-        .migrate();
+    TestSqlSupport.migrateApplicationSchemas(
+        jdbcUrl("wl_chat"), "sa", DB_PASSWORD, APP_LOGIN, APP_PASSWORD);
   }
 
   @FunctionalInterface

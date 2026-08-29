@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.wayden.messenger.bootstrap.IdentitySqlServerTestResource;
@@ -79,6 +80,40 @@ final class IdentityApiIntegrationTest {
         .post("/api/v1/register")
         .then()
         .statusCode(404);
+  }
+
+  @Test
+  void unauthenticatedRequestShouldPersistRedactedAuditMetadata() throws Exception {
+    String requestId =
+        given()
+            .queryParam("access_token", "must-not-be-persisted")
+            .when()
+            .get("/api/v1/users")
+            .then()
+            .statusCode(401)
+            .extract()
+            .header("X-Request-Id");
+
+    try (var connection =
+            DriverManager.getConnection(
+                IdentitySqlServerTestResource.jdbcUrl("wl_chat"),
+                "sa",
+                IdentitySqlServerTestResource.saPassword());
+        var statement =
+            connection.prepareStatement(
+                "SELECT method, path, [query], response_status, source_ip, ip_resolution_source "
+                    + "FROM [audit].[http_audit_event] WHERE request_id = ?")) {
+      statement.setString(1, requestId);
+      try (var resultSet = statement.executeQuery()) {
+        assertTrue(resultSet.next());
+        assertEquals("GET", resultSet.getString("method"));
+        assertEquals("/api/v1/users", resultSet.getString("path"));
+        assertEquals("REDACTED", resultSet.getString("query"));
+        assertEquals(401, resultSet.getInt("response_status"));
+        assertNotNull(resultSet.getString("source_ip"));
+        assertNotNull(resultSet.getString("ip_resolution_source"));
+      }
+    }
   }
 
   @Test

@@ -10,6 +10,8 @@ if [[ "${RESET_DB}" == "true" ]]; then
 fi
 
 "${SCRIPT_DIR}/bootstrap-devdocker.sh"
+WL_CHAT_FLYWAY_TARGET=20260814100000 "${SCRIPT_DIR}/migrate-devdocker.sh"
+"${SCRIPT_DIR}/restrict-runtime-roles-devdocker.sh"
 "${SCRIPT_DIR}/migrate-devdocker.sh"
 
 echo "DevDocker database bootstrap + migration complete."

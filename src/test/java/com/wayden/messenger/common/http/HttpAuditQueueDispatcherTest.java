@@ -115,6 +115,15 @@ final class HttpAuditQueueDispatcherTest {
   }
 
   @Test
+  void statusShouldReportRabbitOutageAsReadyButDegraded() {
+    HttpAuditQueueDispatcher dispatcher =
+        new HttpAuditQueueDispatcher(event -> {}, (event, exception) -> {}, false, 8, () -> false);
+
+    assertEquals("local-sync", dispatcher.status().mode());
+    assertTrue(dispatcher.status().degraded());
+  }
+
+  @Test
   void rabbitJsonRoundTripShouldPreserveFailureDiagnostics() throws Exception {
     ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     HttpAuditEvent event = sampleFailureEvent();

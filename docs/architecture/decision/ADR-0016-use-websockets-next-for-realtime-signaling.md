@@ -62,6 +62,11 @@ immediately with close code `4401`. Tokens are accepted via:
 - `Sec-WebSocket-Protocol: bearer.<raw>` (browser-compatible)
 - `Authorization: Bearer <raw>` (non-browser clients)
 
+Milestone 9 narrows the public hardened profile without removing local compatibility: query-token
+authentication is disabled at the public boundary, browser Origins must match an explicit allowlist,
+and browsers use the subprotocol transport. Non-browser clients may omit Origin and use the
+subprotocol or Authorization header. See ADR-0017.
+
 The `WebSocketSessionAuthenticator` SHA-256-hashes the raw token and validates it against
 `identity.session`, matching the mechanism used in the HTTP auth filter.
 
@@ -140,3 +145,4 @@ Clients that disconnect or miss frames recover by:
 - [ADR-0001 — Modular Monolith](ADR-0001-use-modular-monolith.md)
 - [ADR-0014 — Per-User Delivery and Read Cursors](ADR-0014-use-per-user-delivery-and-read-cursors.md)
 - [Milestone 8 Development Guide](../../development-guide/milestone-8-websockets-step-by-step.md)
+- [ADR-0017 — Harden One ChatBackend Instance Behind NGINX](ADR-0017-harden-single-instance-deployment.md)

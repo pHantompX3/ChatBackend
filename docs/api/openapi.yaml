@@ -362,7 +362,7 @@ components:
       bearerFormat: opaque
 info:
   title: ChatBackend API
-  version: 0.8.0-SNAPSHOT
+  version: 0.9.0-SNAPSHOT
   description: Private messaging backend API
 security:
 - bearerAuth: []

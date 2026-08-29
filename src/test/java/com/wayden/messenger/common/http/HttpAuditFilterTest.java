@@ -15,6 +15,14 @@ import org.junit.jupiter.api.Test;
 final class HttpAuditFilterTest {
 
   @Test
+  void queryRedactionShouldNeverRetainRawValues() {
+    assertEquals("-", HttpAuditFilter.redactQuery(null));
+    assertEquals("-", HttpAuditFilter.redactQuery(""));
+    assertEquals("REDACTED", HttpAuditFilter.redactQuery("token=private-session-token"));
+    assertEquals("REDACTED", HttpAuditFilter.redactQuery("query=member&limit=25"));
+  }
+
+  @Test
   void responseAuditShouldCarryFailureDiagnosticsIntoDispatchedEvent() throws Exception {
     RequestAuditContext auditContext = new RequestAuditContext();
     auditContext.setRequestId("request-500");

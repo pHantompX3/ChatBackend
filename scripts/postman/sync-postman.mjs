@@ -50,6 +50,12 @@ const defaultEnvironmentPaths = [
     repoRoot,
     "postman",
     "environments",
+    "harddocker.example.postman_environment.json",
+  ),
+  path.join(
+    repoRoot,
+    "postman",
+    "environments",
     "production.example.postman_environment.json",
   ),
 ];
@@ -146,6 +152,10 @@ function loadConfig(configPath) {
       "postman-dev-environment-id",
       "POSTMAN_DEV_ENVIRONMENT_ID",
     ]),
+    hardDockerEnvironmentId: get("POSTMAN_HARDDOCKER_ENVIRONMENT_ID", [
+      "postman-harddocker-environment-id",
+      "POSTMAN_HARDDOCKER_ENVIRONMENT_ID",
+    ]),
     prodEnvironmentId: get("POSTMAN_PROD_ENVIRONMENT_ID", [
       "postman-prod-environment-id",
       "POSTMAN_PROD_ENVIRONMENT_ID",
@@ -167,6 +177,13 @@ function environmentIdKeyForFile(environmentPath) {
       id: "devEnvironmentId",
       property: "postman-dev-environment-id",
       label: "DevDocker",
+    };
+  }
+  if (fileName === "harddocker.example.postman_environment.json") {
+    return {
+      id: "hardDockerEnvironmentId",
+      property: "postman-harddocker-environment-id",
+      label: "HardDocker",
     };
   }
   if (fileName === "production.example.postman_environment.json") {

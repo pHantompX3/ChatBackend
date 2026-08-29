@@ -32,9 +32,9 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 30
         env:
-            MSSQL_SA_PASSWORD: "FlowGate_SA_Passw0rd!"
-            WL_CHAT_DB_PASSWORD: "FlowGate_App_Passw0rd!"
-            WL_CHAT_QUEUE_PASSWORD: "FlowGate_Queue_Passw0rd!"
+            MSSQL_SA_PASSWORD: "CiFlowSa!Run${{ github.run_id }}Attempt${{ github.run_attempt }}"
+            WL_CHAT_DB_PASSWORD: "CiFlowApp!Run${{ github.run_id }}Attempt${{ github.run_attempt }}"
+            WL_CHAT_QUEUE_PASSWORD: "CiFlowQueue!Run${{ github.run_id }}Attempt${{ github.run_attempt }}"
             WL_CHAT_ENABLE_QUEUE: "false"
             WL_CHAT_AUDIT_RABBITMQ_ENABLED: "false"
             WL_CHAT_APP_PORT: "8081"
@@ -43,14 +43,14 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v5
+              uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
             - name: Build and start devdocker stack
               shell: bash
               run: ./scripts/cicd/devdocker-up.sh
 
             - name: Set up Node.js
-              uses: actions/setup-node@v5
+              uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
               with:
                   node-version: "24"
 
@@ -64,7 +64,7 @@ jobs:
 
             - name: Upload Newman artifacts
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
               with:
                   name: newman-flow-artifacts
                   path: ${{ env.WL_CHAT_NEWMAN_REPORT_DIR }}

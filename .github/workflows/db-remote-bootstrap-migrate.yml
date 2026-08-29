@@ -1,8 +1,6 @@
-name: DB Remote Bootstrap And Migrate
+name: DB Remote Migrate
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -13,26 +11,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  bootstrap-and-migrate-remote:
+  migrate-remote:
     runs-on: ubuntu-latest
     environment: dev
     env:
-      DB_HOST: ${{ secrets.WL_CHAT_REMOTE_SQL_HOST }}
-      DB_PORT: ${{ secrets.WL_CHAT_REMOTE_SQL_PORT }}
-      SA_PASSWORD: ${{ secrets.WL_CHAT_REMOTE_SQL_SA_PASSWORD }}
-      APP_LOGIN: wl_chat_app
-      APP_PASSWORD: ${{ secrets.WL_CHAT_REMOTE_APP_PASSWORD }}
+      DB_URL: ${{ secrets.WL_CHAT_REMOTE_SQL_URL }}
+      MIGRATOR_USERNAME: ${{ secrets.WL_CHAT_REMOTE_MIGRATOR_USERNAME }}
+      MIGRATOR_PASSWORD: ${{ secrets.WL_CHAT_REMOTE_MIGRATOR_PASSWORD }}
+      APP_LOGIN: ${{ vars.WL_CHAT_REMOTE_APP_LOGIN || 'wl_chat_app' }}
+      FLYWAY_IMAGE: ${{ vars.WL_CHAT_REMOTE_FLYWAY_IMAGE }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Validate Flyway migration naming
         shell: bash
         run: ./scripts/database/validate-flyway-naming.sh
 
       - name: Set up Java 25
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: "25"
@@ -43,38 +41,28 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -n "${DB_HOST}" && -n "${DB_PORT}" && -n "${SA_PASSWORD}" && -n "${APP_PASSWORD}" ]]; then
+          if [[ -n "${DB_URL}" && -n "${MIGRATOR_USERNAME}" && -n "${MIGRATOR_PASSWORD}" \
+            && "${FLYWAY_IMAGE}" == *@sha256:* ]]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Remote SQL secrets are not fully configured; skipping remote bootstrap/migrate."
+            echo "Remote migrator settings are not fully configured; refusing remote migration."
+            exit 1
           fi
 
-      - name: Bootstrap wl_chat database on remote SQL Server
+      - name: Run reviewed Flyway migrations as migrator
         if: steps.remote_secrets.outputs.ready == 'true'
         run: |
           docker run --rm \
-            -v "$PWD/scripts/database/flyway/master:/flyway/sql" \
-            flyway/flyway:10.17.3 \
-            -url="jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=master;encrypt=true;trustServerCertificate=true" \
-            -user="sa" \
-            -password="${SA_PASSWORD}" \
-            -locations="filesystem:/flyway/sql" \
-            migrate
-
-      - name: Run Flyway migrations on remote SQL Server
-        if: steps.remote_secrets.outputs.ready == 'true'
-        run: |
-          docker run --rm \
-            -v "$PWD/scripts/database/flyway/wl_chat:/flyway/sql" \
-            flyway/flyway:10.17.3 \
-            -url="jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=wl_chat;encrypt=true;trustServerCertificate=true" \
-            -user="sa" \
-            -password="${SA_PASSWORD}" \
+            -v "$PWD/scripts/database/flyway/wl_chat:/flyway/sql:ro" \
+            "${FLYWAY_IMAGE}" \
+            -url="${DB_URL}" \
+            -user="${MIGRATOR_USERNAME}" \
+            -password="${MIGRATOR_PASSWORD}" \
             -locations="filesystem:/flyway/sql" \
             -defaultSchema="platform" \
             -schemas="platform,identity,messaging,audit" \
             -table="flyway_schema_history" \
             -placeholders.app_login="${APP_LOGIN}" \
-            -placeholders.app_password="${APP_PASSWORD}" \
+            -placeholders.app_password="unused-preprovisioned-runtime-password" \
             migrate

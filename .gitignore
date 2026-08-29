@@ -2,6 +2,9 @@
 *.class
 target/
 
+# Operating-system metadata
+.DS_Store
+
 # Log file
 *.log
 logs/
@@ -32,3 +35,10 @@ scripts/config/local.secrets.env
 scripts/database/rotate-sql-logins.sh
 
 postman/config.properties
+# Hardened rehearsal secrets and generated operational artifacts
+/deploy/hardened.env
+deploy/tls/generated/*
+!deploy/tls/generated/.gitkeep
+backups/
+load-test/results/
+security-reports/

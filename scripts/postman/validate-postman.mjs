@@ -50,6 +50,12 @@ const defaultEnvironmentPaths = [
     repoRoot,
     "postman",
     "environments",
+    "harddocker.example.postman_environment.json",
+  ),
+  path.join(
+    repoRoot,
+    "postman",
+    "environments",
     "production.example.postman_environment.json",
   ),
 ];

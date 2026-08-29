@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+import com.wayden.messenger.bootstrap.TestSqlSupport;
 import com.wayden.messenger.identity.application.IdentityExceptions;
 import com.wayden.messenger.identity.domain.Invitation;
 import com.wayden.messenger.identity.domain.InvitationId;
@@ -209,18 +210,7 @@ final class JdbcRepositoriesIntegrationTest {
 
   private static void migrateApplicationSchemas() {
     String jdbcUrl = jdbcUrl(SQL_SERVER.getHost(), SQL_SERVER.getMappedPort(1433), "wl_chat");
-    String location =
-        Path.of("scripts", "database", "flyway", "wl_chat").toAbsolutePath().toString();
-
-    Flyway.configure()
-        .dataSource(jdbcUrl, "sa", DB_PASSWORD)
-        .locations("filesystem:" + location)
-        .defaultSchema("platform")
-        .schemas("platform", "identity", "messaging", "audit")
-        .table("flyway_schema_history")
-        .placeholders(java.util.Map.of("app_login", APP_LOGIN, "app_password", APP_PASSWORD))
-        .load()
-        .migrate();
+    TestSqlSupport.migrateApplicationSchemas(jdbcUrl, "sa", DB_PASSWORD, APP_LOGIN, APP_PASSWORD);
   }
 
   private static void clearIdentityTables() {

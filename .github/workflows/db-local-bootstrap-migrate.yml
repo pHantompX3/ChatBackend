@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     services:
       sqlserver:
-        image: mcr.microsoft.com/mssql/server:2022-latest
+        image: mcr.microsoft.com/mssql/server:2022-latest@sha256:e07b9699a2b749969f19d86563ceeea22bd3a69f7f1db85a8d1ac4bdaf0c6f56
         env:
           ACCEPT_EULA: "Y"
           MSSQL_PID: "Developer"
-          MSSQL_SA_PASSWORD: "${{ secrets.WL_CHAT_SQL_SA_PASSWORD || 'StrongPassw0rd!' }}"
+          MSSQL_SA_PASSWORD: "${{ secrets.WL_CHAT_SQL_SA_PASSWORD || format('CiSqlSa!Run{0}Attempt{1}', github.run_id, github.run_attempt) }}"
         ports:
           - 1433:1433
         options: >-
@@ -24,23 +24,27 @@ jobs:
           --health-retries 30
 
     env:
-      SA_PASSWORD: ${{ secrets.WL_CHAT_SQL_SA_PASSWORD || 'StrongPassw0rd!' }}
-      APP_LOGIN: wl_chat_app
-      APP_PASSWORD: ${{ secrets.WL_CHAT_APP_PASSWORD || 'AppPassw0rd!' }}
+      SA_PASSWORD: ${{ secrets.WL_CHAT_SQL_SA_PASSWORD || format('CiSqlSa!Run{0}Attempt{1}', github.run_id, github.run_attempt) }}
+      WL_CHAT_DB_OPERATOR_PASSWORD: ${{ secrets.WL_CHAT_SQL_SA_PASSWORD || format('CiSqlSa!Run{0}Attempt{1}', github.run_id, github.run_attempt) }}
       WL_CHAT_DB_USERNAME: wl_chat_app
-      WL_CHAT_DB_PASSWORD: ${{ secrets.WL_CHAT_APP_PASSWORD || 'AppPassw0rd!' }}
+      WL_CHAT_DB_PASSWORD: ${{ secrets.WL_CHAT_APP_PASSWORD || format('CiSqlApp!Run{0}Attempt{1}', github.run_id, github.run_attempt) }}
+      WL_CHAT_MIGRATOR_USERNAME: messenger_migrator
+      WL_CHAT_MIGRATOR_PASSWORD: ${{ secrets.WL_CHAT_MIGRATOR_PASSWORD || format('CiMigrator!Run{0}Attempt{1}', github.run_id, github.run_attempt) }}
+      WL_CHAT_BACKUP_PASSWORD: ${{ secrets.WL_CHAT_BACKUP_PASSWORD || format('CiBackup!Run{0}Attempt{1}', github.run_id, github.run_attempt) }}
+      WL_CHAT_RESTORE_PASSWORD: ${{ secrets.WL_CHAT_RESTORE_PASSWORD || format('CiRestore!Run{0}Attempt{1}', github.run_id, github.run_attempt) }}
+      WL_CHAT_FLYWAY_IMAGE: flyway/flyway:10.17.3@sha256:c3f6c156dc928ac0e90c4328c0bf79441495b446231df8118c99cc05e2dd4404
       WL_CHAT_DB_URL: jdbc:sqlserver://localhost:1433;databaseName=wl_chat;encrypt=true;trustServerCertificate=true
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Validate Flyway migration naming
         shell: bash
         run: ./scripts/database/validate-flyway-naming.sh
 
       - name: Set up Java 25
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: "25"
@@ -50,11 +54,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          container_id=$(docker ps -q --filter ancestor=mcr.microsoft.com/mssql/server:2022-latest | head -n 1)
+          container_id="${{ job.services.sqlserver.id }}"
           if [[ -z "$container_id" ]]; then
             echo "SQL Server service container not found"
             exit 1
           fi
+          echo "WL_CHAT_SQLSERVER_CONTAINER=${container_id}" >> "$GITHUB_ENV"
 
           for i in {1..90}; do
             if docker exec "$container_id" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -Q "SELECT 1" >/dev/null 2>&1; then
@@ -69,45 +74,34 @@ jobs:
           docker logs "$container_id" || true
           exit 1
 
-      - name: Bootstrap wl_chat database
+      - name: Provision clean-install principals for immutable history
         run: |
-          docker run --rm --network host \
-            -v "$PWD/scripts/database/flyway/master:/flyway/sql" \
-            flyway/flyway:10.17.3 \
-            -url="jdbc:sqlserver://localhost:1433;databaseName=master;encrypt=true;trustServerCertificate=true" \
-            -user="sa" \
-            -password="${SA_PASSWORD}" \
-            -locations="filesystem:/flyway/sql" \
-            migrate
+          WL_CHAT_PRESERVE_RUNTIME_FIXED_ROLES=true ./scripts/database/provision-hardened-principals.sh
 
-      - name: Run Flyway migrations
+      - name: Migrate immutable baseline as migrator
         run: |
-          docker run --rm --network host \
-            -v "$PWD/scripts/database/flyway/wl_chat:/flyway/sql" \
-            flyway/flyway:10.17.3 \
-            -url="jdbc:sqlserver://localhost:1433;databaseName=wl_chat;encrypt=true;trustServerCertificate=true" \
-            -user="sa" \
-            -password="${SA_PASSWORD}" \
-            -locations="filesystem:/flyway/sql" \
-            -defaultSchema="platform" \
-            -schemas="platform,identity,messaging,audit" \
-            -table="flyway_schema_history" \
-            -placeholders.app_login="${APP_LOGIN}" \
-            -placeholders.app_password="${APP_PASSWORD}" \
-            migrate
+          WL_CHAT_FLYWAY_TARGET=20260814100000 \
+          WL_CHAT_MIGRATOR_DB_URL='jdbc:sqlserver://host.docker.internal:1433;databaseName=wl_chat;encrypt=true;trustServerCertificate=true' \
+          ./scripts/database/migrate-hardened.sh
+
+      - name: Remove runtime fixed roles and apply hardening migrations
+        run: |
+          WL_CHAT_PRESERVE_RUNTIME_FIXED_ROLES=false ./scripts/database/provision-hardened-principals.sh
+          WL_CHAT_MIGRATOR_DB_URL='jdbc:sqlserver://host.docker.internal:1433;databaseName=wl_chat;encrypt=true;trustServerCertificate=true' \
+          ./scripts/database/migrate-hardened.sh
 
       - name: Verify app login connectivity
         shell: bash
         run: |
           set -euo pipefail
-          container_id=$(docker ps -q --filter ancestor=mcr.microsoft.com/mssql/server:2022-latest | head -n 1)
-          docker exec "$container_id" /opt/mssql-tools18/bin/sqlcmd -S localhost -U "$APP_LOGIN" -P "$APP_PASSWORD" -C -d wl_chat -b -Q "SELECT DB_NAME() AS database_name, SUSER_SNAME() AS login_name;"
+          container_id="$WL_CHAT_SQLSERVER_CONTAINER"
+          docker exec "$container_id" /opt/mssql-tools18/bin/sqlcmd -S localhost -U "$WL_CHAT_DB_USERNAME" -P "$WL_CHAT_DB_PASSWORD" -C -d wl_chat -b -Q "SELECT DB_NAME() AS database_name, SUSER_SNAME() AS login_name;"
 
       - name: Verify logical schemas and Flyway history placement
         shell: bash
         run: |
           set -euo pipefail
-          container_id=$(docker ps -q --filter ancestor=mcr.microsoft.com/mssql/server:2022-latest | head -n 1)
+          container_id="$WL_CHAT_SQLSERVER_CONTAINER"
 
           schema_count=$(docker exec "$container_id" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -d wl_chat -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.schemas WHERE name IN ('platform','identity','messaging','audit');" | tr -d '\r' | xargs)
           if [[ "$schema_count" != "4" ]]; then
@@ -125,10 +119,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          container_id=$(docker ps -q --filter ancestor=mcr.microsoft.com/mssql/server:2022-latest | head -n 1)
+          container_id="$WL_CHAT_SQLSERVER_CONTAINER"
 
           set +e
-          docker exec "$container_id" /opt/mssql-tools18/bin/sqlcmd -S localhost -U "$APP_LOGIN" -P "$APP_PASSWORD" -C -d wl_chat -b -Q "CREATE TABLE dbo.__ci_forbidden (id INT NOT NULL);"
+          docker exec "$container_id" /opt/mssql-tools18/bin/sqlcmd -S localhost -U "$WL_CHAT_DB_USERNAME" -P "$WL_CHAT_DB_PASSWORD" -C -d wl_chat -b -Q "CREATE TABLE dbo.__ci_forbidden (id INT NOT NULL);"
           ddl_exit=$?
           set -e
 
