@@ -93,6 +93,15 @@ release tags begin when the project intentionally performs a production release 
 
 ### Changed
 
+- Updated the DevDocker bootstrap path to apply the immutable migration baseline, remove the
+  runtime principal's legacy fixed database roles as an operator action, and then apply the
+  least-privilege hardening migrations; this keeps Flow Smoke aligned with the hardened clean-install
+  sequence.
+- Disabled OWASP Dependency-Check's unauthenticated Sonatype OSS Index analyzer after that service
+  began rejecting anonymous component-report requests, while retaining the NVD-backed CVSS gate and
+  the separate SBOM, filesystem, image, and repository scans.
+- Replaced committed CI fallback passwords with run-scoped GitHub expression values so ephemeral
+  database and flow-test credentials are not mistaken for reusable secrets.
 - Added a least-capability, one-shot SQL Server volume initializer so fresh hardened named volumes are
   owned by the image's `10001:10001` account before the non-root database process starts. SQL Server's
   writable secrets directory is durable and initialized with the generated TLS identity so Service

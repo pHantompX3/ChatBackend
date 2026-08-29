@@ -32,9 +32,9 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 30
         env:
-            MSSQL_SA_PASSWORD: "FlowGate_SA_Passw0rd!"
-            WL_CHAT_DB_PASSWORD: "FlowGate_App_Passw0rd!"
-            WL_CHAT_QUEUE_PASSWORD: "FlowGate_Queue_Passw0rd!"
+            MSSQL_SA_PASSWORD: "CiFlowSa!Run${{ github.run_id }}Attempt${{ github.run_attempt }}"
+            WL_CHAT_DB_PASSWORD: "CiFlowApp!Run${{ github.run_id }}Attempt${{ github.run_attempt }}"
+            WL_CHAT_QUEUE_PASSWORD: "CiFlowQueue!Run${{ github.run_id }}Attempt${{ github.run_attempt }}"
             WL_CHAT_ENABLE_QUEUE: "false"
             WL_CHAT_AUDIT_RABBITMQ_ENABLED: "false"
             WL_CHAT_APP_PORT: "8081"

@@ -20,6 +20,7 @@ DB_PORT="${WL_CHAT_DB_PORT:-}"
 FLYWAY_NETWORK="${WL_CHAT_FLYWAY_DOCKER_NETWORK:-}"
 APP_LOGIN="${WL_CHAT_DB_USERNAME:-wl_chat_app}"
 APP_PASSWORD="${WL_CHAT_DB_PASSWORD:-}"
+FLYWAY_TARGET="${WL_CHAT_FLYWAY_TARGET:-}"
 
 if [[ -n "${CI:-}" ]]; then
   DB_HOST="${DB_HOST:-sqlserver-dev}"
@@ -62,17 +63,24 @@ if [[ -n "${FLYWAY_NETWORK}" ]]; then
   docker_run_args+=(--network "${FLYWAY_NETWORK}")
 fi
 
+flyway_args=(
+  -url="jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=wl_chat;encrypt=true;trustServerCertificate=true"
+  -user="sa"
+  -password="${SA_PASSWORD}"
+  -locations="filesystem:/flyway/sql"
+  -defaultSchema="platform"
+  -schemas="platform,identity,messaging,audit"
+  -table="flyway_schema_history"
+  -placeholders.app_login="${APP_LOGIN}"
+  -placeholders.app_password="${APP_PASSWORD}"
+)
+if [[ -n "${FLYWAY_TARGET}" ]]; then
+  flyway_args+=(-target="${FLYWAY_TARGET}")
+fi
+
 docker run "${docker_run_args[@]}" \
   flyway/flyway:10.17.3 \
-  -url="jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=wl_chat;encrypt=true;trustServerCertificate=true" \
-  -user="sa" \
-  -password="${SA_PASSWORD}" \
-  -locations="filesystem:/flyway/sql" \
-  -defaultSchema="platform" \
-  -schemas="platform,identity,messaging,audit" \
-  -table="flyway_schema_history" \
-  -placeholders.app_login="${APP_LOGIN}" \
-  -placeholders.app_password="${APP_PASSWORD}" \
+  "${flyway_args[@]}" \
   migrate
 
 echo "DevDocker migrations complete."
