@@ -33,14 +33,14 @@ Use the X1 and X2 guides for implementation-grade requirements and evidence.
 | Concern | Canonical implementation guide |
 |---|---|
 | Host, OS, storage, power, patching, and service lifecycle | X1 |
-| Private LAN/VPN ingress, firewall, DNS, TLS, and certificates | X1 |
+| Public edge ingress, firewall, DNS, TLS, and certificates | X1 |
 | Secrets, privileged identities, image promotion, migration, rollback | X1 |
 | SQL Server, RabbitMQ, backup, restore, incidents, initial capacity | X1 |
 | Monitoring workstation and third-party monitoring tools | X2 |
 | ChatMonitor project, SQL projection, collection, retention, dashboard | X2 |
 | Alerts, monitoring recovery, operational exercises, final acceptance | X2 |
 | Existing single-host architecture and rehearsal controls | ADR-0017 and Milestone 9 |
-| Owner-controlled client-access boundary | ADR-0018 |
+| Public authenticated edge and future enrolled-client boundary | ADR-0019 |
 | Client behavior and recovery responsibilities | Client Integration and Recovery Guide |
 
 When wording conflicts, accepted ADRs govern architecture decisions, executable operations runbooks
@@ -60,15 +60,16 @@ Requirement language is deliberate:
 1. Production remains a hardened single-host deployment unless evidence justifies a later ADR.
 2. The production machine and operator/development workstation will generally share the same private
    local network.
-3. Production client access is limited to owner-approved LAN, private-VPN, monitoring, and operator
-   paths under ADR-0018. ChatBackend is not an open public-client platform.
-4. Human user sessions remain the authentication principal. Network admission supplements rather
-   than replaces authentication and server-side authorization.
-5. Per-device mutual TLS is rejected. Server HTTPS/WSS and SQL certificate validation remain
-   mandatory.
-6. A sanctioned custom interface must operate through an admitted private path. A party needing
-   independent remote infrastructure operates a separate isolated ChatBackend deployment;
-   federation, shared identity/data, and public delegated authorization are not implied.
+3. Production exposes one public, authenticated HTTPS/WSS NGINX edge under ADR-0019 so remote native
+   mobile and web clients can operate without mandatory VPN enrollment.
+4. Human user sessions and server-side authorization are initially authoritative. X1 does not claim
+   to identify exact frontend software, and users must supply credentials only to clients they trust.
+5. NGINX, firewall, throttling, TLS, monitoring, and revocation reduce public-edge risk but do not
+   attest client binaries. ChatBackend, SQL Server, RabbitMQ, Docker control, and administrative
+   services remain private.
+6. IE-01 through IE-03 are official post-X requirements: native per-installation trust first,
+   mobile-authorized linked-browser protocol second, and the official web companion third. X1 must
+   not block them, but it does not implement or activate them.
 7. The monitoring workstation is the preferred home for dashboards and monitoring history so those
    records can survive production-host loss.
 8. Monitoring is never a runtime dependency of ChatBackend.
@@ -186,7 +187,8 @@ Milestone X does not introduce:
 - production database replication to the monitoring workstation;
 - monitoring writes to production application data;
 - public OAuth/delegated client registration or an open developer ecosystem;
-- per-device mutual TLS; or
+- implementation or mandatory enforcement of IE-01 through IE-03 native trust, linked-browser
+  protocol, or official web-companion capabilities; or
 - software licensing, pricing, or support terms for independent deployments.
 
 ## 9. Required sequence when resumed

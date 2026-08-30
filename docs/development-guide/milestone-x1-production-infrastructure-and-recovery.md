@@ -25,8 +25,8 @@ the [Milestone X umbrella guide](milestone-x-production-activation.md):
 
 1. production host hardware, physical location, operating system, patch owner, power protection,
    time synchronization, storage layout, and expected availability;
-2. trusted LAN and optional private-VPN topology, exact admitted subnets, firewall owner, remote-peer
-   onboarding/revocation, DNS owner, certificate issuer, and renewal owner;
+2. public Internet/router topology, ISP/CGNAT and inbound-port capability, firewall owner, DNS owner,
+   certificate issuer, renewal owner, and private administrative/monitoring sources;
 3. OCI registry, immutable image promotion policy, deployment approver, rollback owner, and protected
    evidence location;
 4. production SQL Server placement, edition/licence, storage, maintenance owner, and supported backup
@@ -36,14 +36,14 @@ the [Milestone X umbrella guide](milestone-x-production-activation.md):
 6. encrypted off-host backup destination, retention/immutability policy, recovery owner, RPO, and RTO;
 7. release workload model, capacity limits, maintenance window, and X1 acceptance owner.
 
-ADR-0017, ADR-0018, the Milestone 9 guide, threat model, and operations runbooks remain authoritative
+ADR-0017, ADR-0019, the Milestone 9 guide, threat model, and operations runbooks remain authoritative
 for their existing decisions. X1 must document environment-specific values without committing
 secrets, raw private topology, or production data.
 
 ## 3. Production Infrastructure and Recovery Workstreams
 
-1. Provision private application, SQL Server, and RabbitMQ networks with the HTTPS/WSS edge reachable
-   only from the owner-approved LAN, optional private-VPN, monitoring, and operator sources.
+1. Provision private application, SQL Server, and RabbitMQ networks with only the authenticated
+   HTTPS/WSS NGINX edge reachable from the Internet.
 2. Replace rehearsal certificates with trusted, automatically renewed certificates appropriate to
    the selected network exposure.
 3. Deliver runtime/operator credentials from the selected secret mechanism; keep them out of images,
@@ -163,7 +163,7 @@ Docker, firmware, or storage maintenance:
 The default single-host traffic model remains:
 
 ```text
-approved LAN or private-VPN client devices
+remote Internet and local client devices
         │ HTTPS/WSS :443
         ▼
 NGINX edge
@@ -179,7 +179,7 @@ operator workstation
         └── read-only SQL TLS ──> monitoring projection only
 ```
 
-Only NGINX publishes the client-facing HTTPS/WSS port to approved network sources. Port 80 may exist
+Only NGINX publishes the client-facing HTTPS/WSS port. Port 80 may exist
 only for an approved ACME challenge and/or redirect path; it must not expose ChatBackend directly.
 SQL Server, RabbitMQ AMQP,
 RabbitMQ management, ChatBackend's internal HTTP port, and container-engine control interfaces must
@@ -192,15 +192,14 @@ rule inventory:
 
 | Source | Destination | Service | Default disposition |
 |---|---|---|---|
-| Approved LAN and private-VPN client sources | NGINX | TCP 443 HTTPS/WSS | Allow |
-| General Internet or unapproved LAN/VPN sources | NGINX | TCP 443 HTTPS/WSS | Deny |
+| Internet and local client sources | NGINX | TCP 443 HTTPS/WSS | Allow through hardened edge policy |
+| Any source | ChatBackend direct port | internal HTTP/WSS | Deny |
 | Certificate authority, if HTTP-01 is selected | NGINX challenge handler | TCP 80 | Allow only as required |
 | Internet/unapproved LAN devices | SQL Server | TCP 1433 or selected port | Deny |
 | Internet/unapproved LAN devices | RabbitMQ AMQP/management | selected ports | Deny |
-| Internet/unapproved LAN devices | ChatBackend internal HTTP | selected port | Deny |
 | ChatBackend network/identity | SQL Server | SQL TLS | Allow |
 | ChatBackend network/identity | RabbitMQ | AMQP/TLS as selected | Allow |
-| Operator workstation fixed address/range | monitoring SQL projection | SQL TLS | Allow |
+| Operator workstation fixed address/range | monitoring SQL projection | SQL TLS | Allow privately |
 | Operator workstation | monitoring agent/API | selected private port | Allow |
 | Approved administrator address only | host administration | selected SSH/management path | Allow |
 | Any workload | Docker socket/API | engine control | Deny unless explicitly required |
@@ -212,31 +211,29 @@ prefer a private VPN-style path over publishing administrative services.
 
 #### 3.2.3 Accepted client-access model
 
-Production follows ADR-0018:
+Production follows ADR-0019:
 
-- **LAN access:** approved devices reach NGINX from the owner-controlled private subnet;
-- **optional private remote access:** individually approved peers or subnets reach NGINX through an
-  owner-controlled VPN/private path with stable internal addresses and explicit revocation; and
-- **no general Internet API ingress:** discovering the domain or address does not permit an arbitrary
-  Internet client to reach the authentication boundary.
+- **public remote access:** native mobile, web, and other compatible clients reach only the NGINX
+  HTTPS/WSS edge;
+- **private internals:** ChatBackend, SQL Server, RabbitMQ, administration, monitoring SQL, and Docker
+  control are not Internet-reachable;
+- **initial client trust:** normal user authentication and server-side authorization are
+  authoritative; the server does not attest exact client software; and
+- **future required hardening:** IE-01 adds native per-installation identity and gateway mTLS; IE-02
+  adds mobile-authorized browser pairing; IE-03 adds the official web companion after both backend
+  foundations are accepted.
 
-A custom client built by another person is sanctioned only after its runtime environment is admitted
-to one of those paths and any browser origin is explicitly allowed. If that person needs an
-independently Internet-accessible stack, they operate an isolated ChatBackend deployment rather than
-connecting an open client ecosystem to this one.
-
-Public/delegated client registration, OAuth-style grants, per-frontend scopes, refresh-token
-infrastructure, embedded frontend secrets, and per-device client certificates are not Milestone X
-work. A change to general public API ingress requires a new ADR, threat model, and authentication
-plan—not only a router change.
+NGINX must not treat Origin, CORS, user-agent, client labels, custom headers, or an embedded shared
+secret as client authentication. Public/delegated OAuth client registration remains outside X1.
 
 #### 3.2.4 Network acceptance evidence
 
-Retain sanitized port scans from approved internal and untrusted test positions, effective host and
-router firewall rules, Docker published-port inspection, DNS resolution, trusted proxy configuration,
-client-IP/trace forwarding checks, and proof that direct SQL/RabbitMQ/application access fails from
-unapproved sources. Evidence must not reveal reusable credentials or unnecessarily publish private
-topology.
+Retain sanitized port scans from Internet and LAN test positions, effective router and host firewall
+rules, Docker published-port inspection, DNS resolution, trusted proxy configuration,
+client-IP/trace forwarding checks, and proof that only NGINX TCP 443 is public while direct
+SQL/RabbitMQ/ChatBackend/administrative access fails. Exercise authentication throttling, bootstrap
+closure, session revocation, HTTP/WSS limits, and common malformed traffic through the public edge.
+Evidence must not reveal reusable credentials or unnecessarily publish private topology.
 
 ### 3.3 DNS and certificate-lifecycle contract
 
@@ -255,11 +252,10 @@ Record separately for the NGINX edge and SQL Server transport:
 | Renewal | Attempt interval, warning thresholds, reload behavior, and failure escalation |
 | Revocation | Compromise response, replacement, client trust update, and evidence |
 
-A publicly trusted server certificate obtained through DNS validation is preferred where the owner
-has an appropriate domain because it preserves normal client trust without installing a private CA or
-client certificate on every device. A private CA is acceptable only if existing client trust can be
-managed without violating the rejected per-device certificate burden. Rehearsal certificates
-generated by the repository are not production certificates.
+A publicly trusted server certificate is mandatory for the remote mobile production path. DNS-01 is
+preferred when inbound port 80 should remain closed; HTTP-01 may be used only with an explicitly
+bounded challenge path. A private/local CA and rehearsal certificates are insufficient for general
+remote clients.
 
 #### 3.3.2 Renewal and rotation sequence
 
@@ -279,10 +275,10 @@ alerts remain required at 30 and 14 days; an additional urgent seven-day alert i
 
 #### 3.3.3 Client and Postman implications
 
-Production Postman and future clients use `https://` and `wss://` endpoints through an approved
-LAN/private-VPN path and trust the selected server issuer. Do not distribute a server private key or
-private-key passphrase to clients. Browser HTTP and WebSocket origins must match the deployment
-allowlists. Origin checks harden browser access but do not replace network or user authorization.
+Production Postman and future clients use the public `https://` and `wss://` endpoints and trust
+the selected public issuer. Do not distribute a server private key or private-key passphrase to
+clients. Browser HTTP and WebSocket origins must match the deployment allowlists. Origin checks
+harden browsers but do not authenticate frontend software or replace user authorization.
 
 ### 3.4 Secret and privileged-identity lifecycle contract
 
@@ -688,7 +684,8 @@ X1 is complete only when:
 
 - the production host and private network boundary are provisioned and ownership is recorded;
 - HTTPS/WSS uses the selected trusted certificate path and renewal/rotation is exercised;
-- only approved LAN/private-VPN, monitoring, and operator sources can reach the edge;
+- only the hardened NGINX HTTPS/WSS edge is public, while internal and administrative services remain
+  unreachable from the Internet;
 - SQL Server and RabbitMQ remain private and least-privilege inventories match the hardened model;
 - secret delivery and rotation, immutable image promotion, migration-before-rollout, and
   schema-aware rollback are proven;

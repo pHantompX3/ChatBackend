@@ -17,10 +17,14 @@
 - Active app login: `wl_chat_app`
 - Audit transport: RabbitMQ-backed delivery is optional; if the audit transport is not configured, the app falls back to local async persistence and still boots cleanly
 - Original roadmap status: Milestones 0–9 complete; Milestone X production activation paused
-- Production client-ingress decision: owner-approved LAN/private-VPN paths only; no general Internet
-  client API, per-device client certificates, public delegated-client platform, or federation
+- Production client-ingress decision: public HTTPS/WSS through one hardened NGINX edge; user
+  authentication and server authorization are initially authoritative. The required post-X sequence
+  adds IE-01 native per-installation trust, IE-02 mobile-authorized linked-browser protocol support,
+  and IE-03 the official linked web companion
 - Post-roadmap enhancements: tracked as Evolution Tracks in
   `docs/platform-evolution-specification.md`
+- Post-production infrastructure requirements: tracked in
+  `docs/infrastructure-evolution-specification.md`
 
 ## Environment Model
 
@@ -41,8 +45,9 @@ This repository currently standardizes three environments:
 
 - Milestone 9 rehearsal: one NGINX HTTPS/WSS edge in front of one private ChatBackend instance, SQL
   Server, and RabbitMQ using `deploy/compose.hardened.yaml`
-- Milestone X target restricts that edge to approved LAN/private-VPN, monitoring, and operator sources
-  under `docs/architecture/decision/ADR-0018-restrict-client-access-to-owner-controlled-networks.md`
+- Milestone X targets a public, authenticated HTTPS/WSS edge under
+  `docs/architecture/decision/ADR-0019-public-authenticated-edge-and-future-enrolled-client-trust.md`;
+  ChatBackend, SQL Server, RabbitMQ, administration, and Docker control remain private
 - Apache APISIX remains an optional later replacement if multi-service gateway or load-balancing needs
   justify it through a later architecture decision
 - Deployment automation is intentionally deferred until a persistent remote environment exists
@@ -529,8 +534,10 @@ production-activation prerequisites and are not claimed.
 - Milestone 9 single-instance hardening decision and threat model:
   - `docs/architecture/decision/ADR-0017-harden-single-instance-deployment.md`
   - `docs/security/threat-model.md`
-- Trusted-network client access and isolated-deployment decision:
+- Superseded trusted-network client-access decision:
   - `docs/architecture/decision/ADR-0018-restrict-client-access-to-owner-controlled-networks.md`
+- Public authenticated edge and future enrolled-client decision:
+  - `docs/architecture/decision/ADR-0019-public-authenticated-edge-and-future-enrolled-client-trust.md`
 - Deferred production activation program (Milestone X):
   - umbrella scope and shared decisions:
     `docs/development-guide/milestone-x-production-activation.md`
@@ -550,6 +557,8 @@ production-activation prerequisites and are not claimed.
   - `docs/private-instant-messaging-platform-spec-v0.2-sql-server.md`
 - Platform evolution specification and Evolution Track register:
   - `docs/platform-evolution-specification.md`
+- Infrastructure evolution specification and IE Track register:
+  - `docs/infrastructure-evolution-specification.md`
 - Platform Evolution product and customer-experience audit outcome:
   - `docs/audit/platform-evolution-product-and-customer-experience-audit-2026-08-29.md`
 - Environment lifecycle and rollout plan:

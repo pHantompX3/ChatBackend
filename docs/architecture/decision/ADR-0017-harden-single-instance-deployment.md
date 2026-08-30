@@ -117,12 +117,14 @@ Revisit this decision when the platform needs multiple backend instances, a fron
 multi-service gateway policies, cross-host deployment, or a production environment whose managed
 services replace repository-owned NGINX, SQL Server, or RabbitMQ responsibilities.
 
-## Follow-on client-ingress decision
+## Follow-on client-ingress decisions
 
-[ADR-0018](ADR-0018-restrict-client-access-to-owner-controlled-networks.md) narrows the production
-edge to owner-approved LAN/private-VPN, monitoring, and operator sources. References in this ADR to a
-“public” hardened profile describe Internet-grade transport and proxy hardening; they do not authorize
-general Internet clients, public delegated-client registration, or per-device client certificates.
+ADR-0018 previously narrowed production to owner-controlled networks. It is superseded by
+[ADR-0019](ADR-0019-public-authenticated-edge-and-future-enrolled-client-trust.md), which authorizes
+one public authenticated NGINX HTTPS/WSS edge for remote mobile/web use while keeping all internal
+services private. The required post-X Infrastructure Evolution sequence adds native
+per-installation trust in IE-01, mobile-authorized linked-browser protocol support in IE-02, and the
+official linked web companion in IE-03.
 
 ## References
 
@@ -133,3 +135,4 @@ general Internet clients, public delegated-client registration, or per-device cl
 - [ADR-0015](ADR-0015-harden-http-contracts-and-authentication-throttling.md)
 - [ADR-0016](ADR-0016-use-websockets-next-for-realtime-signaling.md)
 - [ADR-0018](ADR-0018-restrict-client-access-to-owner-controlled-networks.md)
+- [ADR-0019](ADR-0019-public-authenticated-edge-and-future-enrolled-client-trust.md)

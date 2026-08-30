@@ -1,10 +1,15 @@
 # ADR-0018: Restrict Client Access to Owner-Controlled Networks
 
-- Status: Accepted
+- Status: Superseded by
+  [ADR-0019](ADR-0019-public-authenticated-edge-and-future-enrolled-client-trust.md)
 - Date: 2026-08-30
 - Decision owners: Project owner
 
 ## Context
+
+> Historical decision: this ADR records the previously accepted LAN/private-VPN model. The
+> mobile-heavy remote-access requirement now makes the public authenticated edge in ADR-0019
+> authoritative. Do not use this ADR as current production ingress policy.
 
 ChatBackend is a private, personal messaging platform. A user is the authenticated principal; a web,
 mobile, or desktop frontend is normally only an interface acting for that user. Browser and native

@@ -20,13 +20,13 @@ operator credentials, and backup/restore tooling.
 ## 2. Data flow and trust boundaries
 
 ```text
-Unapproved network source
-  | host firewall / private-network admission
-  v
-Approved LAN or private-VPN client
+Internet or local client
   | HTTPS / WSS
   v
-NGINX edge
+Router / host firewall
+  | public TCP 443 only
+  v
+NGINX public edge
   | private HTTP / WebSocket upgrade
   v
 ChatBackend runtime
@@ -41,7 +41,7 @@ CI/build boundary -> immutable image/SBOM/scans -> protected deployment environm
 Backup operator -> encrypted backup -> isolated restore / future off-host storage
 ```
 
-Trust boundaries exist at private-network admission, client/NGINX, NGINX/ChatBackend, ChatBackend/SQL Server,
+Trust boundaries exist at the Internet/router/firewall, client/NGINX, NGINX/ChatBackend, ChatBackend/SQL Server,
 ChatBackend/RabbitMQ, CI/deployment, operator/secrets, and backup/restore storage.
 
 ## 3. Entry points and privileged actors
@@ -76,10 +76,12 @@ ChatBackend and RabbitMQ runtime users are not privileged operators.
 | T16 | Information disclosure | Error/audit diagnostics expose message content or credentials | Safe client problems, bounded diagnostic fields, query/header/body redaction, access control and retention | Backend/Operations | Verified with privacy sentinels and scans |
 | T17 | DoS | One slow/failing socket delays recipients or request completion | Existing independent asynchronous fan-out; bounded connection limits; REST recovery remains authoritative | Backend | Implemented |
 | T18 | Repudiation | Missed/duplicated/reordered socket frame produces incorrect client state | Client idempotency/gap detection and REST reconciliation; canonical client guide and transport tests | Client/Backend | Implemented contract |
-| T19 | Spoofing/Information disclosure | Arbitrary Internet or unapproved LAN client reaches the authentication boundary, presents a phishing interface, or captures user credentials/data | ADR-0018 trusted-network ingress; host firewall plus tested NGINX source allowlist; ordinary user authentication remains mandatory | Operations/Backend | Production evidence pending |
-| T20 | Elevation/Information disclosure | A sanctioned custom interface is treated as cryptographically trusted merely because it supplies an Origin, client label, or custom header | Record Origin/CORS as browser hardening only; derive user from session; retain role/membership/resource authorization; document honest enforcement limit | Backend/Client | Accepted architecture boundary |
-| T21 | Spoofing | Stolen or orphaned VPN/private-path configuration continues reaching the API | Per-peer/source onboarding inventory, stable private address, least network reach, explicit revocation and periodic review | Operations | Selection and production evidence pending |
+| T19 | Spoofing/Information disclosure | Public client presents a phishing interface, captures credentials/content, or imitates an owner-built client | ADR-0019 honest client boundary; user guidance; TLS; secure token handling; session/account revocation; no official-client attestation claim before IE-01 | Operations/Backend/Client | Accepted initial residual risk; production evidence pending |
+| T20 | Elevation/Information disclosure | A client is treated as trusted merely because it supplies an Origin, client label, user-agent, custom header, or embedded shared secret | Treat those values as browser/diagnostic metadata only; derive user from session; enforce role/membership/resource authorization; prohibit shared private application secrets | Backend/Client | Accepted architecture boundary |
+| T21 | DoS/Spoofing | Internet scanning, credential guessing, malformed traffic, or connection floods exhaust or compromise the public edge | Public trusted TLS; router/host exposure limited to NGINX 443; login throttling; edge request/connection/body/frame/time limits; patching, monitoring, revocation, incident tests | Operations/Backend | Production evidence pending |
 | T22 | Information disclosure | A separately operated deployment is mistaken for a federated/shared instance and receives this deployment's users, secrets, backups, or data | Isolated deployment boundary; no federation/multi-tenancy; independent credentials/data/operations; licensing handled separately | Product/Operations | Accepted architecture boundary |
+| T23 | Spoofing/DoS | Future native certificate, issuer, installation key, or server pin is stolen, expires, cannot rotate, or locks out legitimate clients | IE-01 distinct non-exportable installation keys where supported; issuance/revocation/rotation; CA/pin recovery; staged native enforcement and rollback | Infrastructure/Client/Operations | Required post-X track; not implemented |
+| T24 | Spoofing/Information disclosure | Browser pairing is replayed, approved for the wrong key/user, phished, or represented as proof of exact website code | IE-02 mobile-signed single-use bounded pairing and browser proof-of-possession; IE-03 official-domain, supply-chain, CSP/XSS, revocation, and user-confirmation controls | Infrastructure/Client/Backend | Required post-X tracks; not implemented |
 
 ## 5. Required security verification
 
@@ -97,9 +99,11 @@ critical residual risk. At minimum:
 9. exercise request/socket limits and load regression without durable-state corruption;
 10. inspect running containers for privileged credentials, root UID, unexpected writable paths, and
     published ports;
-11. prove unapproved Internet and LAN sources cannot reach HTTPS/WSS while approved LAN and optional
-    private-VPN peers can authenticate and recover durable state; and
-12. revoke one sanctioned custom-client network path and prove unrelated clients remain available.
+11. prove that only NGINX TCP 443 is Internet-reachable and that ChatBackend, SQL Server, RabbitMQ,
+    administration, monitoring SQL, and Docker control cannot be reached directly;
+12. exercise Internet-origin login throttling, bootstrap closure, malformed/oversized requests,
+    HTTP/WSS connection limits, session revocation, and durable recovery; and
+13. verify public certificate trust and expiry/renewal through representative remote clients.
 
 ## 6. Residual risks and production activation
 
@@ -108,10 +112,15 @@ select an off-host backup service, prove alert delivery, establish a production 
 production SLA. These are explicit production-activation prerequisites rather than reasons to weaken
 repository-owned controls.
 
-ADR-0018 narrows production client ingress to owner-approved LAN/private-VPN paths. Public API access,
-open delegated-client registration, per-device mutual TLS, federation, and shared data between
-independent deployments are not accepted production assumptions. Reopening any of them requires a
-new threat-model review and ADR.
+ADR-0019 accepts public HTTPS/WSS access while keeping every internal service private. The initial
+server authenticates users and does not attest exact frontend software. The stakeholder accepts the
+residual risk that a user-selected malicious client can compromise that user's credentials and
+accessible content; server-side authentication, authorization, throttling, revocation, monitoring,
+and incident response remain mandatory.
+
+IE-01 through IE-03 are required post-X Infrastructure Evolution Tracks for native installation
+trust, the mobile-authorized linked-browser protocol, and the official web companion. They are not
+implemented and must not be represented as current production controls.
 
 Any accepted high/critical residual risk must identify the accepting owner, date, rationale, review
 date, affected environment, and compensating control. Silence or a passing-but-skipped CI job is not

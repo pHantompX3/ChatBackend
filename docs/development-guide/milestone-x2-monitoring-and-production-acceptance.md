@@ -795,12 +795,14 @@ X2 and the parent Milestone X program are complete only when:
 - the primary stakeholder records the deliberate production approval and `1.0.0` release decision.
 
 Passing X2 means the monitored production candidate has been operationally validated and accepted for
-normal use. It does not turn the personal deployment into a public service or promise an external SLA.
+normal use. Public network reachability does not turn the personal deployment into a commercial/open
+service or promise an external SLA.
 
 ## 12. Non-goals
 
 X2 does not introduce multi-tenancy, end-to-end encryption, multi-instance realtime distribution,
 new messaging features, enterprise analytics, invasive user-behavior tracking, a mandatory cloud
 monitoring dependency, speculative distributed tracing, production database replication, monitoring
-writes to production application data, public delegated client registration, per-device mTLS,
+writes to production application data, public delegated client registration, implementation of
+IE-01 through IE-03 native trust, linked-browser protocol, or official web-companion capabilities,
 federation, or licensing terms for independently operated deployments.

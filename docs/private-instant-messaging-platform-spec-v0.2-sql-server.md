@@ -1843,13 +1843,14 @@ recoverable production candidate, and X2
 (`milestone-x2-monitoring-and-production-acceptance.md`) adds monitoring, operational validation,
 and the deliberate production/`1.0.0` decision. It does not add new messaging-domain behavior or
 reopen Milestone 9. Its scope begins only after a target environment and accountable owners are
-selected. ADR-0018 narrows production client ingress to owner-approved LAN/private-VPN paths and
-keeps independently operated deployments isolated.
+selected. ADR-0019 authorizes one public authenticated HTTPS/WSS edge for remote clients while
+keeping ChatBackend, SQL Server, RabbitMQ, administration, and Docker control private. IE-01 records
+the required post-X enrolled-client/device trust capability.
 
 Deliver:
 
-- provisioned production hosting, domain/DNS, trusted LAN/private-VPN ingress, firewall, peer
-  onboarding/revocation, and patch ownership
+- provisioned production hosting, public domain/DNS, router and firewall ingress exposing only NGINX
+  HTTPS/WSS, and patch ownership
 - publicly trusted HTTPS/WSS certificates with automated renewal
 - managed secret delivery and immutable image promotion
 - encrypted off-host backup scheduling, retention, retrieval, and restore evidence

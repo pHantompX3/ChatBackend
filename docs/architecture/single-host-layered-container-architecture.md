@@ -8,8 +8,8 @@
 **Repository:** `pHantompX3/ChatBackend`  
 **Current implementation baseline:** Milestone 9 repository implementation and local hardened
 deployment/recovery rehearsal complete
-**Primary deployment model:** One owner-controlled x86-64 Linux host running Docker Compose with
-client ingress restricted to approved LAN/private-VPN paths
+**Primary deployment model:** One owner-controlled host running Docker Compose with one public,
+authenticated HTTPS/WSS edge and private application/data/control services
 **Architecture purpose:** Production-oriented technical learning environment, not performance-driven scaling
 
 ---
@@ -50,12 +50,13 @@ increment. The executable Milestone 9 scope is defined by
 
 ### Current client-ingress decision
 
-ADR-0018 supersedes this document's earlier use of “public edge,” “Internet client,” and “public
-application port” for the current personal deployment. Read those terms as the **client-facing NGINX
-trust boundary**, reachable only from owner-approved LAN/private-VPN, monitoring, and operator paths.
-General Internet API ingress, public delegated-client registration, per-device mutual TLS, and
-federation are not part of the accepted target. The layered/multi-instance learning topology remains
-future design context but does not reopen the client-ingress decision.
+ADR-0019 supersedes ADR-0018 and restores the literal meaning of “public edge” for remote mobile and
+web use. Only NGINX HTTPS/WSS is public. ChatBackend, SQL Server, RabbitMQ, administration,
+monitoring SQL, and Docker control remain private. User authentication and server authorization are
+initially authoritative. The required post-X sequence adds native per-installation trust in IE-01,
+mobile-authorized linked-browser protocol support in IE-02, and the official web companion in IE-03.
+A generic pass-through BFF is not required. The layered/multi-instance learning topology remains
+future design context.
 
 This document is intended to be stored at:
 
@@ -104,7 +105,7 @@ The target production architecture shall use:
 
 - one physical x86-64 Linux device;
 - Docker Engine and Docker Compose;
-- one client-facing, source-restricted edge NGINX instance;
+- one public, authenticated edge NGINX instance;
 - two frontend/midlayer instances;
 - one internal API NGINX instance;
 - two Quarkus backend instances;
@@ -129,8 +130,9 @@ Client
   -> Shared SQL Server instance
 ```
 
-Only the edge NGINX instance shall publish client-facing application ports, and the host
-firewall/NGINX shall restrict those ports to ADR-0018-approved network sources.
+Only the edge NGINX instance shall publish client-facing application ports. The router and host
+firewall shall expose only required HTTPS/WSS traffic; every backend/data/control port remains
+private under ADR-0019.
 
 The database shall not be load balanced. Both backend instances shall use the same SQL Server database and the same logical application schema.
 
@@ -266,7 +268,7 @@ The direct edge-to-internal-proxy route is transitional. It shall not be interpr
 
 ```mermaid
 flowchart TB
-    Clients((Approved LAN / private-VPN clients))
+    Clients((Internet and local clients))
 
     subgraph Host[Single x86-64 Linux Host]
         Edge[Edge NGINX\nTLS and trusted client routing]
@@ -327,8 +329,7 @@ The duplicate application instances therefore provide application-process resili
 
 ## 7.1 Edge NGINX
 
-The edge NGINX instance is the only client-facing application ingress and is source-restricted under
-ADR-0018.
+The edge NGINX instance is the only public client-facing application ingress under ADR-0019.
 
 ### Responsibilities
 
@@ -550,7 +551,8 @@ The intended membership is:
 
 ## 8.2 Isolation rules
 
-- Only edge NGINX shall publish client-facing application ports, restricted to approved sources.
+- Only edge NGINX shall publish client-facing application ports; every backend, data, control, and
+  administrative service remains private.
 - Frontend/midlayer instances shall not join the database network.
 - Edge NGINX shall not join the backend or database network.
 - Internal API NGINX shall not join the database network.
@@ -2224,13 +2226,13 @@ Scope:
 - HTTP-to-HTTPS redirect;
 - edge request ID generation;
 - security headers and request limits;
-- approved LAN/private-VPN path check and optional external VPN-endpoint heartbeat.
+- public HTTPS/WSS path check and optional independent external heartbeat.
 
 During backend-only development, edge NGINX may route API traffic directly to internal API NGINX.
 
 Exit criteria:
 
-- only the NGINX client-facing/challenge ports are published and source-restricted;
+- only the NGINX client-facing/challenge ports are published;
 - operational endpoints are not public;
 - client TLS is valid;
 - forwarding headers are normalized;

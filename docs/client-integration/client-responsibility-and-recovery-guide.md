@@ -15,8 +15,9 @@ endpoint is a low-latency, best-effort signal and has no durable per-client fram
 or frame-delivery acknowledgement. A correct client must therefore work while the socket is delayed,
 disconnected, duplicated, reordered, or missing an event.
 
-This guide supplements the generated OpenAPI contract, ADR-0014, ADR-0016, and the trusted-network
-client-access policy in ADR-0018. It does not redefine endpoint schemas or authorization policy.
+This guide supplements the generated OpenAPI contract, ADR-0014, ADR-0016, the public-edge decision
+in ADR-0019, and the future IE-01 through IE-03 client-trust sequence. It does not redefine endpoint
+schemas or authorization policy.
 
 ### 1.1 Maintenance cycle
 
@@ -25,16 +26,19 @@ This guide is a living, release-controlled contract rather than a one-time clien
 - During implementation, investigation, testing, review, or incident analysis, record every verified
   new client-facing responsibility, recovery rule, UX implication, transport limitation, security
   consideration, or backend capability gap here in the same change set that establishes the learning.
-- Do not defer a known learning solely because the current milestone or Evolution Track does not
+- Do not defer a known learning solely because the current milestone, Platform Evolution Track, or
+  Infrastructure Evolution Track does not
   build a client. If the learning is tentative, label it as an open question instead of presenting it
   as implemented fact.
-- Before declaring any milestone or Evolution Track complete, audit its code, migrations,
+- Before declaring any milestone, Platform Evolution Track, or Infrastructure Evolution Track
+  complete, audit its code, migrations,
   API/OpenAPI changes, WebSocket behavior, ADRs, development guide, tests, and operational findings
   against this guide.
 - Update affected responsibility tables, workflows, acceptance checks, limitations, and canonical
   references. Remove or revise superseded workarounds when the backend gains a stronger contract.
 - Add a corresponding `CHANGELOG.md` entry when the review produces a notable addition or correction.
-- A milestone or Evolution Track is not documentation-complete until this review has been performed
+- A milestone or either type of Evolution Track is not documentation-complete until this review has
+  been performed
   and either the guide is updated or the completion report explicitly states that no client-facing
   responsibilities or recovery behavior changed.
 
@@ -42,7 +46,7 @@ This guide is a living, release-controlled contract rather than a one-time clien
 
 | Concern | Backend guarantee | Client responsibility |
 | --- | --- | --- |
-| Network admission | The Milestone X production contract requires the edge to accept client traffic only from owner-approved LAN, private-VPN, or equivalent private paths; Local/DevDocker do not prove that production control. Network admission does not replace user authentication. | Operate from an approved path, treat loss/revocation of that path as offline state, and never assume LAN/VPN presence grants messaging authority. |
+| Public edge and client trust | Milestone X exposes only the authenticated NGINX HTTPS/WSS edge; internal services remain private. Until IE-01 enforcement, the backend authenticates users but does not attest exact client software. IE-02 later supplies a mobile-authorized linked-browser protocol, and IE-03 supplies its official web consumer. | Validate trusted server TLS, use only a client the user trusts, protect credentials/tokens, and never represent Origin, CORS, a client label, or browser pairing as proof of exact client source code. |
 | Durable state | Committed messages, tombstones, memberships, sessions, and per-user delivery/read cursors live in SQL Server. | Treat successful REST responses and later REST reads as authoritative; never make socket receipt the only copy of state. |
 | Real-time signals | Post-commit events are attempted for every currently connected active member. | Expect missed, duplicated, delayed, and potentially reordered events; merge them idempotently. |
 | Frame failure | A failed socket send is logged, then discarded. | Reconcile through REST after reconnect, detected gaps, app resume, and suspicious state. |
@@ -81,24 +85,25 @@ backend tracks receipts per user, not per device, and does not expose receipt ti
 
 ## 4. Authentication and Connection Lifecycle
 
-### 4.1 Trusted-network and custom-client boundary
+### 4.1 Public-edge and client-software boundary
 
-The accepted production deployment is not an open Internet client platform. Before attempting login,
-a client must be on the owner-approved LAN, an approved private-VPN peer/subnet, or another explicitly
-documented private path. A connection failure outside that boundary is not necessarily an application
-outage or invalid user credential.
+The Milestone X production edge is publicly reachable for remote mobile and web use. Public
+reachability grants no user authority: every protected operation still requires a valid session and
+server-side role, membership, and resource authorization.
 
-A custom interface built by someone other than the deployment owner may connect only after its
-runtime environment is admitted to that private boundary and, for browsers, its exact HTTP and
-WebSocket origins are approved. CORS, Origin, `User-Agent`, client names, and custom headers do not
-authenticate the frontend. Once network admission and user authentication succeed, the backend still
-cannot attest the exact client source code; normal role, membership, and resource authorization remain
-the safety boundary.
+Before IE-01 is implemented and enforced, the backend cannot attest exact client source code. CORS,
+Origin, `User-Agent`, client names, custom headers, and static secrets embedded in distributed
+applications are not frontend authentication. Users must enter credentials only into clients they
+trust. A malicious client can capture credentials, responses, and content available to that user and
+can act as the user until the session or account is contained.
 
-Clients must not embed a shared deployment secret. Per-device client certificates, public delegated
-client registration, and OAuth-style frontend scopes are not supported. Someone needing an
-independently reachable custom stack operates a separate isolated ChatBackend deployment; accounts,
-sessions, conversations, messages, and realtime signals do not cross deployments.
+Clients must not claim that the server has certified them as official. The operator must provide
+session/account revocation and compromise guidance. The required future sequence adds distinct
+per-installation native keys/certificates and gateway mTLS in IE-01, a mobile-authorized
+linked-browser protocol in IE-02, and the official linked web companion in IE-03. It supplements
+rather than replaces user authentication and does not embed one shared private certificate in
+distributed applications. No supported official browser application is promised before IE-03, and
+a generic pass-through BFF is not required by this design.
 
 ### 4.2 Login and token handling
 

@@ -2,9 +2,9 @@
 
 ## Product Strategy, Enhancement Specification, Track Register, and Planning Standard
 
-**Document version:** 0.2
+**Document version:** 0.3
 **Status:** Authoritative post-Milestone enhancement roadmap
-**Last reviewed:** 2026-08-29
+**Last reviewed:** 2026-08-30
 **Applies after:** Completed Milestones 0–9
 **Production boundary:** Milestone X remains the separate, paused production-activation program
 **Product audit basis:**
@@ -109,25 +109,26 @@ language, and processing state where appropriate.
 
 Capabilities and recovery rules should behave consistently across compatible client implementations.
 Clients should discover supported capabilities and limits instead of relying on hard-coded platform
-assumptions. Under ADR-0018, “compatible” also means the client operates through an owner-approved
-LAN/private-VPN path; it does not imply an open public-client ecosystem.
+assumptions. Under ADR-0019, the initial public edge authenticates users rather than attesting client
+software. The separate Infrastructure Evolution sequence owns native trust in IE-01, browser-pairing
+protocol support in IE-02, and the official web companion in IE-03.
 
 ### 3.8 Self-hostable and proportionate
 
 The complete core experience must remain practical to operate, back up, restore, and understand on
 the intended single host.
 
-### 3.9 Owner-controlled access and deployment independence
+### 3.9 Public access, client trust, and deployment independence
 
-Enhancements must preserve the trusted-network client boundary in ADR-0018 unless a later approved
-ADR deliberately replaces it. A sanctioned custom interface may use an existing deployment only from
-an owner-admitted private path. A party requiring independent remote infrastructure operates an
-isolated ChatBackend deployment with its own identity, data, secrets, recovery, and operations.
+Enhancements must preserve ADR-0019's public authenticated edge and private internal-service
+boundary. They must not infer frontend authenticity from spoofable metadata or shared embedded
+secrets. The Infrastructure Evolution specification owns the required future native trust,
+linked-browser protocol, and official web-companion work in IE-01 through IE-03. Platform tracks must
+cross-reference those boundaries rather than duplicate their security protocols or client delivery.
 
-Do not infer federation, cross-deployment messaging, public delegated-client registration, frontend
-attestation, or shared administrative authority. Per-device mutual TLS is rejected for the current
-personal-use model, and a frontend is not a non-human service client merely because its presentation
-differs from the owner's interface.
+Do not infer federation, cross-deployment messaging, public delegated-client registration, or shared
+administrative authority. Independently operated deployments retain separate identity, data, secrets,
+recovery, and operations.
 
 ---
 
@@ -147,8 +148,9 @@ ADR:
 7. Forward-only Flyway migrations preserve already-applied database history.
 8. RabbitMQ supports asynchronous processing and audit delivery but is not authoritative storage for
    messages or media.
-9. Production client access is owner-controlled at both the private-network and user-authorization
-   boundaries; independently operated deployments remain isolated.
+9. Production exposes only the hardened HTTPS/WSS edge; user authentication and authorization are
+   initially authoritative, IE-01 through IE-03 own future native and linked-browser trust, and
+   independently operated deployments remain isolated.
 10. The application remains a modular monolith unless a demonstrated need justifies another boundary.
 11. The hardened single-host model and least-privilege principals remain the deployment baseline.
 12. Durable files are included in backup, restore, retention, and capacity planning alongside SQL
@@ -401,7 +403,7 @@ approval.
 | 12 | ET-17 Data Portability | Candidate | 3 | 3 | 2–4 weeks | Low | Media lifecycle if files included |
 | 13 | ET-15 Structured Group Tools | Candidate | 3 | 3 | 2–4 weeks | Low | ET-04 relationship patterns |
 | 14 | ET-14 Message Retention and Ephemeral Content | Candidate | 3 | 4 | 3–6 weeks | Low | ET-01 and ET-02 where applicable |
-| 15 | ET-16 Session and Device Visibility | Candidate | 2–3 | 2 | 1–2 weeks | Medium | Session audit |
+| 15 | ET-16 Session and Device Visibility | Candidate | 2–3 | 2 | 1–2 weeks | Medium | Session audit; coordinate IE-01/IE-02 |
 | 16 | ET-07 Self-Hosted Live Calling | Candidate | 4 | 5 | 4–8+ weeks | Low | Authenticated realtime baseline |
 | 17 | ET-D1 Advanced Content Encryption | Deferred | 2 currently | 5 | Extended | Medium | Changed trust model |
 | — | ET-09 Targeted Performance Track | Superseded | — | — | — | — | Replaced by QW-01 |
@@ -749,15 +751,23 @@ already obtained content.
 **Intended beneficiary:** Users understanding and controlling authenticated access
 **Principles:** Trustworthy, understandable, calm and controllable
 **Preliminary assessment:** Value 2–3; effort 2; 1–2 weeks; medium confidence
-**Dependencies:** Current session model audit
+**Dependencies:** Current session model audit; coordinate with IE-01 native enrollment and IE-02
+linked-browser lifecycle
 **Last reviewed:** 2026-08-29
 **Stakeholder decision:** Not selected
 
 **Candidate scope:** Self-service listing and revocation of the current user's sessions, privacy-safe
 session labels or last-used facts, and clear behavior when the active session is revoked.
 
-**Non-goals:** Per-device encryption identity, device-specific message receipts, device management
-frameworks, or precise location tracking.
+**Ownership boundary:** ET-16 owns generalized user-facing session/device visibility semantics.
+IE-01 owns cryptographic native-installation enrollment and IE-02 owns linked-browser pairing and
+lifecycle. If ET-16 ships first, its data and API design must leave compatible extension points for
+those later credential types; it is not a mirrored consumer track for IE-02. IE-03 is the official
+client-side consumer deliverable for the IE-02 protocol.
+
+**Non-goals:** Implementing IE-01 certificate issuance, IE-02 pairing, or IE-03's web client;
+device-specific message receipts; a generic device-management framework; or precise location
+tracking.
 
 ### ET-07 — Self-Hosted Live Calling
 

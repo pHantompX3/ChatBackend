@@ -17,6 +17,14 @@ release tags begin when the project intentionally performs a production release 
 
 ### Added
 
+- Added the canonical Infrastructure Evolution specification and declared three ordered post-X
+  requirements: IE-01 Native Client Trust Foundation, IE-02 Mobile-Authorized Linked-Browser
+  Protocol, and IE-03 Official Linked Web Companion. The sequence covers distinct native-installation
+  keys/certificates, gateway mTLS, server pinning, enrollment, revocation, mobile-approved browser-key
+  pairing, proof of possession, and the eventual official site without requiring a pass-through BFF.
+- Added ADR-0019, accepting one public authenticated HTTPS/WSS production edge for mobile-heavy
+  remote use while keeping all backend, data, control, monitoring, and administrative services
+  private.
 - Added the dated Platform Evolution product and customer-experience audit outcome, preserving the
   repository-backed findings, contemporary capability comparison, value/effort/time assessment,
   recommended delivery waves, and stakeholder decision model that informed roadmap version 0.2.
@@ -107,11 +115,16 @@ release tags begin when the project intentionally performs a production release 
 
 ### Changed
 
+- Superseded ADR-0018's LAN/private-VPN-only ingress decision; reconciled Milestone X/X1/X2, the threat
+  model, deployment architecture, operations strategy, platform roadmap, client responsibility
+  contract, system specification, README, and synchronized agent routing with the public-edge
+  baseline and required future IE-01 through IE-03 client-trust and linked-browser capabilities.
 - Split the deferred Milestone X production-activation program into an authoritative umbrella plus
   two independently reviewable implementation guides: X1 owns production infrastructure and
   recovery through a secure production-candidate handoff, while X2 owns monitoring, ChatMonitor,
   operational validation, and the final `1.0.0` production decision.
-- Accepted ADR-0018: production client ingress is restricted to owner-approved LAN/private-VPN paths;
+- Recorded ADR-0018's now-superseded decision that production client ingress was restricted to
+  owner-approved LAN/private-VPN paths;
   sanctioned custom interfaces require explicit private-network and browser-origin onboarding;
   per-device client certificates and a public delegated-client/OAuth platform are rejected for the
   current personal deployment; and independently operated instances remain isolated pending separate
