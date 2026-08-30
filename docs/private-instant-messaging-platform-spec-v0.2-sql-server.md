@@ -3,13 +3,17 @@
 ## System Specification, Development Plan, and Coding Guide
 
 **Document version:** 0.2  
-**Status:** Draft baseline  
+**Status:** Implemented baseline through Milestone 9; Milestone X deferred
 **Date:** 2026-07-05  
-**Last reviewed:** 2026-08-09
+**Last reviewed:** 2026-08-29
 **Architecture style:** API-first modular monolith  
 **Primary deployment target:** Local development workstation  
 **Secondary deployment target:** DevDocker rehearsal environment on local workstation  
 **Future deployment target:** Hosted production environment
+
+**Post-roadmap successor:** New platform enhancements are governed as Evolution Tracks in
+`docs/platform-evolution-specification.md`. This document remains authoritative for the original
+system baseline and Milestones 0–9/X; it must not be extended with additional numbered milestones.
 
 ## Revision 0.2 summary
 
@@ -1832,26 +1836,37 @@ Exit criteria:
 
 ## Milestone X — Production activation
 
-Milestone X is the deferred environment-specific production work tracked in
-`docs/development-guide/milestone-x-production-activation.md`. It does not add new messaging-domain
-behavior or reopen Milestone 9. Its scope begins only after a target environment and accountable
-owners are selected.
+Milestone X is the deferred environment-specific production program tracked by the umbrella
+`docs/development-guide/milestone-x-production-activation.md`. It is delivered as two ordered
+increments: X1 (`milestone-x1-production-infrastructure-and-recovery.md`) creates the secure,
+recoverable production candidate, and X2
+(`milestone-x2-monitoring-and-production-acceptance.md`) adds monitoring, operational validation,
+and the deliberate production/`1.0.0` decision. It does not add new messaging-domain behavior or
+reopen Milestone 9. Its scope begins only after a target environment and accountable owners are
+selected. ADR-0018 narrows production client ingress to owner-approved LAN/private-VPN paths and
+keeps independently operated deployments isolated.
 
 Deliver:
 
-- provisioned production hosting, domain/DNS, firewall, and patch ownership
+- provisioned production hosting, domain/DNS, trusted LAN/private-VPN ingress, firewall, peer
+  onboarding/revocation, and patch ownership
 - publicly trusted HTTPS/WSS certificates with automated renewal
 - managed secret delivery and immutable image promotion
 - encrypted off-host backup scheduling, retention, retrieval, and restore evidence
-- external monitoring, alert delivery, on-call ownership, and incident procedures
+- workstation-hosted monitoring, optional second-device heartbeat, alert delivery, ownership, and
+  incident procedures
 - production-representative load evidence and accepted service objectives
 
 Exit criteria:
 
+- X1 passes independently and hands a secure, recoverable production candidate to X2
+- X2 passes independently and records the final stakeholder production decision
 - the production environment passes the hardened deployment and security gates
 - backup recovery is proven from the selected off-host store
 - certificate renewal, alerts, rollback, and incident ownership are exercised
 - production thresholds and release approval are recorded before a `1.0.0` decision
+- unapproved Internet/LAN clients cannot reach the API while approved private paths complete HTTP,
+  WSS, authentication, and durable recovery flows
 
 ---
 

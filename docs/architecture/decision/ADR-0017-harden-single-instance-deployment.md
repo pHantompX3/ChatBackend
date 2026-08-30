@@ -117,6 +117,13 @@ Revisit this decision when the platform needs multiple backend instances, a fron
 multi-service gateway policies, cross-host deployment, or a production environment whose managed
 services replace repository-owned NGINX, SQL Server, or RabbitMQ responsibilities.
 
+## Follow-on client-ingress decision
+
+[ADR-0018](ADR-0018-restrict-client-access-to-owner-controlled-networks.md) narrows the production
+edge to owner-approved LAN/private-VPN, monitoring, and operator sources. References in this ADR to a
+“public” hardened profile describe Internet-grade transport and proxy hardening; they do not authorize
+general Internet clients, public delegated-client registration, or per-device client certificates.
+
 ## References
 
 - [Milestone 9 implementation guide](../../development-guide/milestone-9-operational-hardening-step-by-step.md)
@@ -125,3 +132,4 @@ services replace repository-owned NGINX, SQL Server, or RabbitMQ responsibilitie
 - [Threat model](../../security/threat-model.md)
 - [ADR-0015](ADR-0015-harden-http-contracts-and-authentication-throttling.md)
 - [ADR-0016](ADR-0016-use-websockets-next-for-realtime-signaling.md)
+- [ADR-0018](ADR-0018-restrict-client-access-to-owner-controlled-networks.md)

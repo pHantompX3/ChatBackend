@@ -19,7 +19,7 @@ This document formalizes the environment model and rollout sequence for ChatBack
 
 3. Production (future)
    - Persistent hosted environment
-   - API reachable by real clients
+   - API reachable by real clients only through owner-approved LAN/private-VPN paths under ADR-0018
    - Fronted by the Milestone 9 NGINX HTTPS/WSS reference on the remote host
    - Apache APISIX remains an optional later replacement if multi-service gateway or load-balancing
      requirements justify the added component
@@ -102,7 +102,8 @@ Exit criteria:
 2. Add secure secrets management and network policy.
 3. Add the Milestone 9 NGINX reference on the remote machine as the TLS reverse proxy in front of the
    single ChatBackend instance.
-4. Route public HTTPS/WSS traffic through NGINX and keep the application on an internal-only port.
+4. Route source-restricted HTTPS/WSS traffic through NGINX and keep the application on an
+   internal-only port.
 5. Activate remote migration workflow with production safeguards.
 6. Add deployment + post-deploy health checks.
 
@@ -126,6 +127,9 @@ Exit criteria:
    per five minutes and 30 source attempts per minute, with shared state in SQL Server.
 7. Console, application-file, and HTTP-audit logs are JSON Lines outside tests. Preserve
    `X-Request-Id` and `X-Trace-Id` when correlating support and audit investigations.
+8. Keep production client ingress restricted to the ADR-0018 trusted-network boundary. Do not expose
+   a general Internet API, embed frontend secrets, or infer frontend authenticity from Origin/client
+   labels.
 
 ## Open Decisions
 
@@ -134,3 +138,5 @@ Exit criteria:
 3. Production acceptance or replacement of the Milestone 9 rehearsal RPO/RTO objectives.
 4. Whether future multi-service or multi-instance requirements justify replacing NGINX with APISIX or
    another gateway through a later ADR.
+5. Exact LAN/private-VPN implementation, source ranges, peer onboarding/revocation, and whether a
+   second-device heartbeat monitors the private remote-access endpoint.
