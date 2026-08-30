@@ -1,7 +1,7 @@
 # Client Responsibility and Recovery Guide
 
 **Status:** Current implementation audit  
-**Last reviewed:** 2026-08-29
+**Last reviewed:** 2026-08-30
 **Applies to:** ChatBackend `0.9.0-SNAPSHOT`
 
 ## 1. Purpose
@@ -15,8 +15,8 @@ endpoint is a low-latency, best-effort signal and has no durable per-client fram
 or frame-delivery acknowledgement. A correct client must therefore work while the socket is delayed,
 disconnected, duplicated, reordered, or missing an event.
 
-This guide supplements the generated OpenAPI contract, ADR-0014, and ADR-0016. It does not redefine
-endpoint schemas or authorization policy.
+This guide supplements the generated OpenAPI contract, ADR-0014, ADR-0016, and the trusted-network
+client-access policy in ADR-0018. It does not redefine endpoint schemas or authorization policy.
 
 ### 1.1 Maintenance cycle
 
@@ -42,6 +42,7 @@ This guide is a living, release-controlled contract rather than a one-time clien
 
 | Concern | Backend guarantee | Client responsibility |
 | --- | --- | --- |
+| Network admission | The Milestone X production contract requires the edge to accept client traffic only from owner-approved LAN, private-VPN, or equivalent private paths; Local/DevDocker do not prove that production control. Network admission does not replace user authentication. | Operate from an approved path, treat loss/revocation of that path as offline state, and never assume LAN/VPN presence grants messaging authority. |
 | Durable state | Committed messages, tombstones, memberships, sessions, and per-user delivery/read cursors live in SQL Server. | Treat successful REST responses and later REST reads as authoritative; never make socket receipt the only copy of state. |
 | Real-time signals | Post-commit events are attempted for every currently connected active member. | Expect missed, duplicated, delayed, and potentially reordered events; merge them idempotently. |
 | Frame failure | A failed socket send is logged, then discarded. | Reconcile through REST after reconnect, detected gaps, app resume, and suspicious state. |
@@ -80,7 +81,26 @@ backend tracks receipts per user, not per device, and does not expose receipt ti
 
 ## 4. Authentication and Connection Lifecycle
 
-### 4.1 Login and token handling
+### 4.1 Trusted-network and custom-client boundary
+
+The accepted production deployment is not an open Internet client platform. Before attempting login,
+a client must be on the owner-approved LAN, an approved private-VPN peer/subnet, or another explicitly
+documented private path. A connection failure outside that boundary is not necessarily an application
+outage or invalid user credential.
+
+A custom interface built by someone other than the deployment owner may connect only after its
+runtime environment is admitted to that private boundary and, for browsers, its exact HTTP and
+WebSocket origins are approved. CORS, Origin, `User-Agent`, client names, and custom headers do not
+authenticate the frontend. Once network admission and user authentication succeed, the backend still
+cannot attest the exact client source code; normal role, membership, and resource authorization remain
+the safety boundary.
+
+Clients must not embed a shared deployment secret. Per-device client certificates, public delegated
+client registration, and OAuth-style frontend scopes are not supported. Someone needing an
+independently reachable custom stack operates a separate isolated ChatBackend deployment; accounts,
+sessions, conversations, messages, and realtime signals do not cross deployments.
+
+### 4.2 Login and token handling
 
 - Authenticate with `POST /api/v1/sessions`.
 - Store the opaque token using the platform's protected credential storage. Browser applications
@@ -96,12 +116,12 @@ backend tracks receipts per user, not per device, and does not expose receipt ti
 - Call `POST /api/v1/sessions/logout` when the user explicitly signs out. Local credential deletion
   should still happen if the network call cannot complete.
 
-### 4.2 WebSocket establishment
+### 4.3 WebSocket establishment
 
 Connect to `/api/v1/ws`. Supported token transports are `token.<token>` or `bearer.<token>` as a
 WebSocket subprotocol, `?token=<token>`, or an `Authorization` header for clients that can set one.
 
-**Hardened-profile contract:** public deployment disables query-string token authentication because
+**Hardened-profile contract:** production deployment disables query-string token authentication because
 URLs can be retained by intermediaries. Browser clients must use the subprotocol form and send an
 Origin from the deployment allowlist. Non-browser clients may use the subprotocol or Authorization
 header and may omit Origin. A `4403` close indicates a disallowed browser Origin; `4401` indicates a
@@ -115,7 +135,7 @@ The client must maintain a connection state machine such as `offline`, `connecti
 `reconciling`, and `reauthentication-required`. A connected socket is not evidence that local state is
 current; do not show the client as fully synchronized until reconciliation finishes.
 
-### 4.3 Liveness and reconnect
+### 4.4 Liveness and reconnect
 
 - Respond to transport-level ping/pong behavior supplied by the WebSocket library. The application
   also accepts `{"action":"ping"}` and responds with `{"type":"pong"}`.

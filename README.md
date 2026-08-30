@@ -17,6 +17,8 @@
 - Active app login: `wl_chat_app`
 - Audit transport: RabbitMQ-backed delivery is optional; if the audit transport is not configured, the app falls back to local async persistence and still boots cleanly
 - Original roadmap status: Milestones 0–9 complete; Milestone X production activation paused
+- Production client-ingress decision: owner-approved LAN/private-VPN paths only; no general Internet
+  client API, per-device client certificates, public delegated-client platform, or federation
 - Post-roadmap enhancements: tracked as Evolution Tracks in
   `docs/platform-evolution-specification.md`
 
@@ -39,6 +41,8 @@ This repository currently standardizes three environments:
 
 - Milestone 9 rehearsal: one NGINX HTTPS/WSS edge in front of one private ChatBackend instance, SQL
   Server, and RabbitMQ using `deploy/compose.hardened.yaml`
+- Milestone X target restricts that edge to approved LAN/private-VPN, monitoring, and operator sources
+  under `docs/architecture/decision/ADR-0018-restrict-client-access-to-owner-controlled-networks.md`
 - Apache APISIX remains an optional later replacement if multi-service gateway or load-balancing needs
   justify it through a later architecture decision
 - Deployment automation is intentionally deferred until a persistent remote environment exists
@@ -525,8 +529,15 @@ production-activation prerequisites and are not claimed.
 - Milestone 9 single-instance hardening decision and threat model:
   - `docs/architecture/decision/ADR-0017-harden-single-instance-deployment.md`
   - `docs/security/threat-model.md`
-- Deferred production activation backlog (Milestone X):
-  - `docs/development-guide/milestone-x-production-activation.md`
+- Trusted-network client access and isolated-deployment decision:
+  - `docs/architecture/decision/ADR-0018-restrict-client-access-to-owner-controlled-networks.md`
+- Deferred production activation program (Milestone X):
+  - umbrella scope and shared decisions:
+    `docs/development-guide/milestone-x-production-activation.md`
+  - X1 production infrastructure and recovery foundation:
+    `docs/development-guide/milestone-x1-production-infrastructure-and-recovery.md`
+  - X2 monitoring, operational validation, and production acceptance:
+    `docs/development-guide/milestone-x2-monitoring-and-production-acceptance.md`
 - Canonical client responsibility, offline behavior, and recovery guide:
   - `docs/client-integration/client-responsibility-and-recovery-guide.md`
 - Human-run two-participant WebSocket/Postman integration guide:
@@ -539,6 +550,8 @@ production-activation prerequisites and are not claimed.
   - `docs/private-instant-messaging-platform-spec-v0.2-sql-server.md`
 - Platform evolution specification and Evolution Track register:
   - `docs/platform-evolution-specification.md`
+- Platform Evolution product and customer-experience audit outcome:
+  - `docs/audit/platform-evolution-product-and-customer-experience-audit-2026-08-29.md`
 - Environment lifecycle and rollout plan:
   - `docs/operations/environment-strategy-and-rollout-plan.md`
 - Hardened deployment, backup/restore, and load-test runbooks:

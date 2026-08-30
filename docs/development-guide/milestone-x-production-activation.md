@@ -1,58 +1,199 @@
-# Milestone X — Production Activation Backlog
+# Milestone X — Production Activation Program
 
 ## Status
 
-Pocketed for future planning. No production environment is currently claimed.
+**Status:** Pocketed for future implementation; no production environment is currently claimed
 
-## Purpose
+**Last refined:** 2026-08-30
+
+**Program increments:** X1 followed by X2
+
+## 1. Purpose
 
 Milestone X converts the completed single-instance backend and Milestone 9 hardened local rehearsal
-into an operated production deployment. It tracks environment ownership and evidence that cannot be
-completed responsibly inside the repository without a selected host, domain, secret store, backup
-destination, alert channel, and service objectives.
+into an operated production deployment. It is an operational activation program, not a messaging
+feature milestone.
 
-## Entry decisions
+The program is intentionally split into two independently reviewable increments:
 
-Before implementation begins, identify:
+1. [Milestone X1 — Production Infrastructure and Recovery Foundation](milestone-x1-production-infrastructure-and-recovery.md)
+   produces a secure, repeatable, recoverable production candidate.
+2. [Milestone X2 — Monitoring, Operational Validation, and Production Acceptance](milestone-x2-monitoring-and-production-acceptance.md)
+   makes that candidate observable, exercises its operating model, and governs the deliberate
+   `1.0.0` production-release decision.
 
-1. hosting provider, region, x86-64 host shape, operating system, and patch owner;
-2. public domain, DNS owner, certificate issuer, and renewal owner;
-3. OCI registry, image promotion policy, and deployment approver;
-4. production SQL Server placement, edition/licence, storage, and maintenance owner;
-5. managed secret-delivery mechanism and credential-rotation owner;
-6. encrypted off-host backup destination, retention/immutability policy, and recovery owner;
-7. monitoring platform, alert destinations, on-call owner, and incident escalation path;
-8. accepted RPO, RTO, load thresholds, availability objective, and maintenance window.
+Post-Milestone product enhancements remain governed by the
+[Platform Evolution Specification](../platform-evolution-specification.md).
 
-## Workstreams
+## 2. Canonical routing and precedence
 
-1. Provision the private application, SQL Server, and RabbitMQ networks with only the HTTPS/WSS edge
-   publicly reachable.
-2. Replace rehearsal certificates with publicly trusted and automatically renewed certificates.
-3. Deliver runtime/operator credentials from the selected secret store; keep them out of images,
-   source control, deployment logs, and long-running containers that do not need them.
-4. Promote reviewed immutable image digests and exercise migration-before-rollout and schema-aware
-   rollback in the selected environment.
-5. Schedule encrypted off-host backups, enforce retention/immutability, monitor age and transfer, and
-   perform a timed isolated restore from the retrieved off-host artifact.
-6. Route health, certificate, disk, restart, audit degradation/backlog/DLQ, backup/restore age,
-   deployment, and security-gate alerts to the accountable responders.
-7. Run characterization and regression tests against production-representative resources and data,
-   then record approved thresholds and capacity limits.
-8. Complete the security/threat-model production review, incident exercise, release checklist, and
-   deliberate `1.0.0` readiness decision.
+Use this file for program scope, shared decisions, increment dependency, and overall completion.
+Use the X1 and X2 guides for implementation-grade requirements and evidence.
 
-## Exit criteria
+| Concern | Canonical implementation guide |
+|---|---|
+| Host, OS, storage, power, patching, and service lifecycle | X1 |
+| Private LAN/VPN ingress, firewall, DNS, TLS, and certificates | X1 |
+| Secrets, privileged identities, image promotion, migration, rollback | X1 |
+| SQL Server, RabbitMQ, backup, restore, incidents, initial capacity | X1 |
+| Monitoring workstation and third-party monitoring tools | X2 |
+| ChatMonitor project, SQL projection, collection, retention, dashboard | X2 |
+| Alerts, monitoring recovery, operational exercises, final acceptance | X2 |
+| Existing single-host architecture and rehearsal controls | ADR-0017 and Milestone 9 |
+| Owner-controlled client-access boundary | ADR-0018 |
+| Client behavior and recovery responsibilities | Client Integration and Recovery Guide |
 
-- Public HTTPS/WSS works with trusted certificates and renewal has been exercised.
-- SQL Server and RabbitMQ remain private and least-privilege inventories match the hardened model.
-- Managed secret rotation and immutable image promotion are proven.
-- A retrieved off-host encrypted backup restores within the accepted RTO and meets the accepted RPO.
-- External alerts reach the assigned responder and an incident/rollback exercise is recorded.
-- Production-representative load thresholds pass and capacity assumptions are documented.
-- No unaccepted High/Critical risk remains, and production release approval is recorded.
+When wording conflicts, accepted ADRs govern architecture decisions, executable operations runbooks
+govern already-implemented rehearsal commands, and the applicable X1/X2 guide governs unresolved
+production implementation scope. Production-specific secrets, private topology, and raw operational
+evidence remain in protected operator storage.
 
-## Non-goals
+Requirement language is deliberate:
 
-Milestone X does not introduce multi-tenancy, end-to-end encryption, multi-instance realtime
-distribution, or new client/product features. Those require separate product decisions and plans.
+- **must** is a release or safety requirement;
+- **should** is the proportional default and requires a recorded reason to diverge;
+- **may** is optional and does not enter scope without an explicit decision; and
+- **candidate/preferred** requires the stated validation before adoption.
+
+## 3. Confirmed shared direction
+
+1. Production remains a hardened single-host deployment unless evidence justifies a later ADR.
+2. The production machine and operator/development workstation will generally share the same private
+   local network.
+3. Production client access is limited to owner-approved LAN, private-VPN, monitoring, and operator
+   paths under ADR-0018. ChatBackend is not an open public-client platform.
+4. Human user sessions remain the authentication principal. Network admission supplements rather
+   than replaces authentication and server-side authorization.
+5. Per-device mutual TLS is rejected. Server HTTPS/WSS and SQL certificate validation remain
+   mandatory.
+6. A sanctioned custom interface must operate through an admitted private path. A party needing
+   independent remote infrastructure operates a separate isolated ChatBackend deployment;
+   federation, shared identity/data, and public delegated authorization are not implied.
+7. The monitoring workstation is the preferred home for dashboards and monitoring history so those
+   records can survive production-host loss.
+8. Monitoring is never a runtime dependency of ChatBackend.
+9. ChatMonitor uses a Vite vanilla-JavaScript client, standards-based HTML/CSS, a small Node.js
+   collector/API service, and SQLite. React is not part of the accepted baseline.
+10. Audit extraction is one-way, sanitized, read-only, incremental telemetry export—not database
+    replication.
+11. ChatMonitor retains at least 62 days of detailed projected events. The recommended initial
+    defaults are 90 days of detailed events and 365 days of aggregates.
+12. Authoritative production audit retention must permit expected collector catch-up and may not be
+    set below the 62-day floor without an explicit stakeholder decision.
+13. Self-hosted monitoring is preferred. External alert delivery or a second-device heartbeat is
+    optional and cannot become a core application dependency.
+
+The exact production host, network, DNS, certificate issuer, registry, SQL placement, backup store,
+secret mechanism, monitoring tools, graphing package, alert destinations, thresholds, and accountable
+owners are environment decisions to resolve in the applicable increment.
+
+## 4. Standard decision record
+
+Every unresolved production decision must be recorded with:
+
+```text
+Decision ID and title:
+Status: proposed | accepted | deferred | rejected | blocked
+Decision owner:
+Date and review date:
+Context and constraint:
+Selected value/approach:
+Recommended default used or reason for divergence:
+Alternatives considered:
+Security, privacy, availability, cost, and maintenance impact:
+Dependencies and sequence:
+Implementation outputs:
+Verification evidence:
+Rollback/recovery behavior:
+Residual risk and acceptance:
+Canonical documents affected:
+```
+
+Naming a product is not enough. A decision is resolved only when ownership, configuration boundary,
+lifecycle, failure/recovery behavior, validation evidence, and documentation effects are known.
+
+## 5. Increment dependency and delivery model
+
+```text
+Milestone 9 hardened local rehearsal (complete)
+                 |
+                 v
+X1: production infrastructure + recovery foundation
+                 |
+        secure/recoverable candidate
+                 |
+                 v
+X2: monitoring + operational validation + acceptance
+                 |
+            stakeholder approval
+                 |
+                 v
+          production release 1.0.0
+```
+
+X1 and X2 should be implemented and reviewed separately. X2 planning and fixture-based ChatMonitor
+development may proceed in parallel, but X2 production integration and final acceptance depend on the
+X1 evidence handoff.
+
+X1 completion does not authorize normal production use. X2 completion without X1 is impossible.
+Milestone X is complete only when both increments pass and the stakeholder records the final release
+decision.
+
+## 6. Shared evidence and governance
+
+Each increment maintains a sanitized evidence manifest that links to protected evidence instead of
+embedding secrets, raw logs, production data, or private topology in Git. At minimum, final program
+evidence must cover:
+
+- production host/profile and accountable owners;
+- immutable release/image digests and schema version;
+- firewall, certificate, principal, deployment, migration, rollback, and smoke results;
+- backup identity, off-host transfer, retrieval, restore, integrity, RPO, and RTO evidence;
+- characterization thresholds and capacity assumptions;
+- monitoring installation, freshness, recovery, query safety, retention, and alert exercises;
+- incident and rollback exercises;
+- unresolved risks, risk acceptances, review dates, and final approval.
+
+Every implementation change must update the changelog and affected architecture, operations, security,
+and client-responsibility documents. Neither increment may claim completion based only on the local
+Milestone 9 rehearsal.
+
+## 7. Program exit criteria
+
+Milestone X is complete only when:
+
+- every X1 exit criterion passes and its secure/recoverable candidate handoff is accepted by X2;
+- every X2 exit criterion passes;
+- production HTTPS/WSS, private SQL/RabbitMQ boundaries, secrets, release promotion, rollback, backup
+  recovery, monitoring, alerting, capacity, and incident ownership are proven in the selected
+  environment;
+- canonical documentation matches deployed behavior;
+- all findings are resolved, explicitly risk-accepted with owner/reason/review date, or treated as
+  production blockers;
+- no unaccepted High or Critical risk remains; and
+- the primary stakeholder deliberately approves normal production use and the `1.0.0` release.
+
+## 8. Program non-goals
+
+Milestone X does not introduce:
+
+- multi-tenancy or federation;
+- end-to-end encryption;
+- multi-instance realtime distribution;
+- new messaging product features;
+- enterprise observability or invasive user analytics;
+- a mandatory cloud platform;
+- production database replication to the monitoring workstation;
+- monitoring writes to production application data;
+- public OAuth/delegated client registration or an open developer ecosystem;
+- per-device mutual TLS; or
+- software licensing, pricing, or support terms for independent deployments.
+
+## 9. Required sequence when resumed
+
+1. Re-audit this umbrella, X1, and X2 against the repository and actual target environment.
+2. Resolve X1 entry decisions and audit its implementation plan.
+3. Implement, verify, document, and review X1; produce its evidence handoff.
+4. Resolve X2 entry decisions using X1 evidence and current monitoring requirements.
+5. Implement, verify, document, and review X2.
+6. Run the final readiness review and make the deliberate production/`1.0.0` decision.

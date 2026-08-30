@@ -17,6 +17,12 @@ release tags begin when the project intentionally performs a production release 
 
 ### Added
 
+- Added the dated Platform Evolution product and customer-experience audit outcome, preserving the
+  repository-backed findings, contemporary capability comparison, value/effort/time assessment,
+  recommended delivery waves, and stakeholder decision model that informed roadmap version 0.2.
+- Added candidate Evolution Tracks for platform capability discovery, identity and conversation
+  profiles, personal organization, user interaction controls, message retention and ephemeral
+  content, structured group tools, session visibility, and data portability.
 - Added the canonical post-Milestone Platform Evolution specification and initial Evolution Track
   register for platform-focused enhancements, including conversation synchronization, durable media,
   voice-note semantics, rich messaging, search, ephemeral signals, self-hosted calls, notifications,
@@ -101,6 +107,54 @@ release tags begin when the project intentionally performs a production release 
 
 ### Changed
 
+- Split the deferred Milestone X production-activation program into an authoritative umbrella plus
+  two independently reviewable implementation guides: X1 owns production infrastructure and
+  recovery through a secure production-candidate handoff, while X2 owns monitoring, ChatMonitor,
+  operational validation, and the final `1.0.0` production decision.
+- Accepted ADR-0018: production client ingress is restricted to owner-approved LAN/private-VPN paths;
+  sanctioned custom interfaces require explicit private-network and browser-origin onboarding;
+  per-device client certificates and a public delegated-client/OAuth platform are rejected for the
+  current personal deployment; and independently operated instances remain isolated pending separate
+  licensing/distribution decisions.
+- Reconciled Milestone X, ADR-0017, the production threat model, client integration contract, platform
+  evolution and private-messaging specifications, environment rollout plan, layered architecture,
+  and README with the trusted-network access boundary and its honest limitation that admitted
+  authenticated traffic does not attest exact frontend source code.
+
+- Expanded the deferred Milestone X production-activation backlog with the agreed workstation-hosted
+  monitoring topology, layered availability/host/audit monitoring contract, alert inventory,
+  one-way sanitized audit telemetry export, persistence-ordered idempotent catch-up, minimum 62-day
+  detailed retention, dedicated least-privilege SQL projection, bounded non-blocking query rules,
+  candidate monitoring index, failure states, recovery exercises, and acceptance evidence.
+- Committed Milestone X to a frameworkless ChatMonitor dashboard built with Vite's vanilla-JavaScript
+  template, backed by a small Node.js collection/API service and SQLite, with explicit browser/SQL
+  credential separation and an independently runnable `chat-monitor/` project boundary designed for
+  later extraction into its own repository.
+- Expanded the Milestone X ChatMonitor decision into an implementation-grade project blueprint
+  covering the recommended directory tree, module ownership and dependency direction, configuration
+  and Vite secret boundaries, npm command contract, generated/runtime artifacts, test organization,
+  graceful process lifecycle, and extraction criteria for the future standalone repository.
+- Elevated the remainder of Milestone X to the same implementation-grade planning standard as
+  ChatMonitor, adding explicit contracts for host lifecycle and storage, network/firewall exposure,
+  DNS and certificate rotation, secret and privileged-identity management, immutable deployment and
+  schema-aware rollback, SQL Server and RabbitMQ operations, off-host backup and disaster recovery,
+  logging and incident response, production characterization/objectives, ownership, and final
+  evidence-based `1.0.0` readiness review.
+- Completed the Milestone X monitoring-operations blueprint with workstation lifecycle and clean-host
+  recovery, preferred bounded roles and adoption gates for Uptime Kuma and Beszel, explicit
+  non-adoption criteria for a speculative Prometheus/Grafana stack, and severity, delivery,
+  threshold-approval, privacy, dependency, recovery, and exercise contracts for every alert.
+- Added a Milestone X navigation and requirement-language guide plus a standard entry-decision record
+  so future actioners can resolve environment-specific choices with ownership, alternatives,
+  lifecycle, evidence, recovery, residual risk, and canonical-document impact without treating a
+  product name or chat decision as an implementation plan.
+- Refined the authoritative Platform Evolution roadmap from an engineering-focused feature register
+  into an outcome-led product and delivery strategy with experience principles, mandatory track
+  metadata, preliminary effort and elapsed-time estimates, confidence and dependency assessment,
+  primary-stakeholder decision authority, and dependency-aware recommendation waves.
+- Expanded ET-01 to cover durable account synchronization and missed mutation or membership recovery;
+  enriched the media, voice-note, rich-message, notification, and calling initiatives; and superseded
+  ET-09 with a permanent measurement-driven single-host performance workstream.
 - Updated the DevDocker bootstrap path to apply the immutable migration baseline, remove the
   runtime principal's legacy fixed database roles as an operator action, and then apply the
   least-privilege hardening migrations; this keeps Flow Smoke aligned with the hardened clean-install

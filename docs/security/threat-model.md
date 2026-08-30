@@ -2,7 +2,7 @@
 
 **Status:** Milestone 9 local hardened-rehearsal review complete; production activation review pending
 
-**Last reviewed:** 2026-08-26
+**Last reviewed:** 2026-08-30
 
 **Scope:** One NGINX edge, one ChatBackend instance, SQL Server, RabbitMQ audit transport, CI/CD,
 operator credentials, and backup/restore tooling.
@@ -15,12 +15,15 @@ operator credentials, and backup/restore tooling.
 - Keep SQL Server authoritative; WebSocket delivery never changes durable state without an
   authenticated command reaching the application service.
 - Keep privileged database and broker identities out of the long-running application.
-- Detect degraded audit delivery, failed backups, stale restore evidence, and public-edge failures.
+- Detect degraded audit delivery, failed backups, stale restore evidence, and trusted-edge failures.
 
 ## 2. Data flow and trust boundaries
 
 ```text
-Untrusted client
+Unapproved network source
+  | host firewall / private-network admission
+  v
+Approved LAN or private-VPN client
   | HTTPS / WSS
   v
 NGINX edge
@@ -38,7 +41,7 @@ CI/build boundary -> immutable image/SBOM/scans -> protected deployment environm
 Backup operator -> encrypted backup -> isolated restore / future off-host storage
 ```
 
-Trust boundaries exist between client/NGINX, NGINX/ChatBackend, ChatBackend/SQL Server,
+Trust boundaries exist at private-network admission, client/NGINX, NGINX/ChatBackend, ChatBackend/SQL Server,
 ChatBackend/RabbitMQ, CI/deployment, operator/secrets, and backup/restore storage.
 
 ## 3. Entry points and privileged actors
@@ -73,6 +76,10 @@ ChatBackend and RabbitMQ runtime users are not privileged operators.
 | T16 | Information disclosure | Error/audit diagnostics expose message content or credentials | Safe client problems, bounded diagnostic fields, query/header/body redaction, access control and retention | Backend/Operations | Verified with privacy sentinels and scans |
 | T17 | DoS | One slow/failing socket delays recipients or request completion | Existing independent asynchronous fan-out; bounded connection limits; REST recovery remains authoritative | Backend | Implemented |
 | T18 | Repudiation | Missed/duplicated/reordered socket frame produces incorrect client state | Client idempotency/gap detection and REST reconciliation; canonical client guide and transport tests | Client/Backend | Implemented contract |
+| T19 | Spoofing/Information disclosure | Arbitrary Internet or unapproved LAN client reaches the authentication boundary, presents a phishing interface, or captures user credentials/data | ADR-0018 trusted-network ingress; host firewall plus tested NGINX source allowlist; ordinary user authentication remains mandatory | Operations/Backend | Production evidence pending |
+| T20 | Elevation/Information disclosure | A sanctioned custom interface is treated as cryptographically trusted merely because it supplies an Origin, client label, or custom header | Record Origin/CORS as browser hardening only; derive user from session; retain role/membership/resource authorization; document honest enforcement limit | Backend/Client | Accepted architecture boundary |
+| T21 | Spoofing | Stolen or orphaned VPN/private-path configuration continues reaching the API | Per-peer/source onboarding inventory, stable private address, least network reach, explicit revocation and periodic review | Operations | Selection and production evidence pending |
+| T22 | Information disclosure | A separately operated deployment is mistaken for a federated/shared instance and receives this deployment's users, secrets, backups, or data | Isolated deployment boundary; no federation/multi-tenancy; independent credentials/data/operations; licensing handled separately | Product/Operations | Accepted architecture boundary |
 
 ## 5. Required security verification
 
@@ -89,14 +96,22 @@ critical residual risk. At minimum:
 8. scan source, SBOM, application image, and every pinned infrastructure image;
 9. exercise request/socket limits and load regression without durable-state corruption;
 10. inspect running containers for privileged credentials, root UID, unexpected writable paths, and
-    public ports.
+    published ports;
+11. prove unapproved Internet and LAN sources cannot reach HTTPS/WSS while approved LAN and optional
+    private-VPN peers can authenticate and recover durable state; and
+12. revoke one sanctioned custom-client network path and prove unrelated clients remain available.
 
 ## 6. Residual risks and production activation
 
-The repository rehearsal does not eliminate single-host failure, supply a public domain/certificate,
+The repository rehearsal does not eliminate single-host failure, supply a production domain/certificate,
 select an off-host backup service, prove alert delivery, establish a production patch owner, or prove a
 production SLA. These are explicit production-activation prerequisites rather than reasons to weaken
 repository-owned controls.
+
+ADR-0018 narrows production client ingress to owner-approved LAN/private-VPN paths. Public API access,
+open delegated-client registration, per-device mutual TLS, federation, and shared data between
+independent deployments are not accepted production assumptions. Reopening any of them requires a
+new threat-model review and ADR.
 
 Any accepted high/critical residual risk must identify the accepting owner, date, rationale, review
 date, affected environment, and compensating control. Silence or a passing-but-skipped CI job is not
