@@ -20,6 +20,22 @@ These are concise repository-wide rules. Keep them stable and avoid duplicating 
 - Maintain multi-agent guardrail synchronization: Whenever rules, instructions, or skills are modified in `.github/`, update the corresponding files in `.agents/` and [AGENTS.md](../AGENTS.md) in the same change set so that all agents (Copilot, Antigravity, Codex, etc.) operate under identical, synchronized constraints.
 - When creating development branches, use the agent's recognized identifier prefix (e.g. `codex/<feature>`, `antigravity/<feature>`). Milestone branch names are reserved for the original Milestones 0–9 and deferred Milestone X roadmap.
 
+## Graph-first context optimization
+
+- For broad, unfamiliar, architectural, cross-module, planning, review, or investigation work, inspect
+  the [visual repository map](../project-architecture.svg) first. Use its zones and source-path metadata
+  in the [editable graph](../project-architecture.excalidraw) to load only the relevant implementation
+  and canonical documentation.
+- Skip graph loading for a narrowly scoped task when the exact target files and governing contract are
+  already known; optimization means avoiding both repository-wide discovery and unnecessary graph reads.
+- Treat the graph only as a navigation index. Verify routed code and canonical documents before
+  reasoning or mutation.
+- Update both graph artifacts with the
+  [Quarkus graph skill](skills/quarkus-graph-generator/SKILL.md) when a change adds, removes, or
+  materially rewires a represented component, dependency, capability, deployment boundary, or
+  canonical documentation route. Preserve stable identifiers and spatial zones. Ordinary internal
+  edits that do not change the map do not require a redraw.
+
 ## Postman maintenance
 
 Whenever an API endpoint is added, removed, renamed, or materially changed:
@@ -46,10 +62,12 @@ An API implementation change is incomplete when corresponding Postman artifacts 
 - Scoped Java rules: [.github/instructions/backend-java.instructions.md](instructions/backend-java.instructions.md) <-> [.agents/rules/backend-java.md](../.agents/rules/backend-java.md)
 - Scoped DB rules: [.github/instructions/database-scripts.instructions.md](instructions/database-scripts.instructions.md) <-> [.agents/rules/database-scripts.md](../.agents/rules/database-scripts.md)
 - Context architecture skill: [skills/workspace-context-architecture/SKILL.md](skills/workspace-context-architecture/SKILL.md) <-> [.agents/skills/workspace-context-architecture/SKILL.md](../.agents/skills/workspace-context-architecture/SKILL.md)
+- Quarkus graph skill: [skills/quarkus-graph-generator/SKILL.md](skills/quarkus-graph-generator/SKILL.md) <-> [.agents/skills/quarkus-graph-generator/SKILL.md](../.agents/skills/quarkus-graph-generator/SKILL.md)
 
 ## Canonical routing
 
 - Project orientation and navigation: [AGENTS.md](../AGENTS.md)
+- Visual architecture and documentation router: [project-architecture.svg](../project-architecture.svg)
 - Architecture overview: [docs/architecture/single-host-layered-container-architecture.md](../docs/architecture/single-host-layered-container-architecture.md)
 - Decision records: [docs/architecture/decision](../docs/architecture/decision)
 - Release ledger: [CHANGELOG.md](../CHANGELOG.md)
@@ -58,3 +76,4 @@ An API implementation change is incomplete when corresponding Postman artifacts 
 - Post-production infrastructure evolution and IE Track register: [docs/infrastructure-evolution-specification.md](../docs/infrastructure-evolution-specification.md)
 - Client integration and recovery contract: [docs/client-integration/client-responsibility-and-recovery-guide.md](../docs/client-integration/client-responsibility-and-recovery-guide.md)
 - Context architecture skill: [skills/workspace-context-architecture/SKILL.md](skills/workspace-context-architecture/SKILL.md)
+- Quarkus graph skill: [skills/quarkus-graph-generator/SKILL.md](skills/quarkus-graph-generator/SKILL.md)

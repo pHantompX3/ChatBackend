@@ -18,13 +18,17 @@ This document formalizes the environment model and rollout sequence for ChatBack
    - Purpose: rehearse remote-like behavior entirely on laptop
 
 3. Production (future)
-   - Persistent hosted environment
+   - Persistent Windows 11 Pro host at reserved LAN address `192.168.0.199`
+   - Docker Desktop with WSL2; one single-host Compose deployment
    - API reachable by remote clients only through the authenticated public HTTPS/WSS edge under
      ADR-0019
    - Fronted by the Milestone 9 NGINX HTTPS/WSS reference on the remote host
    - Apache APISIX remains an optional later replacement if multi-service gateway or load-balancing
      requirements justify the added component
-   - Deployment automation enabled only after provisioning
+   - One free private Docker Hub repository, with artifacts selected by annotated release tag and
+     immutable digest
+   - Production receives deployment artifacts and metadata, not a repository checkout
+   - Deployment automation enabled only after X1 host, release, recovery, and approval controls pass
 
 ## Database Initialization Strategy
 
@@ -132,13 +136,29 @@ Exit criteria:
    RabbitMQ, administration, monitoring SQL, or Docker control; do not infer frontend authenticity
    from Origin, CORS, client labels, or embedded shared secrets.
 
-## Open Decisions
+## Implementation discovery and later decisions
 
-1. Final hosting target for Production.
-2. Whether Production database is containerized SQL Server or managed SQL.
-3. Production acceptance or replacement of the Milestone 9 rehearsal RPO/RTO objectives.
-4. Whether future multi-service or multi-instance requirements justify replacing NGINX with APISIX or
+1. IPv4 CGNAT is confirmed. ADR-0020 selects outbound-only Cloudflare Tunnel for the current
+   text/API/WebSocket workload; no WAN forwarding or public origin port is used. Future on-premises
+   media delivery requires a separate compliant ingress decision.
+2. Preserve and verify every existing Hostinger DNS record, then onboard the zone to Cloudflare DNS
+   and create a dedicated Tunnel hostname without exposing an origin address.
+3. Use Cloudflare-managed public TLS and authenticated private TLS from `cloudflared` to NGINX; open
+   no ACME or application ingress port on the production host.
+4. Use SQL Server 2022 Express with its documented capacity limits, uncompressed checksum backups,
+   and external archive compression/encryption; no paid SQL edition or SQL-native at-rest encryption
+   enters X1.
+5. Discover the router network-drive protocol. Prefer SMB 2/3, prohibit SMB1, compress and encrypt
+   packages before transfer, and record the accepted lack of immutability/snapshots.
+6. Whether future multi-service or multi-instance requirements justify replacing NGINX with APISIX or
    another gateway through a later ADR.
-5. Public domain/DNS, ISP/CGNAT and inbound-port capability, router forwarding, certificate
-   automation, and whether a second-device heartbeat monitors the public edge.
-6. When client foundations are mature enough to begin required Infrastructure Evolution Track IE-01.
+7. When client foundations are mature enough to begin required Infrastructure Evolution Track IE-01.
+
+X1 has now supplied proportional initial recovery objectives: 24-hour database RPO, 60-minute
+isolated-database restore after recovery capacity is ready, two-hour ordinary software/configuration
+service RTO, and eight-hour total-host-loss service RTO excluding external replacement-hardware delay.
+They remain subject to measured X1 acceptance rather than rehearsal timing alone.
+
+X1 has no remaining planning blocker. Environment-specific WAN, router, DNS, and share facts are
+collected during X1-A before the related control is enabled. Monitoring/alert decisions remain X2
+scope.

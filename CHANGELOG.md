@@ -17,6 +17,48 @@ release tags begin when the project intentionally performs a production release 
 
 ### Added
 
+- Added the audited X1 Windows 11/Docker Desktop/WSL2 production-host profile, four explicit zero-cost
+  production decisions, tagged build-once private-registry release model, Windows lifecycle contract,
+  bounded implementation slices, and executable acceptance matrix.
+- Added X1 production contracts for public-health minimization, WebSocket handshake throttling,
+  bootstrap-secret revocation, SQL Server Express limits, 90-day authoritative audit retention,
+  externally compressed/pre-transfer-encrypted router-drive backups, authenticated manifests,
+  schema-compatible rollback,
+  free public certificates/hostname handling, and proportionate RPO/RTO objectives.
+- Recorded the confirmed Hostinger DNS access, private `wl-chat-production` Docker Hub repository,
+  dynamic public-address assumption, router Samba/FTP capability, SSH-installation state, and
+  separate publisher-versus-production-pull credential boundary for X1-A.
+- Recorded the TP-Link Archer AX73 v2.0 router, its current/offered firmware, required pre-ingress
+  firmware update evidence, exact WAN/port-forwarding paths, authenticated Samba direction, and
+  prohibition on DMZ, UPnP, Internet FTP, and public router administration.
+- Recorded confirmed double NAT: the Archer receives private WAN `192.168.100.7` from upstream
+  gateway `192.168.100.1` while external lookup returns dynamic public `196.3.x.x`; X1-A now requires
+  modem/ONT identification and prefers bridge/IP passthrough before considering explicit double
+  forwarding or a bounded upstream-DMZ fallback.
+- Identified the upstream Digicel Huawei HG8245W5-6T GPON ONT as a routed PPPoE/NAT boundary and
+  prohibited unassisted changes to its provider-managed WAN/VLAN/IPTV/VoIP/TR-069 configuration;
+  X1 now defaults to explicit two-stage forwarding after public-WAN verification and treats ONT,
+  PPPoE, and subscriber identifiers as protected evidence.
+- Confirmed Digicel IPv4 CGNAT from the ONT's `100.64.0.0/10` WAN assignment; ordinary IPv4 port
+  forwarding is now explicitly blocked. X1 first seeks a no-cost dynamic public IPv4 and otherwise
+  requires full IPv6 delegation/reachability/client-compatibility proof rather than treating the
+  ONT's global IPv6 WAN address as sufficient or silently introducing a hosted tunnel.
+- Added ADR-0020 and accepted Cloudflare Tunnel as the outbound-only X1 ingress for the current
+  text/API/WebSocket workload, with no public origin ports or Cloudflare media storage. Refined the
+  future ET-02 path to allow deliberately bounded on-premises media transfer through the Tunnel:
+  50 MiB assembled attachments, 25 MiB tus upload requests, authorized HTTP range downloads,
+  client-owned compression/transcoding, and an explicitly accepted possible-redesign risk.
+- Added synchronized Quarkus architecture-graph generator skills for Codex/Gemini and GitHub
+  Copilot. The reusable workflow scans implemented Quarkus structure and dependencies, preserves
+  stable Excalidraw layout across updates, produces an SVG preview, and validates evidence, paths,
+  counts, and secret exclusion.
+- Generated the initial editable Excalidraw and SVG ChatBackend project map, covering runtime layers,
+  module dependencies, durable/integration boundaries, deployment surfaces, and a canonical
+  documentation-navigation lane discoverable from `AGENTS.md`.
+- Established synchronized graph-first context routing: agents use the project map to minimize
+  broad discovery for unfamiliar or cross-cutting work, bypass it for already precise tasks, verify
+  routed authoritative sources, and redraw only when represented architecture or canonical routes
+  materially change.
 - Added the canonical Infrastructure Evolution specification and declared three ordered post-X
   requirements: IE-01 Native Client Trust Foundation, IE-02 Mobile-Authorized Linked-Browser
   Protocol, and IE-03 Official Linked Web Companion. The sequence covers distinct native-installation
@@ -36,7 +78,7 @@ release tags begin when the project intentionally performs a production release 
   voice-note semantics, rich messaging, search, ephemeral signals, self-hosted calls, notifications,
   proportional performance work, and explicitly deferred advanced encryption.
 - Established Evolution Tracks as the bounded planning units that may produce audited development
-  guides, while preserving Milestone X as the paused endpoint of the original production roadmap.
+  guides, while preserving Milestone X as the production endpoint of the original roadmap.
 - Extended the repository-wide client-responsibility review cycle and synchronized agent guardrails
   from milestones to Evolution Tracks.
 - Advanced Maven project version to `0.9.0-SNAPSHOT` for active Milestone 9 development.
@@ -115,6 +157,9 @@ release tags begin when the project intentionally performs a production release 
 
 ### Changed
 
+- Moved Milestone X from fully pocketed to active X1 planning without claiming production readiness;
+  reconciled the environment strategy and threat model with the selected Windows host, immutable
+  artifact-only deployment, public-edge, off-host recovery, and X1/X2 ownership boundaries.
 - Superseded ADR-0018's LAN/private-VPN-only ingress decision; reconciled Milestone X/X1/X2, the threat
   model, deployment architecture, operations strategy, platform roadmap, client responsibility
   contract, system specification, README, and synchronized agent routing with the public-edge

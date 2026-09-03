@@ -33,9 +33,10 @@ initial production activation.
 
 ### 1. Public HTTPS/WSS is the Milestone X access baseline
 
-The production NGINX edge may be reachable from the Internet on TCP 443. Router and host firewall
-rules expose only the required edge. ChatBackend, SQL Server, RabbitMQ, Docker control interfaces, and
-administrative services remain private and are never directly published.
+The production NGINX edge is reachable through the authenticated public HTTPS/WSS boundary. ADR-0020
+refines the transport for the confirmed CGNAT environment: outbound-only Cloudflare Tunnel reaches
+private NGINX, and the origin publishes no inbound port. ChatBackend, SQL Server, RabbitMQ, Docker
+control interfaces, and administrative services remain private and are never directly published.
 
 Every public application operation continues to require normal ChatBackend authentication and
 server-side authorization. Public reachability grants no messaging authority.
@@ -137,6 +138,7 @@ IE-03 are ready to change client-admission behavior.
 
 - [ADR-0017: Harden One ChatBackend Instance Behind NGINX](ADR-0017-harden-single-instance-deployment.md)
 - [ADR-0018: Restrict Client Access to Owner-Controlled Networks](ADR-0018-restrict-client-access-to-owner-controlled-networks.md)
+- [ADR-0020: Use Cloudflare Tunnel for CGNAT Production Ingress](ADR-0020-use-cloudflare-tunnel-for-cgnat-production-ingress.md)
 - [Infrastructure Evolution Specification](../../infrastructure-evolution-specification.md)
 - [Milestone X production activation](../../development-guide/milestone-x-production-activation.md)
 - [Client responsibility and recovery guide](../../client-integration/client-responsibility-and-recovery-guide.md)

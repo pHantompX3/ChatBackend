@@ -24,7 +24,7 @@ Internet or local client
   | HTTPS / WSS
   v
 Router / host firewall
-  | public TCP 443 only
+  | Cloudflare public HTTPS/WSS edge
   v
 NGINX public edge
   | private HTTP / WebSocket upgrade
@@ -78,10 +78,16 @@ ChatBackend and RabbitMQ runtime users are not privileged operators.
 | T18 | Repudiation | Missed/duplicated/reordered socket frame produces incorrect client state | Client idempotency/gap detection and REST reconciliation; canonical client guide and transport tests | Client/Backend | Implemented contract |
 | T19 | Spoofing/Information disclosure | Public client presents a phishing interface, captures credentials/content, or imitates an owner-built client | ADR-0019 honest client boundary; user guidance; TLS; secure token handling; session/account revocation; no official-client attestation claim before IE-01 | Operations/Backend/Client | Accepted initial residual risk; production evidence pending |
 | T20 | Elevation/Information disclosure | A client is treated as trusted merely because it supplies an Origin, client label, user-agent, custom header, or embedded shared secret | Treat those values as browser/diagnostic metadata only; derive user from session; enforce role/membership/resource authorization; prohibit shared private application secrets | Backend/Client | Accepted architecture boundary |
-| T21 | DoS/Spoofing | Internet scanning, credential guessing, malformed traffic, or connection floods exhaust or compromise the public edge | Public trusted TLS; router/host exposure limited to NGINX 443; login throttling; edge request/connection/body/frame/time limits; patching, monitoring, revocation, incident tests | Operations/Backend | Production evidence pending |
+| T21 | DoS/Spoofing | Internet scanning, credential guessing, malformed traffic, or connection floods exhaust or compromise the public edge | Cloudflare public TLS/Tunnel; zero public origin ports; NGINX/application limits; login throttling; patching, monitoring, revocation, incident tests | Operations/Backend | Production evidence pending |
 | T22 | Information disclosure | A separately operated deployment is mistaken for a federated/shared instance and receives this deployment's users, secrets, backups, or data | Isolated deployment boundary; no federation/multi-tenancy; independent credentials/data/operations; licensing handled separately | Product/Operations | Accepted architecture boundary |
 | T23 | Spoofing/DoS | Future native certificate, issuer, installation key, or server pin is stolen, expires, cannot rotate, or locks out legitimate clients | IE-01 distinct non-exportable installation keys where supported; issuance/revocation/rotation; CA/pin recovery; staged native enforcement and rollback | Infrastructure/Client/Operations | Required post-X track; not implemented |
 | T24 | Spoofing/Information disclosure | Browser pairing is replayed, approved for the wrong key/user, phished, or represented as proof of exact website code | IE-02 mobile-signed single-use bounded pairing and browser proof-of-possession; IE-03 official-domain, supply-chain, CSP/XSS, revocation, and user-confirmation controls | Infrastructure/Client/Backend | Required post-X tracks; not implemented |
+| T25 | DoS/Tampering | Windows restart, Docker Desktop/WSL2 startup, VHDX/storage behavior, or power loss leaves the stack unavailable or damages durable state | X1 Windows execution-plane contract; BitLocker recovery; bounded Docker readiness task; cold-reboot and power-loss recovery; SQL/Rabbit integrity checks; off-host restore | Host/Operations | X1 production evidence pending |
+| T26 | Tampering/Elevation | Mutable/rebuilt image, stale production branch, compromised deployment runner, or unreviewed migration reaches production | Annotated release tag; build once; private registry digest; protected environment approval; signed/checksummed release manifest; workstation runner; production receives artifacts only; concurrency and schema-aware rollback | CI/Operations | X1 implementation pending |
+| T27 | Information disclosure/Tampering | Weak router-share transport exposes credentials, a share administrator deletes backups, or an attacker replaces both package and checksum | Prefer SMB 2/3 and prohibit SMB1; compress, encrypt, and authenticate the backup package before transfer; protect the archive passphrase separately; authenticate the manifest; retrieve/decrypt/decompress/restore; explicitly accept the router drive's deletion/no-snapshot risk | Recovery/Operations | X1 implementation pending |
+| T28 | Elevation/Information disclosure | Active SQL/RabbitMQ bootstrap/operator credentials remain visible in long-running container metadata | Service-specific secret delivery where supported; provision durable operator; revoke/rotate bootstrap value; inspect containers; prove retained bootstrap value is invalid; keep ChatBackend runtime-only | Database/Operations | X1 implementation pending |
+| T29 | Information disclosure/DoS | Public detailed readiness leaks internal state or unlimited WebSocket handshakes exhaust the application before connection limits apply | Minimal public liveness; private detailed readiness; handshake-attempt and concurrent-connection limits; forwarded-source validation; reconnect/oversize/idle tests | Edge/Operations | X1 implementation pending |
+| T30 | Tampering/DoS/Information disclosure | Future partial uploads exhaust disk, splice or corrupt chunks, spoof media types, escape storage paths, expose unauthorized ranges, or leave messages pointing at incomplete content | ET-02 50 MiB object and 25 MiB request limits; authenticated owner-scoped tus resources; exact offset and checksum validation; server-side type sniffing; opaque paths; isolated temporary storage; expiry/orphan cleanup; atomic `AVAILABLE` promotion; authorization on every full/ranged download; storage alerts and recovery tests | Backend/Operations/Client | Required by ET-02; not implemented |
 
 ## 5. Required security verification
 
@@ -94,16 +100,26 @@ critical residual risk. At minimum:
 4. prove untrusted SQL certificates fail;
 5. prove runtime database and broker accounts cannot administer their services;
 6. interrupt RabbitMQ and verify API availability plus visible degradation and eventual drain;
-7. create, verify, decrypt, restore, migrate, and smoke-test a representative encrypted backup;
+7. create and verify an uncompressed checksum backup, package it with external compression and
+   client-side encryption, then retrieve, decrypt, decompress, restore, migrate, and smoke-test it;
 8. scan source, SBOM, application image, and every pinned infrastructure image;
 9. exercise request/socket limits and load regression without durable-state corruption;
 10. inspect running containers for privileged credentials, root UID, unexpected writable paths, and
     published ports;
-11. prove that only NGINX TCP 443 is Internet-reachable and that ChatBackend, SQL Server, RabbitMQ,
+11. prove that the origin exposes no public inbound port and only the dedicated Cloudflare hostname
+    reaches NGINX; prove that ChatBackend, SQL Server, RabbitMQ,
     administration, monitoring SQL, and Docker control cannot be reached directly;
 12. exercise Internet-origin login throttling, bootstrap closure, malformed/oversized requests,
     HTTP/WSS connection limits, session revocation, and durable recovery; and
-13. verify public certificate trust and expiry/renewal through representative remote clients.
+13. verify public certificate trust and expiry/renewal through representative remote clients;
+14. prove Windows sign-in startup, cold reboot, power-loss recovery, BitLocker recovery readiness, and
+    persistent SQL/Rabbit data on the selected host;
+15. prove build-once digest promotion, protected deployment approval, release-manifest verification,
+    and fail-closed schema-incompatible rollback;
+16. transfer and retrieve a compressed/pre-encrypted package from the router network drive, verify its
+    authenticated manifest, and restore it without relying on the production host; and
+17. prove any bootstrap values retained in container metadata are invalid and detailed readiness is
+    not publicly exposed.
 
 ## 6. Residual risks and production activation
 

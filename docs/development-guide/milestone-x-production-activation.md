@@ -2,7 +2,8 @@
 
 ## Status
 
-**Status:** Pocketed for future implementation; no production environment is currently claimed
+**Status:** X1 audited and ready for implementation; no production environment is currently claimed
+and X2 remains deferred until the X1 handoff
 
 **Last refined:** 2026-08-30
 
@@ -84,9 +85,15 @@ Requirement language is deliberate:
 13. Self-hosted monitoring is preferred. External alert delivery or a second-device heartbeat is
     optional and cannot become a core application dependency.
 
-The exact production host, network, DNS, certificate issuer, registry, SQL placement, backup store,
-secret mechanism, monitoring tools, graphing package, alert destinations, thresholds, and accountable
-owners are environment decisions to resolve in the applicable increment.
+The production host, Windows/Docker Desktop/WSL2 runtime, Docker Hub Personal's single free private
+repository, owner,
+DHCP-reserved address, BitLocker boundary, approximate workload, and absence of a UPS are recorded in
+X1. X1 now fixes a zero-cost direction: SQL Server Express, Cloudflare Tunnel/public TLS for the
+current text/API/WebSocket workload, and externally compressed/pre-transfer-encrypted backups on the
+router network drive. Cloudflare DNS onboarding, connector hardening, share protocol, and the exact
+hostname are X1-A implementation tasks rather than entry
+blockers. Monitoring tools, graphing package, alert destinations, and final production thresholds
+remain X2 decisions.
 
 ## 4. Standard decision record
 
@@ -191,10 +198,12 @@ Milestone X does not introduce:
   protocol, or official web-companion capabilities; or
 - software licensing, pricing, or support terms for independent deployments.
 
-## 9. Required sequence when resumed
+## 9. Current required sequence
 
 1. Re-audit this umbrella, X1, and X2 against the repository and actual target environment.
-2. Resolve X1 entry decisions and audit its implementation plan.
+   **Completed for X1 on 2026-08-30.**
+2. Execute the four accepted X1 zero-cost decisions and retain their discovery/verification evidence.
+   **Ready to begin in X1-A.**
 3. Implement, verify, document, and review X1; produce its evidence handoff.
 4. Resolve X2 entry decisions using X1 evidence and current monitoring requirements.
 5. Implement, verify, document, and review X2.

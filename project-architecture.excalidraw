@@ -1,0 +1,4514 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "ChatBackend quarkus-graph-generator",
+  "elements": [
+    {
+      "id": "zone-edge",
+      "type": "rectangle",
+      "x": 30,
+      "y": 25,
+      "width": 1740,
+      "height": 150,
+      "angle": 0,
+      "strokeColor": "#495057",
+      "backgroundColor": "#f1f3f5",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "dashed",
+      "roughness": 0,
+      "opacity": 45,
+      "groupIds": [],
+      "frameId": null,
+      "index": "azone-edge",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 489674558,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": true,
+      "customData": {
+        "kind": "zone",
+        "sourcePaths": []
+      }
+    },
+    {
+      "id": "zone-edge-label",
+      "type": "text",
+      "x": 44,
+      "y": 33,
+      "width": 1712,
+      "height": 21,
+      "angle": 0,
+      "strokeColor": "#495057",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bzone-edge",
+      "roundness": null,
+      "seed": 1134656603,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "fontSize": 16,
+      "fontFamily": 3,
+      "text": "INBOUND CLIENTS & EDGE",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "INBOUND CLIENTS & EDGE",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "zone-api",
+      "type": "rectangle",
+      "x": 30,
+      "y": 195,
+      "width": 1740,
+      "height": 205,
+      "angle": 0,
+      "strokeColor": "#1d4ed8",
+      "backgroundColor": "#dbeafe",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "dashed",
+      "roughness": 0,
+      "opacity": 45,
+      "groupIds": [],
+      "frameId": null,
+      "index": "azone-api",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 847076473,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": true,
+      "customData": {
+        "kind": "zone",
+        "sourcePaths": []
+      }
+    },
+    {
+      "id": "zone-api-label",
+      "type": "text",
+      "x": 44,
+      "y": 203,
+      "width": 1712,
+      "height": 21,
+      "angle": 0,
+      "strokeColor": "#1d4ed8",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bzone-api",
+      "roundness": null,
+      "seed": 1312558944,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "fontSize": 16,
+      "fontFamily": 3,
+      "text": "INTERFACE ADAPTERS",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "INTERFACE ADAPTERS",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "zone-core",
+      "type": "rectangle",
+      "x": 30,
+      "y": 420,
+      "width": 1740,
+      "height": 315,
+      "angle": 0,
+      "strokeColor": "#15803d",
+      "backgroundColor": "#dcfce7",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "dashed",
+      "roughness": 0,
+      "opacity": 45,
+      "groupIds": [],
+      "frameId": null,
+      "index": "azone-core",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 489625888,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": true,
+      "customData": {
+        "kind": "zone",
+        "sourcePaths": []
+      }
+    },
+    {
+      "id": "zone-core-label",
+      "type": "text",
+      "x": 44,
+      "y": 428,
+      "width": 1712,
+      "height": 21,
+      "angle": 0,
+      "strokeColor": "#15803d",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bzone-core",
+      "roundness": null,
+      "seed": 1452715001,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "fontSize": 16,
+      "fontFamily": 3,
+      "text": "APPLICATION & DOMAIN MODULES",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "APPLICATION & DOMAIN MODULES",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "zone-data",
+      "type": "rectangle",
+      "x": 30,
+      "y": 755,
+      "width": 1740,
+      "height": 205,
+      "angle": 0,
+      "strokeColor": "#a16207",
+      "backgroundColor": "#fef9c3",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "dashed",
+      "roughness": 0,
+      "opacity": 45,
+      "groupIds": [],
+      "frameId": null,
+      "index": "azone-data",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 489642283,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": true,
+      "customData": {
+        "kind": "zone",
+        "sourcePaths": []
+      }
+    },
+    {
+      "id": "zone-data-label",
+      "type": "text",
+      "x": 44,
+      "y": 763,
+      "width": 1712,
+      "height": 21,
+      "angle": 0,
+      "strokeColor": "#a16207",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bzone-data",
+      "roundness": null,
+      "seed": 2115903442,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "fontSize": 16,
+      "fontFamily": 3,
+      "text": "PERSISTENCE & INTEGRATIONS",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "PERSISTENCE & INTEGRATIONS",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "zone-ops",
+      "type": "rectangle",
+      "x": 30,
+      "y": 980,
+      "width": 1740,
+      "height": 160,
+      "angle": 0,
+      "strokeColor": "#c2410c",
+      "backgroundColor": "#ffedd5",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "dashed",
+      "roughness": 0,
+      "opacity": 45,
+      "groupIds": [],
+      "frameId": null,
+      "index": "azone-ops",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 847089937,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": true,
+      "customData": {
+        "kind": "zone",
+        "sourcePaths": []
+      }
+    },
+    {
+      "id": "zone-ops-label",
+      "type": "text",
+      "x": 44,
+      "y": 988,
+      "width": 1712,
+      "height": 21,
+      "angle": 0,
+      "strokeColor": "#c2410c",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bzone-ops",
+      "roundness": null,
+      "seed": 562015432,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "fontSize": 16,
+      "fontFamily": 3,
+      "text": "DEPLOYMENT & OPERATIONS",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "DEPLOYMENT & OPERATIONS",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "zone-docs",
+      "type": "rectangle",
+      "x": 30,
+      "y": 1160,
+      "width": 1740,
+      "height": 205,
+      "angle": 0,
+      "strokeColor": "#0f766e",
+      "backgroundColor": "#ccfbf1",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "dashed",
+      "roughness": 0,
+      "opacity": 45,
+      "groupIds": [],
+      "frameId": null,
+      "index": "azone-docs",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 489655228,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": true,
+      "customData": {
+        "kind": "zone",
+        "sourcePaths": []
+      }
+    },
+    {
+      "id": "zone-docs-label",
+      "type": "text",
+      "x": 44,
+      "y": 1168,
+      "width": 1712,
+      "height": 21,
+      "angle": 0,
+      "strokeColor": "#0f766e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bzone-docs",
+      "roundness": null,
+      "seed": 1813537187,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "fontSize": 16,
+      "fontFamily": 3,
+      "text": "DOCUMENTATION & AGENT NAVIGATION",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "DOCUMENTATION & AGENT NAVIGATION",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "arrow-0-clients-public-edge",
+      "type": "arrow",
+      "x": 227.5,
+      "y": 107.5,
+      "width": 385,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c00",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1151548836,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          385,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "clients",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "public-edge",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "HTTPS / WSS"
+      }
+    },
+    {
+      "id": "arrow-1-public-edge-quarkus-runtime",
+      "type": "arrow",
+      "x": 612.5,
+      "y": 107.5,
+      "width": 417.5,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c01",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1752648013,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          417.5,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "public-edge",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "quarkus-runtime",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "proxy"
+      }
+    },
+    {
+      "id": "arrow-2-quarkus-runtime-rest-api",
+      "type": "arrow",
+      "x": 1030,
+      "y": 107.5,
+      "width": -775,
+      "height": 192.5,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c02",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1811723057,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -775,
+          192.5
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "quarkus-runtime",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "rest-api",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "HTTP"
+      }
+    },
+    {
+      "id": "arrow-3-quarkus-runtime-websocket-api",
+      "type": "arrow",
+      "x": 1030,
+      "y": 107.5,
+      "width": 135,
+      "height": 192.5,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c03",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1493839782,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          135,
+          192.5
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "quarkus-runtime",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "websocket-api",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "WSS"
+      }
+    },
+    {
+      "id": "arrow-4-rest-api-http-crosscut",
+      "type": "arrow",
+      "x": 255,
+      "y": 300,
+      "width": 455,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c04",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1012000389,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          455,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "rest-api",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "http-crosscut",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "filters"
+      }
+    },
+    {
+      "id": "arrow-5-rest-api-identity-core",
+      "type": "arrow",
+      "x": 255,
+      "y": 300,
+      "width": 195,
+      "height": 227.5,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c05",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1705333982,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          195,
+          227.5
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "rest-api",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "identity-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "injects"
+      }
+    },
+    {
+      "id": "arrow-6-rest-api-session-core",
+      "type": "arrow",
+      "x": 255,
+      "y": 300,
+      "width": 482.5,
+      "height": 227.5,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c06",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 804573662,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          482.5,
+          227.5
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "rest-api",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "session-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "injects"
+      }
+    },
+    {
+      "id": "arrow-7-rest-api-conversation-core",
+      "type": "arrow",
+      "x": 255,
+      "y": 300,
+      "width": 770,
+      "height": 227.5,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c07",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1574123395,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          770,
+          227.5
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "rest-api",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "conversation-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "injects"
+      }
+    },
+    {
+      "id": "arrow-8-rest-api-message-core",
+      "type": "arrow",
+      "x": 255,
+      "y": 300,
+      "width": 1057.5,
+      "height": 227.5,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c08",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1404407983,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          1057.5,
+          227.5
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "rest-api",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "message-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "injects"
+      }
+    },
+    {
+      "id": "arrow-9-rest-api-delivery-core",
+      "type": "arrow",
+      "x": 255,
+      "y": 300,
+      "width": 1342.5,
+      "height": 227.5,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c09",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1703317932,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          1342.5,
+          227.5
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "rest-api",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "delivery-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "injects"
+      }
+    },
+    {
+      "id": "arrow-10-websocket-api-realtime-core",
+      "type": "arrow",
+      "x": 1165,
+      "y": 300,
+      "width": 75,
+      "height": 365,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c10",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1293556680,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          75,
+          365
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "websocket-api",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "realtime-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "injects"
+      }
+    },
+    {
+      "id": "arrow-11-session-core-identity-core",
+      "type": "arrow",
+      "x": 737.5,
+      "y": 527.5,
+      "width": -287.5,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c11",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1918497225,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -287.5,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "session-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "identity-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "authenticates"
+      }
+    },
+    {
+      "id": "arrow-12-conversation-core-identity-core",
+      "type": "arrow",
+      "x": 1025,
+      "y": 527.5,
+      "width": -575,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c12",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 387156778,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -575,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "conversation-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "identity-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "directory"
+      }
+    },
+    {
+      "id": "arrow-13-message-core-conversation-core",
+      "type": "arrow",
+      "x": 1312.5,
+      "y": 527.5,
+      "width": -287.5,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c13",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1540328577,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -287.5,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "message-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "conversation-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "authorizes"
+      }
+    },
+    {
+      "id": "arrow-14-delivery-core-conversation-core",
+      "type": "arrow",
+      "x": 1597.5,
+      "y": 527.5,
+      "width": -572.5,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c14",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1273517556,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -572.5,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "delivery-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "conversation-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "authorizes"
+      }
+    },
+    {
+      "id": "arrow-15-message-core-realtime-core",
+      "type": "arrow",
+      "x": 1312.5,
+      "y": 527.5,
+      "width": -72.5,
+      "height": 137.5,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c15",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1587722393,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -72.5,
+          137.5
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "message-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "realtime-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "post-commit events"
+      }
+    },
+    {
+      "id": "arrow-16-delivery-core-realtime-core",
+      "type": "arrow",
+      "x": 1597.5,
+      "y": 527.5,
+      "width": -357.5,
+      "height": 137.5,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c16",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 346567564,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -357.5,
+          137.5
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "delivery-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "realtime-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "post-commit events"
+      }
+    },
+    {
+      "id": "arrow-17-session-core-realtime-core",
+      "type": "arrow",
+      "x": 737.5,
+      "y": 527.5,
+      "width": 502.5,
+      "height": 137.5,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c17",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 660649386,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          502.5,
+          137.5
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "session-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "realtime-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "revocation events"
+      }
+    },
+    {
+      "id": "arrow-18-identity-core-jdbc-adapters",
+      "type": "arrow",
+      "x": 450,
+      "y": 527.5,
+      "width": -187.5,
+      "height": 330,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c18",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1682798935,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -187.5,
+          330
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "identity-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "jdbc-adapters",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "ports"
+      }
+    },
+    {
+      "id": "arrow-19-session-core-jdbc-adapters",
+      "type": "arrow",
+      "x": 737.5,
+      "y": 527.5,
+      "width": -475,
+      "height": 330,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c19",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1823385727,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -475,
+          330
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "session-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "jdbc-adapters",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "ports"
+      }
+    },
+    {
+      "id": "arrow-20-conversation-core-jdbc-adapters",
+      "type": "arrow",
+      "x": 1025,
+      "y": 527.5,
+      "width": -762.5,
+      "height": 330,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c20",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 165927566,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -762.5,
+          330
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "conversation-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "jdbc-adapters",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "ports"
+      }
+    },
+    {
+      "id": "arrow-21-message-core-jdbc-adapters",
+      "type": "arrow",
+      "x": 1312.5,
+      "y": 527.5,
+      "width": -1050,
+      "height": 330,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c21",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1544508562,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -1050,
+          330
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "message-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "jdbc-adapters",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "ports"
+      }
+    },
+    {
+      "id": "arrow-22-delivery-core-jdbc-adapters",
+      "type": "arrow",
+      "x": 1597.5,
+      "y": 527.5,
+      "width": -1335,
+      "height": 330,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c22",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1509303905,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -1335,
+          330
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "delivery-core",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "jdbc-adapters",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "ports"
+      }
+    },
+    {
+      "id": "arrow-23-jdbc-adapters-sql-server",
+      "type": "arrow",
+      "x": 262.5,
+      "y": 857.5,
+      "width": 422.5,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c23",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 612124857,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          422.5,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "jdbc-adapters",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "sql-server",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "JDBC / TLS"
+      }
+    },
+    {
+      "id": "arrow-24-http-crosscut-rabbitmq",
+      "type": "arrow",
+      "x": 710,
+      "y": 300,
+      "width": 365,
+      "height": 557.5,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c24",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 783732572,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          365,
+          557.5
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "http-crosscut",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "rabbitmq",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "publishes audit"
+      }
+    },
+    {
+      "id": "arrow-25-rabbitmq-jdbc-adapters",
+      "type": "arrow",
+      "x": 1075,
+      "y": 857.5,
+      "width": -812.5,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c25",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1472756409,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -812.5,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "rabbitmq",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "jdbc-adapters",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "consumes"
+      }
+    },
+    {
+      "id": "arrow-26-flyway-sql-server",
+      "type": "arrow",
+      "x": 1465,
+      "y": 857.5,
+      "width": -780,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c26",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 193094899,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -780,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "flyway",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "sql-server",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "migrates"
+      }
+    },
+    {
+      "id": "arrow-27-runtime-config-quarkus-runtime",
+      "type": "arrow",
+      "x": 250,
+      "y": 1062.5,
+      "width": 780,
+      "height": -955,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c27",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1624592663,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          780,
+          -955
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "runtime-config",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "quarkus-runtime",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "configures"
+      }
+    },
+    {
+      "id": "arrow-28-compose-images-quarkus-runtime",
+      "type": "arrow",
+      "x": 715,
+      "y": 1062.5,
+      "width": 315,
+      "height": -955,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c28",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1184657627,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          315,
+          -955
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "compose-images",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "quarkus-runtime",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "runs"
+      }
+    },
+    {
+      "id": "arrow-29-health-contracts-quarkus-runtime",
+      "type": "arrow",
+      "x": 1180,
+      "y": 1062.5,
+      "width": -150,
+      "height": -955,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c29",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 520882814,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -150,
+          -955
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "health-contracts",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "quarkus-runtime",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "observes"
+      }
+    },
+    {
+      "id": "arrow-30-ci-cd-compose-images",
+      "type": "arrow",
+      "x": 1585,
+      "y": 1062.5,
+      "width": -870,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c30",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1289741400,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -870,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "ci-cd",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "compose-images",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "builds / deploys"
+      }
+    },
+    {
+      "id": "arrow-31-repo-router-architecture-docs",
+      "type": "arrow",
+      "x": 200,
+      "y": 1262.5,
+      "width": 305,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "dashed",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c31",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 1831682324,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          -35
+        ],
+        [
+          305,
+          -35
+        ],
+        [
+          305,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "repo-router",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "architecture-docs",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "routes"
+      }
+    },
+    {
+      "id": "arrow-32-repo-router-spec-docs",
+      "type": "arrow",
+      "x": 200,
+      "y": 1262.5,
+      "width": 630,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "dashed",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c32",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 117876604,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          -35
+        ],
+        [
+          630,
+          -35
+        ],
+        [
+          630,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "repo-router",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "spec-docs",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "routes"
+      }
+    },
+    {
+      "id": "arrow-33-repo-router-guide-docs",
+      "type": "arrow",
+      "x": 200,
+      "y": 1262.5,
+      "width": 970,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "dashed",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c33",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 922417707,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          -35
+        ],
+        [
+          970,
+          -35
+        ],
+        [
+          970,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "repo-router",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "guide-docs",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "routes"
+      }
+    },
+    {
+      "id": "arrow-34-repo-router-ops-docs",
+      "type": "arrow",
+      "x": 200,
+      "y": 1262.5,
+      "width": 1330,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "dashed",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c34",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 387827169,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493430,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          -35
+        ],
+        [
+          1330,
+          -35
+        ],
+        [
+          1330,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "repo-router",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "ops-docs",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "routes"
+      }
+    },
+    {
+      "id": "clients",
+      "type": "rectangle",
+      "x": 85,
+      "y": 75,
+      "width": 285,
+      "height": 65,
+      "angle": 0,
+      "strokeColor": "#495057",
+      "backgroundColor": "#f1f3f5",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "aclients",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 860587528,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": []
+      }
+    },
+    {
+      "id": "clients-label",
+      "type": "text",
+      "x": 97,
+      "y": 88.5,
+      "width": 261,
+      "height": 38,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bclients",
+      "roundness": null,
+      "seed": 869633297,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Browser / Mobile / Desktop\nClients",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Browser / Mobile / Desktop\nClients",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "public-edge",
+      "type": "rectangle",
+      "x": 455,
+      "y": 65,
+      "width": 315,
+      "height": 85,
+      "angle": 0,
+      "strokeColor": "#495057",
+      "backgroundColor": "#f1f3f5",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "apublic-edge",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1126697311,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "deploy/nginx/conf.d/chat-backend.conf",
+          "deploy/compose.hardened.yaml"
+        ]
+      }
+    },
+    {
+      "id": "public-edge-label",
+      "type": "text",
+      "x": 467,
+      "y": 88.5,
+      "width": 291,
+      "height": 38,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bpublic-edge",
+      "roundness": null,
+      "seed": 1413237960,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Cloudflare Tunnel → NGINX\nHTTPS / WSS policy boundary",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Cloudflare Tunnel → NGINX\nHTTPS / WSS policy boundary",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "quarkus-runtime",
+      "type": "rectangle",
+      "x": 875,
+      "y": 65,
+      "width": 310,
+      "height": 85,
+      "angle": 0,
+      "strokeColor": "#495057",
+      "backgroundColor": "#f1f3f5",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "aquarkus-runtime",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 874241569,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "pom.xml",
+          "src/main/resources/application.properties"
+        ]
+      }
+    },
+    {
+      "id": "quarkus-runtime-label",
+      "type": "text",
+      "x": 887,
+      "y": 88.5,
+      "width": 286,
+      "height": 38,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bquarkus-runtime",
+      "roundness": null,
+      "seed": 1711182214,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "ChatBackend Quarkus Runtime\nJava 25 modular monolith",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "ChatBackend Quarkus Runtime\nJava 25 modular monolith",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "rest-api",
+      "type": "rectangle",
+      "x": 80,
+      "y": 245,
+      "width": 350,
+      "height": 110,
+      "angle": 0,
+      "strokeColor": "#1d4ed8",
+      "backgroundColor": "#dbeafe",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "arest-api",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 338607967,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/bootstrap/api",
+          "src/main/java/com/wayden/messenger/identity/api",
+          "src/main/java/com/wayden/messenger/session/api",
+          "src/main/java/com/wayden/messenger/conversation/api",
+          "src/main/java/com/wayden/messenger/message/api",
+          "src/main/java/com/wayden/messenger/delivery/api"
+        ]
+      }
+    },
+    {
+      "id": "rest-api-label",
+      "type": "text",
+      "x": 92,
+      "y": 271.5,
+      "width": 326,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "brest-api",
+      "roundness": null,
+      "seed": 831919816,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "REST Resources & Problem Mappers\nbootstrap · identity · sessions\nconversations · messages · delivery",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "REST Resources & Problem Mappers\nbootstrap · identity · sessions\nconversations · messages · delivery",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "http-crosscut",
+      "type": "rectangle",
+      "x": 535,
+      "y": 245,
+      "width": 350,
+      "height": 110,
+      "angle": 0,
+      "strokeColor": "#1d4ed8",
+      "backgroundColor": "#dbeafe",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "ahttp-crosscut",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1209177511,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/session/api/AuthenticationFilter.java",
+          "src/main/java/com/wayden/messenger/common/http"
+        ]
+      }
+    },
+    {
+      "id": "http-crosscut-label",
+      "type": "text",
+      "x": 547,
+      "y": 271.5,
+      "width": 326,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bhttp-crosscut",
+      "roundness": null,
+      "seed": 1210650446,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Authentication + Request/Audit Filters\nRFC 9457 errors · request IDs\nrate limits · source resolution",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Authentication + Request/Audit Filters\nRFC 9457 errors · request IDs\nrate limits · source resolution",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "websocket-api",
+      "type": "rectangle",
+      "x": 990,
+      "y": 245,
+      "width": 350,
+      "height": 110,
+      "angle": 0,
+      "strokeColor": "#1d4ed8",
+      "backgroundColor": "#dbeafe",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "awebsocket-api",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 380252396,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/realtime/api/ChatWebSocketEndpoint.java",
+          "src/main/java/com/wayden/messenger/realtime/api/WebSocketHandshakePolicy.java"
+        ]
+      }
+    },
+    {
+      "id": "websocket-api-label",
+      "type": "text",
+      "x": 1002,
+      "y": 271.5,
+      "width": 326,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bwebsocket-api",
+      "roundness": null,
+      "seed": 1952760571,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "WebSocket Endpoint /api/v1/ws\nhandshake policy · commands\nbest-effort event signals",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "WebSocket Endpoint /api/v1/ws\nhandshake policy · commands\nbest-effort event signals",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "bootstrap-core",
+      "type": "rectangle",
+      "x": 65,
+      "y": 475,
+      "width": 225,
+      "height": 85,
+      "angle": 0,
+      "strokeColor": "#15803d",
+      "backgroundColor": "#dcfce7",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "abootstrap-core",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1431775330,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/bootstrap"
+        ]
+      }
+    },
+    {
+      "id": "bootstrap-core-label",
+      "type": "text",
+      "x": 77,
+      "y": 498.5,
+      "width": 201,
+      "height": 38,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bbootstrap-core",
+      "roundness": null,
+      "seed": 1634581509,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Bootstrap / Health\nPingService",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Bootstrap / Health\nPingService",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "identity-core",
+      "type": "rectangle",
+      "x": 320,
+      "y": 475,
+      "width": 260,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#15803d",
+      "backgroundColor": "#dcfce7",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "aidentity-core",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 515843918,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/identity/application",
+          "src/main/java/com/wayden/messenger/identity/domain"
+        ]
+      }
+    },
+    {
+      "id": "identity-core-label",
+      "type": "text",
+      "x": 332,
+      "y": 499,
+      "width": 236,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bidentity-core",
+      "roundness": null,
+      "seed": 1469417397,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Identity\nAdmin + invitation services\nusers · roles · password hashing",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Identity\nAdmin + invitation services\nusers · roles · password hashing",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "session-core",
+      "type": "rectangle",
+      "x": 610,
+      "y": 475,
+      "width": 255,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#15803d",
+      "backgroundColor": "#dcfce7",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "asession-core",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 732922762,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/session/application",
+          "src/main/java/com/wayden/messenger/session/domain"
+        ]
+      }
+    },
+    {
+      "id": "session-core-label",
+      "type": "text",
+      "x": 622,
+      "y": 499,
+      "width": 231,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bsession-core",
+      "roundness": null,
+      "seed": 1844683043,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Sessions\nlogin · logout · revocation\nauthentication throttling",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Sessions\nlogin · logout · revocation\nauthentication throttling",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "conversation-core",
+      "type": "rectangle",
+      "x": 895,
+      "y": 475,
+      "width": 260,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#15803d",
+      "backgroundColor": "#dcfce7",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "aconversation-core",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 710889129,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/conversation/application",
+          "src/main/java/com/wayden/messenger/conversation/domain"
+        ]
+      }
+    },
+    {
+      "id": "conversation-core-label",
+      "type": "text",
+      "x": 907,
+      "y": 499,
+      "width": 236,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bconversation-core",
+      "roundness": null,
+      "seed": 202604240,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Conversations\ndirect/group membership\nroles · discovery · cursors",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Conversations\ndirect/group membership\nroles · discovery · cursors",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "message-core",
+      "type": "rectangle",
+      "x": 1185,
+      "y": 475,
+      "width": 255,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#15803d",
+      "backgroundColor": "#dcfce7",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "amessage-core",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1332757083,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/message/application",
+          "src/main/java/com/wayden/messenger/message/domain"
+        ]
+      }
+    },
+    {
+      "id": "message-core-label",
+      "type": "text",
+      "x": 1197,
+      "y": 489.5,
+      "width": 231,
+      "height": 76,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bmessage-core",
+      "roundness": null,
+      "seed": 777765068,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Messages\ndurable send · edit\ntombstone · idempotency\nsequence",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Messages\ndurable send · edit\ntombstone · idempotency\nsequence",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "delivery-core",
+      "type": "rectangle",
+      "x": 1470,
+      "y": 475,
+      "width": 255,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#15803d",
+      "backgroundColor": "#dcfce7",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "adelivery-core",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 370471464,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/delivery/application",
+          "src/main/java/com/wayden/messenger/delivery/domain"
+        ]
+      }
+    },
+    {
+      "id": "delivery-core-label",
+      "type": "text",
+      "x": 1482,
+      "y": 499,
+      "width": 231,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bdelivery-core",
+      "roundness": null,
+      "seed": 869850815,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Delivery / Read State\nmonotonic per-user cursors\nunread + aggregate status",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Delivery / Read State\nmonotonic per-user cursors\nunread + aggregate status",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "realtime-core",
+      "type": "rectangle",
+      "x": 1070,
+      "y": 625,
+      "width": 340,
+      "height": 80,
+      "angle": 0,
+      "strokeColor": "#15803d",
+      "backgroundColor": "#dcfce7",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "arealtime-core",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1199976767,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/realtime/application",
+          "src/main/java/com/wayden/messenger/realtime/domain",
+          "src/main/java/com/wayden/messenger/realtime/infrastructure"
+        ]
+      }
+    },
+    {
+      "id": "realtime-core-label",
+      "type": "text",
+      "x": 1082,
+      "y": 636.5,
+      "width": 316,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "brealtime-core",
+      "roundness": null,
+      "seed": 836996328,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Realtime Application\nauthenticator · connection registry\npost-commit event dispatcher",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Realtime Application\nauthenticator · connection registry\npost-commit event dispatcher",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "jdbc-adapters",
+      "type": "rectangle",
+      "x": 80,
+      "y": 805,
+      "width": 365,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#a16207",
+      "backgroundColor": "#fef9c3",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "ajdbc-adapters",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 37240426,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/identity/infrastructure",
+          "src/main/java/com/wayden/messenger/session/infrastructure",
+          "src/main/java/com/wayden/messenger/conversation/infrastructure",
+          "src/main/java/com/wayden/messenger/message/infrastructure",
+          "src/main/java/com/wayden/messenger/delivery/infrastructure",
+          "src/main/java/com/wayden/messenger/common/http/JdbcHttpAuditEventSink.java"
+        ]
+      }
+    },
+    {
+      "id": "jdbc-adapters-label",
+      "type": "text",
+      "x": 92,
+      "y": 829,
+      "width": 341,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bjdbc-adapters",
+      "roundness": null,
+      "seed": 822299645,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "JDBC Repository Adapters\nidentity · sessions · conversations\nmessages · delivery · audit sink",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "JDBC Repository Adapters\nidentity · sessions · conversations\nmessages · delivery · audit sink",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "sql-server",
+      "type": "rectangle",
+      "x": 535,
+      "y": 805,
+      "width": 300,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#a16207",
+      "backgroundColor": "#fef9c3",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "asql-server",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 413947938,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "scripts/database/flyway/wl_chat"
+        ]
+      }
+    },
+    {
+      "id": "sql-server-label",
+      "type": "text",
+      "x": 547,
+      "y": 829,
+      "width": 276,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bsql-server",
+      "roundness": null,
+      "seed": 1703397769,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "SQL Server · Durable authority\nidentity · messaging\naudit schemas",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "SQL Server · Durable authority\nidentity · messaging\naudit schemas",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "rabbitmq",
+      "type": "rectangle",
+      "x": 925,
+      "y": 805,
+      "width": 300,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#7e22ce",
+      "backgroundColor": "#f3e8ff",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "arabbitmq",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 95168706,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/common/http/HttpAuditQueueDispatcher.java",
+          "deploy/rabbitmq/definitions.json"
+        ]
+      }
+    },
+    {
+      "id": "rabbitmq-label",
+      "type": "text",
+      "x": 937,
+      "y": 829,
+      "width": 276,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "brabbitmq",
+      "roundness": null,
+      "seed": 780305317,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "RabbitMQ Audit Transport\nexchange · queue · DLQ\nasync publish / consume",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "RabbitMQ Audit Transport\nexchange · queue · DLQ\nasync publish / consume",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "flyway",
+      "type": "rectangle",
+      "x": 1315,
+      "y": 805,
+      "width": 300,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#a16207",
+      "backgroundColor": "#fef9c3",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "aflyway",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1271331428,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "deploy/flyway/Dockerfile",
+          "scripts/database/flyway"
+        ]
+      }
+    },
+    {
+      "id": "flyway-label",
+      "type": "text",
+      "x": 1327,
+      "y": 838.5,
+      "width": 276,
+      "height": 38,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bflyway",
+      "roundness": null,
+      "seed": 204016765,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Flyway Migrator\nforward-only SQL Server migrations",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Flyway Migrator\nforward-only SQL Server migrations",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "runtime-config",
+      "type": "rectangle",
+      "x": 75,
+      "y": 1025,
+      "width": 350,
+      "height": 75,
+      "angle": 0,
+      "strokeColor": "#c2410c",
+      "backgroundColor": "#ffedd5",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "aruntime-config",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1486021929,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/resources/application.properties",
+          "src/main/java/com/wayden/messenger/bootstrap/config",
+          "src/main/java/com/wayden/messenger/common/configuration/DatabaseTlsPolicy.java"
+        ]
+      }
+    },
+    {
+      "id": "runtime-config-label",
+      "type": "text",
+      "x": 87,
+      "y": 1043.5,
+      "width": 326,
+      "height": 38,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bruntime-config",
+      "roundness": null,
+      "seed": 1007226754,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Runtime Configuration & Secrets\nMicroProfile Config · verified SQL TLS",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Runtime Configuration & Secrets\nMicroProfile Config · verified SQL TLS",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "compose-images",
+      "type": "rectangle",
+      "x": 520,
+      "y": 1025,
+      "width": 390,
+      "height": 75,
+      "angle": 0,
+      "strokeColor": "#c2410c",
+      "backgroundColor": "#ffedd5",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "acompose-images",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1232735469,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "deploy/compose.hardened.yaml",
+          "Dockerfile",
+          "deploy/nginx",
+          "deploy/rabbitmq",
+          "deploy/flyway"
+        ]
+      }
+    },
+    {
+      "id": "compose-images-label",
+      "type": "text",
+      "x": 532,
+      "y": 1043.5,
+      "width": 366,
+      "height": 38,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bcompose-images",
+      "roundness": null,
+      "seed": 922506310,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Hardened Compose / Images\nNGINX · app · SQL · RabbitMQ · migrator",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Hardened Compose / Images\nNGINX · app · SQL · RabbitMQ · migrator",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "health-contracts",
+      "type": "rectangle",
+      "x": 1005,
+      "y": 1025,
+      "width": 350,
+      "height": 75,
+      "angle": 0,
+      "strokeColor": "#c2410c",
+      "backgroundColor": "#ffedd5",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "ahealth-contracts",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 501265264,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "src/main/java/com/wayden/messenger/common/api/OpenApiConfiguration.java",
+          "src/main/java/com/wayden/messenger/common/http/AuditTransportHealthCheck.java",
+          "docs/api/openapi.yaml"
+        ]
+      }
+    },
+    {
+      "id": "health-contracts-label",
+      "type": "text",
+      "x": 1017,
+      "y": 1043.5,
+      "width": 326,
+      "height": 38,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bhealth-contracts",
+      "roundness": null,
+      "seed": 1460538793,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Health + OpenAPI + JSON Logs\nSmallRye Health · generated contracts",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Health + OpenAPI + JSON Logs\nSmallRye Health · generated contracts",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "ci-cd",
+      "type": "rectangle",
+      "x": 1445,
+      "y": 1025,
+      "width": 280,
+      "height": 75,
+      "angle": 0,
+      "strokeColor": "#c2410c",
+      "backgroundColor": "#ffedd5",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "aci-cd",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 94603048,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          ".github/workflows"
+        ]
+      }
+    },
+    {
+      "id": "ci-cd-label",
+      "type": "text",
+      "x": 1457,
+      "y": 1043.5,
+      "width": 256,
+      "height": 38,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bci-cd",
+      "roundness": null,
+      "seed": 8053745,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "GitHub Actions / Deployment\nbuild · scan · migrate · smoke · sync",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "GitHub Actions / Deployment\nbuild · scan · migrate · smoke · sync",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "repo-router",
+      "type": "rectangle",
+      "x": 65,
+      "y": 1210,
+      "width": 270,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#0f766e",
+      "backgroundColor": "#ccfbf1",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "arepo-router",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1397210620,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "AGENTS.md",
+          "README.md",
+          "CHANGELOG.md"
+        ]
+      }
+    },
+    {
+      "id": "repo-router-label",
+      "type": "text",
+      "x": 77,
+      "y": 1234,
+      "width": 246,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "brepo-router",
+      "roundness": null,
+      "seed": 998161941,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Start Here\nAGENTS.md · README.md\nCHANGELOG.md",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Start Here\nAGENTS.md · README.md\nCHANGELOG.md",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "architecture-docs",
+      "type": "rectangle",
+      "x": 365,
+      "y": 1210,
+      "width": 280,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#0f766e",
+      "backgroundColor": "#ccfbf1",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "aarchitecture-docs",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 224872843,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "docs/architecture/single-host-layered-container-architecture.md",
+          "docs/architecture/decision"
+        ]
+      }
+    },
+    {
+      "id": "architecture-docs-label",
+      "type": "text",
+      "x": 377,
+      "y": 1234,
+      "width": 256,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "barchitecture-docs",
+      "roundness": null,
+      "seed": 824517220,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Architecture & Decisions\nsingle-host architecture\ndocs/architecture/decision/",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Architecture & Decisions\nsingle-host architecture\ndocs/architecture/decision/",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "spec-docs",
+      "type": "rectangle",
+      "x": 675,
+      "y": 1210,
+      "width": 310,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#0f766e",
+      "backgroundColor": "#ccfbf1",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "aspec-docs",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 1750079219,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "docs/private-instant-messaging-platform-spec-v0.2-sql-server.md",
+          "docs/platform-evolution-specification.md",
+          "docs/infrastructure-evolution-specification.md"
+        ]
+      }
+    },
+    {
+      "id": "spec-docs-label",
+      "type": "text",
+      "x": 687,
+      "y": 1234,
+      "width": 286,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bspec-docs",
+      "roundness": null,
+      "seed": 1727512116,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Platform Specifications\nimplemented v0.2 baseline\nplatform + infrastructure evolution",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Platform Specifications\nimplemented v0.2 baseline\nplatform + infrastructure evolution",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "guide-docs",
+      "type": "rectangle",
+      "x": 1015,
+      "y": 1210,
+      "width": 310,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#0f766e",
+      "backgroundColor": "#ccfbf1",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "aguide-docs",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 18908780,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "docs/development-guide",
+          "docs/client-integration/client-responsibility-and-recovery-guide.md"
+        ]
+      }
+    },
+    {
+      "id": "guide-docs-label",
+      "type": "text",
+      "x": 1027,
+      "y": 1234,
+      "width": 286,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bguide-docs",
+      "roundness": null,
+      "seed": 802252717,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Implementation & Client Guides\ndocs/development-guide/\nclient responsibility + recovery",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Implementation & Client Guides\ndocs/development-guide/\nclient responsibility + recovery",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "ops-docs",
+      "type": "rectangle",
+      "x": 1355,
+      "y": 1210,
+      "width": 350,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#0f766e",
+      "backgroundColor": "#ccfbf1",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "aops-docs",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 163384202,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "docs/operations",
+          "docs/security/threat-model.md"
+        ]
+      }
+    },
+    {
+      "id": "ops-docs-label",
+      "type": "text",
+      "x": 1367,
+      "y": 1234,
+      "width": 326,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bops-docs",
+      "roundness": null,
+      "seed": 498805027,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1788352493431,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Operations & Security\nenvironment rollout · runbooks\nthreat model",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Operations & Security\nenvironment rollout · runbooks\nthreat model",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    }
+  ],
+  "appState": {
+    "gridSize": 20,
+    "viewBackgroundColor": "#ffffff",
+    "currentItemFontFamily": 3
+  },
+  "files": {},
+  "metadata": {
+    "updatedAt": "2026-09-02T12:34:53Z",
+    "productionPackages": 30,
+    "productionClasses": 161,
+    "componentNodes": 26,
+    "capabilities": [
+      "Quarkus REST/Jackson",
+      "JDBC SQL Server",
+      "Flyway",
+      "SmallRye Health",
+      "Hibernate Validator",
+      "SmallRye OpenAPI",
+      "JSON Logging",
+      "WebSockets Next",
+      "RabbitMQ AMQP",
+      "Argon2"
+    ]
+  }
+}

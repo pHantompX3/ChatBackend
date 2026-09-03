@@ -16,7 +16,8 @@
 - Active local database name: `wl_chat`
 - Active app login: `wl_chat_app`
 - Audit transport: RabbitMQ-backed delivery is optional; if the audit transport is not configured, the app falls back to local async persistence and still boots cleanly
-- Original roadmap status: Milestones 0–9 complete; Milestone X production activation paused
+- Original roadmap status: Milestones 0–9 complete; Milestone X1 is audited and ready for
+  implementation; no production deployment is claimed
 - Production client-ingress decision: public HTTPS/WSS through one hardened NGINX edge; user
   authentication and server authorization are initially authoritative. The required post-X sequence
   adds IE-01 native per-installation trust, IE-02 mobile-authorized linked-browser protocol support,

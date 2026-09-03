@@ -1,7 +1,7 @@
 # Client Responsibility and Recovery Guide
 
 **Status:** Current implementation audit  
-**Last reviewed:** 2026-08-30
+**Last reviewed:** 2026-09-02
 **Applies to:** ChatBackend `0.9.0-SNAPSHOT`
 
 ## 1. Purpose
@@ -57,6 +57,7 @@ This guide is a living, release-controlled contract rather than a one-time clien
 | Receipt visibility | A sender can query aggregate delivery/read status; recipient identities and raw positions are not exposed. | Render aggregate states accurately and do not imply per-device or named-recipient proof. |
 | Membership privacy | Only active members can read a private conversation or receive its events. | Remove inaccessible cached content from active UI on privacy-preserving `404`, leave/removal, or account/session changes according to product policy. |
 | Pagination | Conversation/member pages use opaque cursors; message history uses forward sequence pagination. | Follow returned cursors exactly, avoid inventing or decoding opaque cursors, and persist per-conversation synchronization state. |
+| Future attachment transfer | ET-02 will provide authenticated tus resumable uploads, a 50 MiB assembled-object limit, 25 MiB request chunks, verified on-premises storage, and authorized HTTP byte-range downloads. WebSockets will signal state only. | Compress, resize, or transcode before upload; persist the upload URL and acknowledged offset; resume rather than restart after interruption; associate only an `AVAILABLE` attachment; use ranges for resumable download/playback; and handle expiry, rejection, and cleanup states. |
 
 ## 3. Recommended Client State Model
 
@@ -294,6 +295,38 @@ logic on human-readable detail strings.
 - Apply backpressure: batch reconciliation and acknowledgements, limit concurrent requests, and avoid
   per-message receipt polling.
 
+### 10.1 Planned ET-02 attachment workflow
+
+This section records an accepted future contract, not a currently implemented API. A conforming
+client will:
+
+1. Inspect the source locally and, when useful, compress, resize, or transcode it before any upload.
+   A client must reject or transform a resulting representation above 50 MiB; splitting one logical
+   attachment into multiple messages to evade the limit is not supported.
+2. Create an authenticated tus upload resource with the final byte length and safe metadata. Retain
+   the returned opaque upload URL, attachment identifier, expiry, and local file fingerprint in
+   durable client state. Session tokens must not be placed in that URL.
+3. Send sequential offset-checked `PATCH` bodies no larger than 25 MiB using
+   `application/offset+octet-stream`. After an ambiguous response, issue `HEAD` and continue from the
+   server's `Upload-Offset`; never guess an offset or resend bytes blindly.
+4. Surface pause, resume, cancel, expired, rejected, verifying, and failed states. A `409` offset
+   conflict requires `HEAD` reconciliation; `410` expiry requires a new upload; `413` requires a
+   smaller client-produced representation or cancellation.
+5. Wait for authoritative verification and `AVAILABLE` state before creating or updating a message
+   that references the attachment. Persist a stable message idempotency key separately from the
+   upload identity.
+6. Treat WebSocket attachment/message events as refresh hints. Fetch authoritative metadata after a
+   missed event, reconnect, or app resume; never treat an emitted frame as proof that bytes are
+   durable or accessible.
+7. Download through the authenticated content resource. Retain `ETag` and the completed local byte
+   count, then use `Range` with `If-Range` to resume or seek. On a full `200`, changed validator, or
+   `416`, discard incompatible partial state and restart safely. Verify the final whole-object digest
+   before presenting content as complete.
+
+Compression is a client capability, not permission to upload an unsafe archive. Clients should
+prefer interoperable media encodings and preserve accessible filename/caption/alternative-text
+metadata, while the server independently validates the stored representation.
+
 ## 11. First-Client Acceptance Checklist
 
 A client is not ready for production integration until automated tests demonstrate:
@@ -360,3 +393,6 @@ client must compensate or where a future backend milestone could simplify client
 - Reconnect and receipt behavior: `docs/development-guide/milestone-6-delivery-and-read-state-step-by-step.md`
 - WebSocket frames and commands: `docs/development-guide/milestone-8-websockets-step-by-step.md`
 - Executable REST journeys: `postman/README.md`
+- Future attachment contract: `docs/platform-evolution-specification.md`, ET-02
+- Resumable upload protocol: <https://tus.io/protocols/resumable-upload>
+- HTTP range semantics: <https://www.rfc-editor.org/rfc/rfc9110.html#section-14>
