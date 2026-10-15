@@ -23,7 +23,9 @@ release tags begin when the project intentionally performs a production release 
   signed rollback compatibility an explicit fail-closed release input, and retired misleading
   legacy production-branch deployment guidance. Kept the clean-install CI bootstrap aligned by
   supplying its required ephemeral maintenance-principal credential, and upgraded the RabbitMQ
-  Java client to 5.34.0 to resolve CVE-2026-75516 oversized-frame denial of service.
+  Java client to 5.34.0 to resolve CVE-2026-75516 oversized-frame denial of service. Aligned Jackson
+  dependencies on fixed version 2.21.7 and moved the hardened application runtime to Ubuntu 24.04
+  to resolve the additional high-severity findings in the container scan.
 
 ### Added
 
