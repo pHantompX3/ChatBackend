@@ -75,5 +75,7 @@ An API implementation change is incomplete when corresponding Postman artifacts 
 - Post-Milestone enhancement planning and Evolution Track register: [docs/platform-evolution-specification.md](../../docs/platform-evolution-specification.md)
 - Post-production infrastructure evolution and IE Track register: [docs/infrastructure-evolution-specification.md](../../docs/infrastructure-evolution-specification.md)
 - Client integration and recovery contract: [docs/client-integration/client-responsibility-and-recovery-guide.md](../../docs/client-integration/client-responsibility-and-recovery-guide.md)
+- X1 production operator procedure: [docs/operations/x1-production-operator-manual.md](../../docs/operations/x1-production-operator-manual.md)
+- X3 production deployment and acceptance: [docs/development-guide/milestone-x3-production-deployment-and-acceptance.md](../../docs/development-guide/milestone-x3-production-deployment-and-acceptance.md)
 - Context architecture skill: [skills/workspace-context-architecture/SKILL.md](../skills/workspace-context-architecture/SKILL.md)
 - Quarkus graph skill: [skills/quarkus-graph-generator/SKILL.md](../skills/quarkus-graph-generator/SKILL.md)

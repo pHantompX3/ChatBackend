@@ -43,6 +43,31 @@ For production, copy the encrypted artifact off-host on a schedule, apply retent
 immutability controls, monitor transfer and backup age, and rehearse retrieval from that actual store.
 Do not treat a backup remaining only on the database host as disaster recovery.
 
+## X1 production backup and restore
+
+Production uses SQL Server Express and deliberately does not depend on paid-edition native backup
+compression or encryption. Run `scripts/production/backup-production.sh`. It creates an uncompressed
+native backup with SQL `CHECKSUM`, executes `RESTORE VERIFYONLY`, hashes the native backup, then
+streams it into a gzip-compressed AES-256-CBC/PBKDF2 package. A detached RSA signature authenticates
+the manifest, which includes both native-backup and encrypted-package hashes. Only the encrypted,
+signed package is copied to the configured SMB 2/3 off-host destination; the plaintext `.bak` is
+removed after successful verification.
+
+Retrieve a package back from the off-host share and run:
+
+```text
+scripts/production/restore-production-backup.sh \
+  --package-dir <retrieved-package-directory> \
+  --isolated-target wl_chat_restore_drill
+```
+
+The command verifies the signature and ciphertext hash before decryption, verifies the native backup
+hash, starts an isolated SQL Server Express instance, performs `RESTORE VERIFYONLY`, restores with
+explicit file moves, and runs `DBCC CHECKDB`. It refuses the authoritative `wl_chat` target. Retention
+is managed separately through `prune-production-backups.sh`, which defaults to dry-run and always
+protects the newest package. The accepted router-share deletion/no-snapshot residual risk remains;
+the signed package detects tampering but cannot prevent administrative deletion.
+
 ## Recorded local rehearsal
 
 On 2026-08-27 UTC, the hardened rehearsal created and verified an encrypted checksum backup, restored

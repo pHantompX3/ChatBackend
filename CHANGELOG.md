@@ -15,8 +15,42 @@ release tags begin when the project intentionally performs a production release 
 
 ## [Unreleased]
 
+### Fixed
+
+- Corrected the X1 Windows task and firewall entrypoints to use valid PowerShell parameter
+  splatting, prevented isolated-restore SQL credentials from being recorded in Docker container
+  metadata, measured SQL Server Express data-file usage without transaction-log inflation, made
+  signed rollback compatibility an explicit fail-closed release input, and retired misleading
+  legacy production-branch deployment guidance.
+
 ### Added
 
+- Split the production program into independently closable X1 repository foundation, X2 monitoring
+  foundation, and X3 production deployment/integration/acceptance increments, isolating Windows-host,
+  Cloudflare, DNS, Internet, live-backup, and operational-evidence dependencies in X3.
+- Future-proofed ChatMonitor for official mobile, desktop, and web clients through a versioned,
+  source-neutral telemetry envelope and adapter boundary, privacy/cardinality controls, synthetic
+  client fixtures, and a deliberately deferred authenticated public-ingestion edge. The monitor's
+  initial home remains the administrator machine with loopback-only access by default.
+- Added the X3 production deployment and acceptance guide and synchronized its canonical route across
+  AGENTS, Antigravity/Gemini, and Copilot instruction surfaces.
+- Implemented the X1 repository-owned production foundation: a private-network SQL Server Express,
+  RabbitMQ, ChatBackend, NGINX, and Cloudflare Tunnel Compose stack with file-mounted secrets,
+  private origin TLS, no public origin ports, minimal liveness, and bounded WebSocket handshakes.
+- Added a protected annotated-tag production release workflow that builds and scans application and
+  migration images once, publishes immutable Docker Hub digests, signs a release manifest, requires
+  production approval, and verifies artifacts before SSH transfer and deployment.
+- Added Windows 11/WSL2 host initialization, startup, firewall, prerequisite, and maintenance-task
+  entrypoints plus production preflight, deployment, rollback, diagnostics, capacity, edge, and
+  release-verification commands.
+- Added SQL Server Express-compatible signed and externally encrypted backup packaging, off-host
+  transfer, dry-run retention, independent retrieval/restore/DBCC verification, and private TLS
+  generation and renewal tooling.
+- Added a forward-only, bounded audit-retention procedure and execute-only maintenance principal,
+  including production least-privilege verification.
+- Added the X1 Production Operator Manual, translating the production-activation plan into ordered
+  stakeholder and production-host procedures with prerequisites, safety stops, verification,
+  evidence requirements, rollback points, and a preparation checklist.
 - Added the audited X1 Windows 11/Docker Desktop/WSL2 production-host profile, four explicit zero-cost
   production decisions, tagged build-once private-registry release model, Windows lifecycle contract,
   bounded implementation slices, and executable acceptance matrix.

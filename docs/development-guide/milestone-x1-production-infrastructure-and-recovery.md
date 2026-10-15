@@ -2,22 +2,32 @@
 
 ## Status
 
-**Status:** Audited and ready for implementation; X1-A begins with the environment discovery in
-section 2.2
+**Status:** Repository implementation complete, reviewed, and locally verified; merge-ready.
+Production-host execution and live evidence are transferred to X3.
 **Parent program:** [Milestone X — Production Activation](milestone-x-production-activation.md)  
-**Successor increment:** [Milestone X2 — Monitoring and Production Acceptance](milestone-x2-monitoring-and-production-acceptance.md)  
-**Last refined:** 2026-08-30 after the Windows-host implementation-readiness audit
+**Successor increment:** [Milestone X2 — Monitoring Foundation](milestone-x2-monitoring-and-production-acceptance.md)
+**Production activation:** [Milestone X3 — Production Deployment, Integration, and Acceptance](milestone-x3-production-deployment-and-acceptance.md)
+**Last refined:** 2026-10-15 after external production activation moved to X3
+
+**Operator procedure:** [X1 Production Operator Manual](../operations/x1-production-operator-manual.md)
 
 ## 1. Purpose and boundary
 
 Milestone X1 converts the Milestone 9 hardened local rehearsal into a secure, repeatable, and
-recoverable production candidate. It owns the production host, public edge and private internals,
+recoverable deployment foundation. It owns repository implementation for the production topology,
 certificates, secrets, immutable release process, SQL Server and RabbitMQ operations, off-host
-backups, rollback, incident foundations, capacity characterization, ownership, and evidence manifest.
+backups, rollback, incident foundations, capacity checks, Windows automation, and evidence manifest.
+X3 owns applying and proving those controls on the real production host and external services.
 
 X1 does not approve normal production use or release version `1.0.0`. Its output is a production
-candidate that can be deployed and recovered safely. Monitoring, ChatMonitor, operational alerting,
-final acceptance exercises, and the production-release decision belong to X2.
+candidate that can be deployed and recovered safely. ChatMonitor implementation belongs to X2;
+production execution, live operational alerting, final acceptance exercises, and the release decision
+belong to X3.
+
+The operator manual is the step-by-step execution companion for this plan. It separates stakeholder
+actions, repository automation, production-host verification, evidence, stop conditions, and
+rollback points. If the manual conflicts with this guide or an accepted ADR, this guide and the ADR
+govern until the documents are reconciled.
 
 ## 2. Entry decisions and prerequisites
 
@@ -180,12 +190,13 @@ and records a runtime decision instead of weakening the test or enabling insecur
    enforce bounded retention,
    monitor age and transfer, and
    perform a timed isolated restore from the retrieved artifact.
-6. Produce the production endpoints, evidence, and safe integration boundary required by the
-   [X2 monitoring and acceptance guide](milestone-x2-monitoring-and-production-acceptance.md).
+6. Produce the contracts and fixtures required by the
+   [X2 monitoring foundation guide](milestone-x2-monitoring-and-production-acceptance.md) and the
+   executable external-integration procedure consumed by X3.
 7. Run characterization and regression tests against production-representative resources and data,
    then record approved thresholds and capacity limits.
-8. Complete the X1 threat-model review, recovery exercise, and production-candidate checklist; final
-   incident/alert exercises and the deliberate `1.0.0` decision remain X2 responsibilities.
+8. Complete the X1 threat-model review and local production-representative verification; real-host
+   recovery, incident/alert exercises, and the deliberate `1.0.0` decision remain X3 responsibilities.
 
 The detailed contracts below refine these workstreams. They extend rather than replace the accepted
 single-host decision in
@@ -606,15 +617,21 @@ the deployment bundle, or documented in README examples. If the initially create
 scope, use it only for the bounded publisher role and create a distinct pull credential for
 production. Revoking either credential must not invalidate the other role.
 
-The release manifest must contain at least:
+The X1 build-time candidate manifest must contain:
 
-- release tag, Git commit, application/migration/infrastructure digests, SBOM checksums, scan result,
-  and build provenance;
-- Flyway schema before/after and a machine-readable minimum/maximum compatible schema range for the
-  application image;
-- previous verified compatible application digest and an explicit `rollbackAllowed` decision;
-- deployment-bundle checksum and expected production hostname/profile; and
-- approval, observation-window, smoke, and final disposition fields.
+- release tag and Git commit;
+- immutable application and migration image digests;
+- target Flyway schema and a machine-readable minimum/maximum compatible schema range for the
+  application image; and
+- an explicit `rollbackAllowed` decision, defaulting to `false`. A release engineer may set
+  `WL_CHAT_ROLLBACK_ALLOWED=true` with numeric `WL_CHAT_MINIMUM_COMPATIBLE_SCHEMA` and
+  `WL_CHAT_MAXIMUM_COMPATIBLE_SCHEMA` only after compatibility has been established.
+
+The workflow retains the SBOM, scan reports, bundle checksum, and signature beside that manifest.
+X3 then records the selected infrastructure-image digests, prior compatible application digest,
+production hostname/profile, approval, observation window, smoke evidence, and final disposition in
+the production evidence manifest. These values depend on the real environment and must not be
+invented during X1 candidate creation.
 
 #### 3.5.2 Deployment state machine
 
@@ -664,7 +681,7 @@ rollback script is not production compatibility evidence.
 
 #### 3.5.4 Production-candidate release acceptance
 
-The first production release becomes `1.0.0` only after all X1 and X2 exit criteria and final
+The first production release becomes `1.0.0` only after all X1, X2, and X3 exit criteria and final
 evidence are accepted. Finalization includes changelog promotion from Unreleased, version alignment,
 release notes, image/tag provenance, known-risk register, recovery contacts, and an explicit statement
 of the selected network exposure, RPO/RTO, availability objective, and unsupported capabilities.
@@ -1059,34 +1076,39 @@ repository command or documented PowerShell entrypoint and sanitized evidence:
 
 X1 is complete only when:
 
-- the production host and private network boundary are provisioned and ownership is recorded;
-- HTTPS/WSS uses the selected trusted certificate path and renewal/rotation is exercised;
-- only the hardened NGINX HTTPS/WSS edge is public, while internal and administrative services remain
-  unreachable from the Internet;
-- SQL Server and RabbitMQ remain private and least-privilege inventories match the hardened model;
-- SQL Server Express and its size limits are enforced, and checksum backup/restore plus external
-  package compression and encryption are proven on that exact edition;
-- secret delivery and rotation, immutable image promotion, migration-before-rollout, and
-  schema-aware rollback are proven;
-- Windows sign-in startup, cold reboot, power-loss recovery, audit retention, minimal public health,
-  and WebSocket abuse controls are proven;
-- a retrieved off-host encrypted backup restores within the accepted RTO and meets the accepted RPO;
-- production-representative characterization passes the approved X1 thresholds;
-- the incident, diagnostic, evidence-manifest, and responsibility foundations are usable without
-  relying on chat history;
+- the production Compose topology resolves with only the Cloudflare connector able to reach the
+  Internet and no SQL, RabbitMQ, application, or NGINX host port published;
+- secret templates and preflight validation fail closed without printing values;
+- immutable release manifests, signatures, image digests, migration-before-start ordering, and
+  schema-aware rollback decisions are implemented and fixture-tested;
+- SQL Server Express, least-privilege runtime/migrator/backup/restore/maintenance authorities,
+  bounded audit retention, and capacity guards are migration/integration tested;
+- checksum backup, external compression/encryption, signed manifests, guarded retention, retrieval,
+  isolated restore, and `DBCC CHECKDB` tooling are locally verified with synthetic artifacts;
+- Windows prerequisite, initialization, startup, firewall, and maintenance entrypoints are reviewed
+  and parse successfully where tooling is available;
+- NGINX liveness/privacy and WebSocket abuse-control configuration validates;
+- the operator manual identifies every external value, safety stop, evidence requirement, and X3
+  action without embedding secrets;
 - the threat model, architecture, operations, client responsibility guide, and changelog match the
-  deployed candidate; and
-- every X1 risk is resolved, explicitly accepted with owner and review date, or marked as an X2/final
-  production blocker.
+  implemented foundation; and
+- every remaining real-host, Cloudflare, DNS, Internet, router-share, live-alert, and operational
+  proof is explicitly handed to X3 rather than silently claimed.
 
 Passing X1 means **secure and recoverable production candidate**, not production approval.
 
-## 6. Handoff to X2
+As re-scoped on 2026-10-15, X1 acceptance is limited to repository-owned implementation and local,
+production-representative verification. Every exit criterion above that requires the real Windows
+host, Cloudflare account, DNS zone, Internet path, router share, or live alert destination is an X3
+criterion. The requirement remains unchanged; only its delivery increment moved.
 
-The X1 handoff must provide sanitized identifiers or protected references for the deployed release,
-image digests, schema version, firewall and certificate evidence, runtime principals, backup and
-restore evidence, characterization baseline, unresolved risks, and all endpoints or projections X2
-needs for monitoring. X2 must not infer these values from developer-machine rehearsal defaults.
+## 6. Handoff to X2 and X3
+
+The X1 handoff provides X2 with stable audit/projection contracts and representative fixtures. It
+provides X3 with the signed release contract, expected image/schema identities, firewall and
+certificate procedures, runtime principals, backup/restore commands, characterization tools,
+unresolved environment values, and evidence checklist. X2 and X3 must not infer production values
+from developer-machine rehearsal defaults.
 
 ## 7. Implementation-readiness audit resolution ledger
 
@@ -1108,6 +1130,7 @@ are resolved in this plan as follows:
 | Recovery objectives were ambiguous | Separate RPO, isolated-restore, ordinary-failure, and host-loss objectives in section 3.8.1 |
 | Public readiness and socket-handshake controls underspecified | Minimal liveness/private readiness and handshake-rate contract in section 3.2.5 |
 
-The guide is planning-complete and ready for implementation. X1-A owns the remaining discovery rather
-than treating it as stakeholder homework. This does not claim that any production control has already
-been built or verified.
+The guide and repository tooling are implementation-complete, code-reviewed, and locally verified.
+The remaining production-host discovery and execution are X3 work rather than stakeholder homework
+or an untracked X1 tail. No production control is considered live-verified until the operator manual
+produces its required evidence during X3.

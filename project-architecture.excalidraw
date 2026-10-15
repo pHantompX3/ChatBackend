@@ -3898,10 +3898,13 @@
         "kind": "component",
         "sourcePaths": [
           "deploy/compose.hardened.yaml",
+          "deploy/compose.production.yaml",
           "Dockerfile",
           "deploy/nginx",
+          "deploy/cloudflared",
           "deploy/rabbitmq",
-          "deploy/flyway"
+          "deploy/flyway",
+          "scripts/production"
         ]
       }
     },
@@ -3934,11 +3937,11 @@
       "locked": false,
       "fontSize": 14,
       "fontFamily": 3,
-      "text": "Hardened Compose / Images\nNGINX · app · SQL · RabbitMQ · migrator",
+      "text": "Rehearsal + Production Compose\nTunnel · NGINX · app · SQL · queue",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "Hardened Compose / Images\nNGINX · app · SQL · RabbitMQ · migrator",
+      "originalText": "Rehearsal + Production Compose\nTunnel · NGINX · app · SQL · queue",
       "lineHeight": 1.25,
       "autoResize": false,
       "customData": {
@@ -4055,7 +4058,10 @@
       "customData": {
         "kind": "component",
         "sourcePaths": [
-          ".github/workflows"
+          ".github/workflows",
+          ".github/workflows/production-release.yml",
+          "scripts/production/create-release-bundle.sh",
+          "scripts/production/deploy-from-workstation.sh"
         ]
       }
     },
@@ -4088,11 +4094,11 @@
       "locked": false,
       "fontSize": 14,
       "fontFamily": 3,
-      "text": "GitHub Actions / Deployment\nbuild · scan · migrate · smoke · sync",
+      "text": "CI / Signed Production Release\nbuild · scan · approve · deploy",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "GitHub Actions / Deployment\nbuild · scan · migrate · smoke · sync",
+      "originalText": "CI / Signed Production Release\nbuild · scan · approve · deploy",
       "lineHeight": 1.25,
       "autoResize": false,
       "customData": {
@@ -4365,6 +4371,10 @@
         "kind": "component",
         "sourcePaths": [
           "docs/development-guide",
+          "docs/development-guide/milestone-x-production-activation.md",
+          "docs/development-guide/milestone-x1-production-infrastructure-and-recovery.md",
+          "docs/development-guide/milestone-x2-monitoring-and-production-acceptance.md",
+          "docs/development-guide/milestone-x3-production-deployment-and-acceptance.md",
           "docs/client-integration/client-responsibility-and-recovery-guide.md"
         ]
       }
@@ -4398,11 +4408,11 @@
       "locked": false,
       "fontSize": 14,
       "fontFamily": 3,
-      "text": "Implementation & Client Guides\ndocs/development-guide/\nclient responsibility + recovery",
+      "text": "Implementation & Client Guides\nX1 foundation · X2 monitor · X3 activation\nclient responsibility + recovery",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "Implementation & Client Guides\ndocs/development-guide/\nclient responsibility + recovery",
+      "originalText": "Implementation & Client Guides\nX1 foundation · X2 monitor · X3 activation\nclient responsibility + recovery",
       "lineHeight": 1.25,
       "autoResize": false,
       "customData": {
@@ -4475,11 +4485,11 @@
       "locked": false,
       "fontSize": 14,
       "fontFamily": 3,
-      "text": "Operations & Security\nenvironment rollout · runbooks\nthreat model",
+      "text": "Operations & Security\nX3 executes operator manual · runbooks\nthreat model",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "Operations & Security\nenvironment rollout · runbooks\nthreat model",
+      "originalText": "Operations & Security\nX3 executes operator manual · runbooks\nthreat model",
       "lineHeight": 1.25,
       "autoResize": false,
       "customData": {
@@ -4494,7 +4504,7 @@
   },
   "files": {},
   "metadata": {
-    "updatedAt": "2026-09-02T12:34:53Z",
+    "updatedAt": "2026-10-15T11:25:46Z",
     "productionPackages": 30,
     "productionClasses": 161,
     "componentNodes": 26,

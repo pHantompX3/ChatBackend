@@ -15,8 +15,9 @@ SCENARIO=""
 if [[ "${1:-}" == "--scenario" ]]; then
   SCENARIO="${2:-}"
 fi
-if [[ "${SCENARIO}" != "clean" && "${SCENARIO}" != "upgrade-milestone-8" ]]; then
-  echo "Usage: $0 --scenario clean|upgrade-milestone-8" >&2
+if [[ "${SCENARIO}" != "clean" && "${SCENARIO}" != "upgrade-milestone-8" \
+  && "${SCENARIO}" != "production" ]]; then
+  echo "Usage: $0 --scenario clean|upgrade-milestone-8|production" >&2
   exit 1
 fi
 
@@ -25,6 +26,8 @@ RUNTIME_USERNAME="${WL_CHAT_DB_USERNAME:-wl_chat_app}"
 RUNTIME_PASSWORD="${WL_CHAT_DB_PASSWORD:-}"
 MIGRATOR_USERNAME="${WL_CHAT_MIGRATOR_USERNAME:-messenger_migrator}"
 MIGRATOR_PASSWORD="${WL_CHAT_MIGRATOR_PASSWORD:-}"
+MAINTENANCE_USERNAME="${WL_CHAT_MAINTENANCE_USERNAME:-wl_chat_maintenance}"
+MAINTENANCE_PASSWORD="${WL_CHAT_MAINTENANCE_PASSWORD:-}"
 
 if [[ -z "${RUNTIME_PASSWORD}" || -z "${MIGRATOR_PASSWORD}" ]]; then
   echo "WL_CHAT_DB_PASSWORD and WL_CHAT_MIGRATOR_PASSWORD are required." >&2
@@ -61,5 +64,20 @@ expect_denied "audit deletion" \
 sqlcmd_as "${MIGRATOR_USERNAME}" "${MIGRATOR_PASSWORD}" \
   "BEGIN TRANSACTION; CREATE TABLE [platform].[__migrator_permission_probe] ([id] int NOT NULL); ROLLBACK TRANSACTION; SELECT TOP (1) [installed_rank] FROM [platform].[flyway_schema_history];" \
   >/dev/null
+
+if [[ "${SCENARIO}" == "production" ]]; then
+  if [[ -z "${MAINTENANCE_PASSWORD}" ]]; then
+    echo "WL_CHAT_MAINTENANCE_PASSWORD is required for production verification." >&2
+    exit 1
+  fi
+  sqlcmd_as "${MAINTENANCE_USERNAME}" "${MAINTENANCE_PASSWORD}" \
+    "EXEC audit.purge_http_audit_events @retention_days=90, @batch_size=1, @max_batches=1;" \
+    >/dev/null
+  if sqlcmd_as "${MAINTENANCE_USERNAME}" "${MAINTENANCE_PASSWORD}" \
+    "SELECT TOP (1) event_id FROM audit.http_audit_event;" >/dev/null 2>&1; then
+    echo "Maintenance principal unexpectedly has direct audit-table read access." >&2
+    exit 1
+  fi
+fi
 
 echo "Hardened permission verification passed for scenario ${SCENARIO}."

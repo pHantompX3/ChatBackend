@@ -1,19 +1,20 @@
-# Milestone X2 — Monitoring, Operational Validation, and Production Acceptance
+# Milestone X2 — Monitoring Foundation
 
 ## Status
 
-**Status:** Pocketed for future implementation; production integration depends on X1  
+**Status:** Planned for independent implementation on the administrator machine; no production-host
+or Cloudflare dependency
 **Parent program:** [Milestone X — Production Activation](milestone-x-production-activation.md)  
-**Required predecessor:** [Milestone X1 — Production Infrastructure and Recovery Foundation](milestone-x1-production-infrastructure-and-recovery.md)  
-**Last refined:** 2026-08-30
+**Required successor:** [Milestone X3 — Production Deployment, Integration, and Acceptance](milestone-x3-production-deployment-and-acceptance.md)
+**Last refined:** 2026-10-15
 
 ## 1. Purpose and boundary
 
-Milestone X2 makes the X1 production candidate observable, operationally testable, and eligible for a
-deliberate production-release decision. It owns the monitoring workstation, availability and
-host/container monitoring, ChatMonitor, the safe audit projection and local telemetry store, alert
-delivery, monitoring recovery, operational exercises, final evidence review, and the `1.0.0`
-acceptance decision.
+Milestone X2 builds a production-capable monitoring foundation on the administrator's machine. It
+owns ChatMonitor, its local source-neutral telemetry store, SQL-audit collection adapter, dashboard,
+aggregation, retention, local alert-state engine, packaging, startup, backup/recovery, and fixture or
+hardened-rehearsal verification. X3 owns connection to the real production host, live alert delivery,
+operational exercises, and the `1.0.0` acceptance decision.
 
 ChatBackend must continue operating when every X2 monitoring component is unavailable. X2 does not
 add messaging-domain behavior, replicate production data, or permit monitoring tools to mutate
@@ -21,9 +22,9 @@ application state.
 
 ## 2. Entry decisions, dependency, and sequencing
 
-Before X2 production integration begins:
+Before X2 implementation begins:
 
-1. X1 must provide a secure and recoverable production candidate plus its evidence handoff;
+1. X1 must provide stable production/rehearsal contracts and sanitized representative fixtures;
 2. record the monitoring workstation OS, power/sleep and auto-start behavior, Node.js ownership,
    local data path, backup choice, maintenance owner, and permitted network path;
 3. select accountable alert responders, destinations, escalation behavior, quiet-hours/maintenance
@@ -35,14 +36,14 @@ Before X2 production integration begins:
 6. confirm authoritative audit retention remains long enough for monitor catch-up and never below
    the accepted 62-day detailed-history floor without an explicit stakeholder decision.
 
-ChatMonitor may be built and tested against fixtures before X1 completes. Its production SQL
-projection, least-privilege principal, query plan, locking behavior, and alert thresholds cannot be
-accepted until exercised against the X1 candidate.
+ChatMonitor is built and accepted in X2 against deterministic fixtures and the hardened local
+rehearsal. X3 validates its production SQL projection, live credentials, network path, query plans,
+locking behavior, thresholds, and alert destinations against the deployed candidate.
 
 ## 3. Preferred Monitoring Topology
 
 ```text
-Operator/development workstation
+Administrator/development workstation (initial ChatMonitor home)
 ├── availability and certificate monitor
 ├── host/container monitoring hub
 ├── ChatMonitor audit-metrics collector and Vite dashboard
@@ -450,7 +451,59 @@ For the accepted simple deployment, the ChatMonitor Node.js service serves the i
 `dist/client/` Vite build and same-origin local API. The Vite development server remains
 development-only and is absent from workstation auto-start and normal operation.
 
-### 5.2 Responsibility boundary
+### 5.2 Source-neutral telemetry and future client onboarding
+
+ChatMonitor must not hard-code its durable model or dashboard to SQL audit rows. The SQL audit
+projection is the first source adapter, not the definition of a monitorable event. Internally, every
+adapter must emit a versioned normalized envelope containing at least:
+
+```text
+event_id                 globally unique, source-issued or deterministically namespaced
+schema_version           normalized-envelope version
+source_type              CHATBACKEND_AUDIT | CLIENT_TELEMETRY | HOST | SYNTHETIC
+source_instance_id       stable pseudonymous source identity
+event_name               allowlisted semantic name
+occurred_at              source observation time
+received_at              ChatMonitor receipt time
+severity                 normalized bounded level
+dimensions               allowlisted low-cardinality labels
+measurements             bounded numeric values
+```
+
+The normalized envelope, repositories, aggregation engine, dashboard API, and charts must remain
+independent of transport. Source-specific payloads are validated and reduced by adapters before a
+local transaction persists them. A new official client must therefore require a new adapter and
+allowlist, not a new monitoring database or dashboard architecture.
+
+X2 implements the internal adapter contract and proves it with the SQL-audit adapter plus synthetic
+client fixtures. It does **not** expose a public client-ingestion endpoint. A later official-client
+track may enable one only after defining authentication/enrollment, abuse controls, consent, privacy,
+network reachability, and operational ownership. IE-01 installation identity is the preferred future
+authentication foundation for native clients; browser telemetry must never rely on an embedded shared
+secret.
+
+Future official-client telemetry must follow these guardrails:
+
+- explicitly versioned schemas with additive compatibility and an unsupported-version response;
+- allowlisted event names, dimensions, and measurements with strict size/cardinality limits;
+- no message content, attachment content, credentials, session tokens, authorization headers,
+  contact data, raw URLs/query strings, or arbitrary client logs;
+- pseudonymous installation/source identifiers rather than usernames or account identifiers unless
+  a separately approved diagnostic workflow requires them;
+- client-generated idempotency keys, bounded batches, compression where useful, and safe duplicate
+  handling;
+- both client occurrence time and server receipt time, with clock-skew detection;
+- bounded offline buffering with oldest/newest limits and explicit drop accounting;
+- per-source authentication, revocation, rate/volume quotas, and rejection metrics; and
+- a user/operator-visible switch for diagnostic telemetry where future client requirements warrant
+  collection beyond essential health signals.
+
+ChatMonitor initially runs on the administrator machine and binds its dashboard/API to loopback. X3
+may authorize narrowly scoped LAN access. Public client ingestion is not achieved by exposing that
+local Node service directly; any later remote ingestion path requires an intentionally designed edge
+and threat-model update.
+
+### 5.3 Responsibility boundary
 
 The production table `[audit].[http_audit_event]` remains authoritative audit evidence. A custom
 monitor may retain a sanitized, derived projection for metrics and graphs. The local monitoring store
@@ -474,7 +527,7 @@ error_code
 Do not project actor identity, target identity, IP addresses, user agents, raw headers, detailed
 failure location, or unrelated metadata unless a later monitoring requirement is explicitly approved.
 
-### 5.3 Collection ordering
+### 5.4 Collection ordering
 
 The collector must use the durable persistence cursor:
 
@@ -485,7 +538,7 @@ The collector must use the durable persistence cursor:
 It must not use only `occurred_at`. RabbitMQ or local asynchronous delivery can persist an event after
 its request occurrence time; an occurrence-time-only cursor could permanently skip such a late event.
 
-### 5.4 Incremental collection cycle
+### 5.5 Incremental collection cycle
 
 On each scheduled cycle:
 
@@ -500,7 +553,7 @@ On each scheduled cycle:
 The normal polling interval should begin around 30–60 seconds and remain configurable. Catch-up uses
 bounded pages and yields between failures; it must not issue one unbounded query after a long outage.
 
-### 5.5 Restart and catch-up behavior
+### 5.6 Restart and catch-up behavior
 
 When the monitor restarts, it resumes from its last committed cursor and retrieves all still-retained
 audit events persisted afterward. If local insertion succeeded but cursor persistence did not, the
@@ -516,7 +569,7 @@ The monitor must expose these states:
 
 The monitor must never silently label incomplete history as current.
 
-### 5.6 Local persistence and retention
+### 5.7 Local persistence and retention
 
 SQLite is the preferred initial local store because it is transactional, supports unique constraints
 and indexes, is easy to back up, and does not require another database server. This remains a
@@ -533,7 +586,7 @@ Retention requirements:
 Retention cleanup occurs only in the local monitoring store. The monitor has no permission to purge
 production audit records.
 
-### 5.7 Useful derived metrics
+### 5.8 Useful derived metrics
 
 The local monitoring application may present:
 
@@ -725,7 +778,8 @@ evidence and schedule periodic retesting of delivery and certificate/backup path
 
 ## 9. Monitoring Failure and Recovery Exercises
 
-Before production approval, demonstrate:
+X2 demonstrates the following with deterministic fixtures and hardened rehearsal; X3 repeats every
+item that depends on production, a live alert destination, or the external network:
 
 1. production continues operating while the monitor is stopped;
 2. the monitor restarts and automatically catches up all retained events;
@@ -744,7 +798,7 @@ Before production approval, demonstrate:
 
 ## 10. Monitoring Acceptance Evidence
 
-The X2 implementation must define exact commands and retain evidence for:
+The X2 implementation must define exact commands and retain local/rehearsal evidence for:
 
 - monitoring topology and firewall inventory;
 - availability and WebSocket synthetic checks;
@@ -770,33 +824,35 @@ The X2 implementation must define exact commands and retain evidence for:
 
 ---
 
-## 11. X2 Exit Criteria and Production Decision
+## 11. X2 Exit Criteria
 
-X2 and the parent Milestone X program are complete only when:
+X2 is complete when:
 
 - the monitoring workstation stack is installed, auto-starting, access-controlled, recoverable, and
   documented;
-- availability, certificate, host/container, audit degradation/backlog/DLQ, backup age, deployment,
-  collector freshness, capacity, and security-gate alerts reach the assigned responder;
-- ChatMonitor catches up after downtime, retains at least 62 days of detailed projected events,
-  maintains an idempotent durable cursor, exposes data freshness/gaps, and cannot block or mutate
-  production;
+- fixture/rehearsal availability, host/container, audit, backup, deployment, collector-freshness,
+  capacity, and security-gate conditions drive deterministic alert-state transitions;
+- ChatMonitor catches up after simulated downtime, retains at least 62 days of detailed projected
+  events, maintains an idempotent durable cursor, exposes data freshness/gaps, and cannot block or
+  mutate its source;
 - its dependency installation, automated tests, Vite production build, Node service, and clean-host
   recovery are reproducible, with no SQL credential in browser-delivered assets;
-- the dedicated SQL projection/principal passes positive and negative permission tests, query plans
-  and candidate indexes are accepted, and normal/catch-up collection stays within locking and
-  latency budgets;
-- production-representative thresholds and capacity assumptions are approved;
-- certificate renewal, alert delivery, monitoring outage/catch-up, backup restore, incident, and
-  rollback exercises are recorded;
-- the production threat model and every canonical runbook match the deployed state;
+- the SQL projection/principal contract has migrations and positive/negative integration tests, while
+  live query-plan and lock evidence is explicitly handed to X3;
+- the source-adapter contract accepts SQL audit and synthetic official-client fixtures without
+  changing normalized persistence, aggregation, or dashboard APIs;
+- malformed, oversized, unknown-version, duplicate, high-cardinality, content-bearing, and
+  unauthorized synthetic client events are rejected without contaminating retained telemetry;
+- local alert-state, monitoring-outage/catch-up, ChatMonitor backup/restore, and clean-host recovery
+  exercises are recorded;
+- the monitoring threat model and canonical runbooks match the implemented foundation;
 - all residual risks and accepted monitoring blind spots have an owner, reason, and review date;
-- no unaccepted High or Critical risk remains; and
-- the primary stakeholder records the deliberate production approval and `1.0.0` release decision.
+- no unaccepted High or Critical implementation risk remains; and
+- the X3 handoff identifies every live credential, network, threshold, alert-destination, production
+  query-plan, and operational exercise still requiring external evidence.
 
-Passing X2 means the monitored production candidate has been operationally validated and accepted for
-normal use. Public network reachability does not turn the personal deployment into a commercial/open
-service or promise an external SLA.
+Passing X2 means the monitoring foundation is independently deployable and ready for production
+onboarding. It does not claim a production deployment or authorize normal production use.
 
 ## 12. Non-goals
 

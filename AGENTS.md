@@ -16,6 +16,8 @@ ChatBackend is a Java 25 Quarkus backend for a private messaging platform, curre
 - Architecture decisions (ADR): [docs/architecture/decision](docs/architecture/decision)
 - Development guides: [docs/development-guide](docs/development-guide)
 - Operations strategy: [docs/operations/environment-strategy-and-rollout-plan.md](docs/operations/environment-strategy-and-rollout-plan.md)
+- X1 production operator procedure: [docs/operations/x1-production-operator-manual.md](docs/operations/x1-production-operator-manual.md)
+- X3 production deployment and acceptance: [docs/development-guide/milestone-x3-production-deployment-and-acceptance.md](docs/development-guide/milestone-x3-production-deployment-and-acceptance.md)
 - API/domain specs: [docs/private-instant-messaging-platform-spec-v0.2-sql-server.md](docs/private-instant-messaging-platform-spec-v0.2-sql-server.md)
 - Post-Milestone platform evolution specification and track register:
   [docs/platform-evolution-specification.md](docs/platform-evolution-specification.md)

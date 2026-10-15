@@ -1,6 +1,6 @@
 # SQL Server principals and permissions
 
-**Scope:** Milestone 9 hardened single-instance deployment
+**Scope:** Milestone 9 hardened rehearsal and X1 production deployment
 
 **Last reviewed:** 2026-08-27
 
@@ -13,6 +13,7 @@
 | `wl_chat_app` | Long-running application | Explicit table-level DML needed by repository code; no DDL, role management, Flyway history mutation, audit deletion, or backup/restore |
 | `wl_chat_backup` | Scheduled backup job only | `db_backupoperator` on `wl_chat` and `VIEW DEFINITION` on the backup certificate |
 | `wl_chat_restore` | Guarded isolated drill/recovery only | `dbcreator` plus backup-certificate visibility; absent from all long-running containers |
+| `wl_chat_maintenance` | Scheduled bounded maintenance only | Execute-only access to approved maintenance procedures; no direct audit-table access |
 
 The runtime principal is intentionally named `wl_chat_app` for compatibility with immutable early
 migrations. It is not a fixed database-role member after the hardening migration. The application
@@ -47,6 +48,11 @@ application's table access. They explicitly deny:
 
 Every future migration that introduces a table or stored routine used at runtime must add its exact
 grant in that same new migration and extend the positive/negative permission verification.
+
+Migration `V20260914010000` creates `audit.purge_http_audit_events` and the
+`audit_maintenance` role. The procedure enforces a minimum 62-day retention window, bounded batch
+size and batch count, low deadlock priority, and a short lock timeout. The maintenance principal may
+execute the procedure but cannot directly select, update, or delete audit rows.
 
 ## Backup encryption
 

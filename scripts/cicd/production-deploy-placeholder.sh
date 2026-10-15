@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[production-trigger] Placeholder only."
-echo "[production-trigger] Replace this script with real production deployment logic (e.g., AWS ECS/EKS/App Runner + migration job)."
+echo "[production-trigger] The legacy production-branch trigger is retired."
+echo "[production-trigger] Production candidates are created only from annotated semantic-version tags by .github/workflows/production-release.yml."
 echo "[production-trigger] No remote deployment was executed."

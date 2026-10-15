@@ -2,12 +2,13 @@
 
 ## Status
 
-**Status:** X1 audited and ready for implementation; no production environment is currently claimed
-and X2 remains deferred until the X1 handoff
+**Status:** X1 repository implementation complete and locally verified; X2 remains planned; all
+production-machine, Cloudflare, DNS, Internet-access, and live acceptance work is isolated in X3.
+No production environment is currently claimed.
 
 **Last refined:** 2026-08-30
 
-**Program increments:** X1 followed by X2
+**Program increments:** X1 foundation, X2 monitoring foundation, then X3 production activation
 
 ## 1. Purpose
 
@@ -15,13 +16,18 @@ Milestone X converts the completed single-instance backend and Milestone 9 harde
 into an operated production deployment. It is an operational activation program, not a messaging
 feature milestone.
 
-The program is intentionally split into two independently reviewable increments:
+The program is intentionally split into three independently reviewable increments:
 
 1. [Milestone X1 — Production Infrastructure and Recovery Foundation](milestone-x1-production-infrastructure-and-recovery.md)
-   produces a secure, repeatable, recoverable production candidate.
-2. [Milestone X2 — Monitoring, Operational Validation, and Production Acceptance](milestone-x2-monitoring-and-production-acceptance.md)
-   makes that candidate observable, exercises its operating model, and governs the deliberate
-   `1.0.0` production-release decision.
+   implements and locally verifies the deployable, recoverable production foundation.
+2. [Milestone X2 — Monitoring Foundation](milestone-x2-monitoring-and-production-acceptance.md)
+   builds ChatMonitor and its admin-workstation operating model against fixtures and rehearsal
+   environments, without depending on a production machine.
+3. [Milestone X3 — Production Deployment, Integration, and Acceptance](milestone-x3-production-deployment-and-acceptance.md)
+   performs all external integration: production-host setup, Cloudflare/DNS, live deployment,
+   monitoring onboarding, recovery exercises, and the deliberate `1.0.0` decision. Its operator
+   procedure is the [X1 Production Operator Manual](../operations/x1-production-operator-manual.md),
+   which X3 executes and will rename only when doing so no longer harms established links.
 
 Post-Milestone product enhancements remain governed by the
 [Platform Evolution Specification](../platform-evolution-specification.md).
@@ -29,23 +35,24 @@ Post-Milestone product enhancements remain governed by the
 ## 2. Canonical routing and precedence
 
 Use this file for program scope, shared decisions, increment dependency, and overall completion.
-Use the X1 and X2 guides for implementation-grade requirements and evidence.
+Use the X1, X2, and X3 guides for implementation-grade requirements and evidence.
 
 | Concern | Canonical implementation guide |
 |---|---|
-| Host, OS, storage, power, patching, and service lifecycle | X1 |
-| Public edge ingress, firewall, DNS, TLS, and certificates | X1 |
+| Deployable Compose, scripts, release contract, recovery tooling | X1 |
+| ChatMonitor project, source-neutral event model, local collector/store/dashboard | X2 |
+| Host, OS, storage, power, patching, and service lifecycle | X3 |
+| Public edge ingress, Cloudflare, firewall, DNS, TLS, and certificates | X3 |
 | Secrets, privileged identities, image promotion, migration, rollback | X1 |
 | SQL Server, RabbitMQ, backup, restore, incidents, initial capacity | X1 |
-| Monitoring workstation and third-party monitoring tools | X2 |
-| ChatMonitor project, SQL projection, collection, retention, dashboard | X2 |
-| Alerts, monitoring recovery, operational exercises, final acceptance | X2 |
+| Monitoring workstation implementation and local/rehearsal validation | X2 |
+| Live monitoring onboarding, alert delivery, operational exercises, final acceptance | X3 |
 | Existing single-host architecture and rehearsal controls | ADR-0017 and Milestone 9 |
 | Public authenticated edge and future enrolled-client boundary | ADR-0019 |
 | Client behavior and recovery responsibilities | Client Integration and Recovery Guide |
 
 When wording conflicts, accepted ADRs govern architecture decisions, executable operations runbooks
-govern already-implemented rehearsal commands, and the applicable X1/X2 guide governs unresolved
+govern already-implemented rehearsal commands, and the applicable X1/X2/X3 guide governs unresolved
 production implementation scope. Production-specific secrets, private topology, and raw operational
 evidence remain in protected operator storage.
 
@@ -71,8 +78,9 @@ Requirement language is deliberate:
 6. IE-01 through IE-03 are official post-X requirements: native per-installation trust first,
    mobile-authorized linked-browser protocol second, and the official web companion third. X1 must
    not block them, but it does not implement or activate them.
-7. The monitoring workstation is the preferred home for dashboards and monitoring history so those
-   records can survive production-host loss.
+7. The administrator's development/operations machine is ChatMonitor's first home. Its source-neutral
+   telemetry model must allow future official mobile, desktop, and web clients to be onboarded without
+   replacing the collector store, aggregate model, dashboard API, or charts.
 8. Monitoring is never a runtime dependency of ChatBackend.
 9. ChatMonitor uses a Vite vanilla-JavaScript client, standards-based HTML/CSS, a small Node.js
    collector/API service, and SQLite. React is not part of the accepted baseline.
@@ -126,12 +134,17 @@ lifecycle, failure/recovery behavior, validation evidence, and documentation eff
 Milestone 9 hardened local rehearsal (complete)
                  |
                  v
-X1: production infrastructure + recovery foundation
+X1: deployable infrastructure + recovery foundation
                  |
-        secure/recoverable candidate
+        locally verified artifacts
                  |
                  v
-X2: monitoring + operational validation + acceptance
+X2: monitoring foundation on the admin machine
+                 |
+        locally verified monitor
+                 |
+                 v
+X3: production deployment + external integration + acceptance
                  |
             stakeholder approval
                  |
@@ -139,13 +152,11 @@ X2: monitoring + operational validation + acceptance
           production release 1.0.0
 ```
 
-X1 and X2 should be implemented and reviewed separately. X2 planning and fixture-based ChatMonitor
-development may proceed in parallel, but X2 production integration and final acceptance depend on the
-X1 evidence handoff.
+All three increments are implemented and reviewed separately. X2 may use fixtures and hardened local
+rehearsal and has no production dependency. X3 consumes the accepted X1 and X2 handoffs.
 
-X1 completion does not authorize normal production use. X2 completion without X1 is impossible.
-Milestone X is complete only when both increments pass and the stakeholder records the final release
-decision.
+X1 or X2 completion does not authorize normal production use. Milestone X is complete only when all
+three increments pass and the stakeholder records the final release decision in X3.
 
 ## 6. Shared evidence and governance
 
@@ -170,8 +181,9 @@ Milestone 9 rehearsal.
 
 Milestone X is complete only when:
 
-- every X1 exit criterion passes and its secure/recoverable candidate handoff is accepted by X2;
+- every X1 repository-foundation exit criterion passes;
 - every X2 exit criterion passes;
+- every X3 deployment and acceptance criterion passes;
 - production HTTPS/WSS, private SQL/RabbitMQ boundaries, secrets, release promotion, rollback, backup
   recovery, monitoring, alerting, capacity, and incident ownership are proven in the selected
   environment;
@@ -202,9 +214,7 @@ Milestone X does not introduce:
 
 1. Re-audit this umbrella, X1, and X2 against the repository and actual target environment.
    **Completed for X1 on 2026-08-30.**
-2. Execute the four accepted X1 zero-cost decisions and retain their discovery/verification evidence.
-   **Ready to begin in X1-A.**
-3. Implement, verify, document, and review X1; produce its evidence handoff.
-4. Resolve X2 entry decisions using X1 evidence and current monitoring requirements.
-5. Implement, verify, document, and review X2.
-6. Run the final readiness review and make the deliberate production/`1.0.0` decision.
+2. Review, merge, and close X1 after its repository evidence is accepted.
+3. Implement, verify, document, and close the X2 monitoring foundation on the admin machine.
+4. Execute X3 against the production machine, Cloudflare, DNS, backup destination, and live network.
+5. Run the X3 readiness review and make the deliberate production/`1.0.0` decision.

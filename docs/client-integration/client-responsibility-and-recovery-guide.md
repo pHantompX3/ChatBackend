@@ -327,6 +327,30 @@ Compression is a client capability, not permission to upload an unsafe archive. 
 prefer interoperable media encodings and preserve accessible filename/caption/alternative-text
 metadata, while the server independently validates the stored representation.
 
+### 10.2 Future official-client operational telemetry
+
+This is a future integration contract, not a currently available endpoint. ChatMonitor begins on the
+administrator machine and X2 prepares a source-neutral telemetry model so future owner-built mobile,
+desktop, and web clients can be onboarded without redesigning monitoring persistence or dashboards.
+
+An official client that later participates must:
+
+- emit only versioned, allowlisted operational events and bounded numeric measurements;
+- never include message or attachment content, credentials, session tokens, authorization headers,
+  contacts, arbitrary logs, raw URLs/query strings, or unbounded identifiers;
+- use a pseudonymous installation/source identity, per-event idempotency key, source occurrence time,
+  and bounded offline batches;
+- account visibly for events dropped because the offline buffer, age limit, or quota was exceeded;
+- tolerate duplicate acceptance, unsupported-schema rejection, revocation, throttling, and temporary
+  monitor unavailability without affecting messaging behavior; and
+- treat telemetry as fail-open diagnostics: inability to report must never block login, message
+  submission, recovery, or logout.
+
+No public telemetry endpoint is approved by X2 or X3. A later implementation must separately define
+the authenticated edge, enrollment/revocation model, consent and privacy behavior, quotas, abuse
+controls, and threat model. Native IE-01 installation identity is the preferred future authentication
+foundation; browser code must not contain a shared monitoring secret.
+
 ## 11. First-Client Acceptance Checklist
 
 A client is not ready for production integration until automated tests demonstrate:

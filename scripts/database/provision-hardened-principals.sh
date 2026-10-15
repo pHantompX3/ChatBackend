@@ -19,6 +19,7 @@ RUNTIME_LOGIN="${WL_CHAT_DB_USERNAME:-wl_chat_app}"
 MIGRATOR_LOGIN="${WL_CHAT_MIGRATOR_USERNAME:-messenger_migrator}"
 BACKUP_LOGIN="${WL_CHAT_BACKUP_USERNAME:-wl_chat_backup}"
 RESTORE_LOGIN="${WL_CHAT_RESTORE_USERNAME:-wl_chat_restore}"
+MAINTENANCE_LOGIN="${WL_CHAT_MAINTENANCE_USERNAME:-wl_chat_maintenance}"
 PRESERVE_RUNTIME_FIXED_ROLES="${WL_CHAT_PRESERVE_RUNTIME_FIXED_ROLES:-false}"
 
 if [[ "${PRESERVE_RUNTIME_FIXED_ROLES}" != "true" && "${PRESERVE_RUNTIME_FIXED_ROLES}" != "false" ]]; then
@@ -32,6 +33,7 @@ required_values=(
   WL_CHAT_MIGRATOR_PASSWORD
   WL_CHAT_BACKUP_PASSWORD
   WL_CHAT_RESTORE_PASSWORD
+  WL_CHAT_MAINTENANCE_PASSWORD
 )
 for variable_name in "${required_values[@]}"; do
   if [[ -z "${!variable_name:-}" ]]; then
@@ -40,7 +42,8 @@ for variable_name in "${required_values[@]}"; do
   fi
 done
 
-for login in "${RUNTIME_LOGIN}" "${MIGRATOR_LOGIN}" "${BACKUP_LOGIN}" "${RESTORE_LOGIN}"; do
+for login in "${RUNTIME_LOGIN}" "${MIGRATOR_LOGIN}" "${BACKUP_LOGIN}" "${RESTORE_LOGIN}" \
+  "${MAINTENANCE_LOGIN}"; do
   if [[ ! "${login}" =~ ^[A-Za-z][A-Za-z0-9_]{0,127}$ ]]; then
     echo "Unsafe SQL login name: ${login}" >&2
     exit 1
@@ -66,11 +69,13 @@ docker exec -i "${SQLSERVER_CONTAINER}" /opt/mssql-tools18/bin/sqlcmd \
   -v MIGRATOR_LOGIN="${MIGRATOR_LOGIN}" \
   -v BACKUP_LOGIN="${BACKUP_LOGIN}" \
   -v RESTORE_LOGIN="${RESTORE_LOGIN}" \
+  -v MAINTENANCE_LOGIN="${MAINTENANCE_LOGIN}" \
   -v PRESERVE_RUNTIME_FIXED_ROLES="${PRESERVE_RUNTIME_FIXED_ROLES}" \
   -v RUNTIME_PASSWORD_HEX="$(encode_password_hex "${WL_CHAT_DB_PASSWORD}")" \
   -v MIGRATOR_PASSWORD_HEX="$(encode_password_hex "${WL_CHAT_MIGRATOR_PASSWORD}")" \
   -v BACKUP_PASSWORD_HEX="$(encode_password_hex "${WL_CHAT_BACKUP_PASSWORD}")" \
   -v RESTORE_PASSWORD_HEX="$(encode_password_hex "${WL_CHAT_RESTORE_PASSWORD}")" \
+  -v MAINTENANCE_PASSWORD_HEX="$(encode_password_hex "${WL_CHAT_MAINTENANCE_PASSWORD}")" \
   < "${PROVISION_SQL}"
 
 echo "Hardened SQL Server principals provisioned for wl_chat."

@@ -11,11 +11,13 @@ DECLARE @runtime_login sysname = N'$(RUNTIME_LOGIN)';
 DECLARE @migrator_login sysname = N'$(MIGRATOR_LOGIN)';
 DECLARE @backup_login sysname = N'$(BACKUP_LOGIN)';
 DECLARE @restore_login sysname = N'$(RESTORE_LOGIN)';
+DECLARE @maintenance_login sysname = N'$(MAINTENANCE_LOGIN)';
 
 DECLARE @runtime_password_hex varchar(512) = '$(RUNTIME_PASSWORD_HEX)';
 DECLARE @migrator_password_hex varchar(512) = '$(MIGRATOR_PASSWORD_HEX)';
 DECLARE @backup_password_hex varchar(512) = '$(BACKUP_PASSWORD_HEX)';
 DECLARE @restore_password_hex varchar(512) = '$(RESTORE_PASSWORD_HEX)';
+DECLARE @maintenance_password_hex varchar(512) = '$(MAINTENANCE_PASSWORD_HEX)';
 
 DECLARE @runtime_password nvarchar(128) = CONVERT(
     nvarchar(128),
@@ -37,9 +39,15 @@ DECLARE @restore_password nvarchar(128) = CONVERT(
     CAST(N'' AS xml).value(
         'xs:hexBinary(sql:variable("@restore_password_hex"))',
         'varbinary(256)'));
+DECLARE @maintenance_password nvarchar(128) = CONVERT(
+    nvarchar(128),
+    CAST(N'' AS xml).value(
+        'xs:hexBinary(sql:variable("@maintenance_password_hex"))',
+        'varbinary(256)'));
 
 IF @runtime_password IS NULL OR @migrator_password IS NULL
     OR @backup_password IS NULL OR @restore_password IS NULL
+    OR @maintenance_password IS NULL
 BEGIN
     THROW 50001, 'A hardened SQL principal password could not be decoded.', 1;
 END;
@@ -74,6 +82,13 @@ SET @login_sql = CASE WHEN SUSER_ID(@restore_login) IS NULL THEN N'CREATE' ELSE 
         THEN N', CHECK_POLICY = ON, CHECK_EXPIRATION = OFF' ELSE N'' END + N';';
 EXEC sys.sp_executesql @login_sql;
 
+SET @login_sql = CASE WHEN SUSER_ID(@maintenance_login) IS NULL THEN N'CREATE' ELSE N'ALTER' END
+    + N' LOGIN ' + QUOTENAME(@maintenance_login)
+    + N' WITH PASSWORD = ' + QUOTENAME(@maintenance_password, '''')
+    + CASE WHEN SUSER_ID(@maintenance_login) IS NULL
+        THEN N', CHECK_POLICY = ON, CHECK_EXPIRATION = OFF' ELSE N'' END + N';';
+EXEC sys.sp_executesql @login_sql;
+
 IF IS_SRVROLEMEMBER(N'dbcreator', @restore_login) <> 1
 BEGIN
     SET @login_sql = N'ALTER SERVER ROLE [dbcreator] ADD MEMBER '
@@ -97,6 +112,12 @@ BEGIN
         + N' FOR LOGIN ' + QUOTENAME(@restore_login) + N';';
     EXEC sys.sp_executesql @login_sql;
 END;
+IF USER_ID(@maintenance_login) IS NULL
+BEGIN
+    SET @login_sql = N'CREATE USER ' + QUOTENAME(@maintenance_login)
+        + N' FOR LOGIN ' + QUOTENAME(@maintenance_login) + N';';
+    EXEC sys.sp_executesql @login_sql;
+END;
 GO
 
 USE [wl_chat];
@@ -105,6 +126,7 @@ GO
 DECLARE @runtime_login sysname = N'$(RUNTIME_LOGIN)';
 DECLARE @migrator_login sysname = N'$(MIGRATOR_LOGIN)';
 DECLARE @backup_login sysname = N'$(BACKUP_LOGIN)';
+DECLARE @maintenance_login sysname = N'$(MAINTENANCE_LOGIN)';
 DECLARE @preserve_runtime_fixed_roles bit =
     CASE WHEN LOWER(N'$(PRESERVE_RUNTIME_FIXED_ROLES)') = N'true' THEN 1 ELSE 0 END;
 DECLARE @user_sql nvarchar(max);
@@ -127,6 +149,21 @@ IF USER_ID(@backup_login) IS NULL
 BEGIN
     SET @user_sql = N'CREATE USER ' + QUOTENAME(@backup_login)
         + N' FOR LOGIN ' + QUOTENAME(@backup_login) + N' WITH DEFAULT_SCHEMA = [dbo];';
+    EXEC sys.sp_executesql @user_sql;
+END;
+
+IF USER_ID(@maintenance_login) IS NULL
+BEGIN
+    SET @user_sql = N'CREATE USER ' + QUOTENAME(@maintenance_login)
+        + N' FOR LOGIN ' + QUOTENAME(@maintenance_login) + N' WITH DEFAULT_SCHEMA = [dbo];';
+    EXEC sys.sp_executesql @user_sql;
+END;
+
+IF DATABASE_PRINCIPAL_ID(N'audit_maintenance') IS NOT NULL
+    AND IS_ROLEMEMBER(N'audit_maintenance', @maintenance_login) <> 1
+BEGIN
+    SET @user_sql = N'ALTER ROLE [audit_maintenance] ADD MEMBER '
+        + QUOTENAME(@maintenance_login) + N';';
     EXEC sys.sp_executesql @user_sql;
 END;
 
