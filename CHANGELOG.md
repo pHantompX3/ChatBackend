@@ -25,7 +25,9 @@ release tags begin when the project intentionally performs a production release 
   supplying its required ephemeral maintenance-principal credential, and upgraded the RabbitMQ
   Java client to 5.34.0 to resolve CVE-2026-75516 oversized-frame denial of service. Aligned Jackson
   dependencies on fixed version 2.21.7 and moved the hardened application runtime to Ubuntu 24.04
-  to resolve the additional high-severity findings in the container scan.
+  to resolve additional high-severity findings in the application image. Upgraded the isolated
+  migration image to Flyway 13.10.0 so its bundled Jackson and Netty libraries include their current
+  denial-of-service and TLS-routing fixes.
 
 ### Added
 

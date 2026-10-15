@@ -49,7 +49,7 @@ jobs:
       WL_CHAT_TEMURIN_JDK_IMAGE: eclipse-temurin:25-jdk@sha256:e787e08ef76f4c16866108cd7f9fcd96a68eef3ac6cc76866897d4d02d5a2262
       WL_CHAT_TEMURIN_JRE_IMAGE: eclipse-temurin:25-jre-noble@sha256:d9a39a23634650173f1e2bbc176227af9728587ecf0f4b62d53e9355cd7a19ab
       WL_CHAT_TRIVY_IMAGE: aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
-      WL_CHAT_FLYWAY_BASE_IMAGE: flyway/flyway:13.3.0-alpine@sha256:fb13953f16913efd313f202ec4b4ed34fd2ea14cc51401eb36ea9818c0df2918
+      WL_CHAT_FLYWAY_BASE_IMAGE: flyway/flyway:13.10.0-alpine@sha256:c0c2592aa3ab9edf4dde3939d36df3d5f6ee27b8dcc51924ad8bca2470d24fdd
       WL_CHAT_BUILD_IMAGE_TAG: chat-backend:security-scan
       WL_CHAT_SCAN_IMAGE: chat-backend:security-scan
       WL_CHAT_MIGRATION_BUILD_IMAGE_TAG: chat-backend-flyway:security-scan
