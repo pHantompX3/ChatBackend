@@ -21,7 +21,8 @@ release tags begin when the project intentionally performs a production release 
   splatting, prevented isolated-restore SQL credentials from being recorded in Docker container
   metadata, measured SQL Server Express data-file usage without transaction-log inflation, made
   signed rollback compatibility an explicit fail-closed release input, and retired misleading
-  legacy production-branch deployment guidance.
+  legacy production-branch deployment guidance. Kept the clean-install CI bootstrap aligned by
+  supplying its required ephemeral maintenance-principal credential.
 
 ### Added
 
