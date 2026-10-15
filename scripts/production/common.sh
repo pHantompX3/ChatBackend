@@ -3,7 +3,7 @@ set -euo pipefail
 
 PRODUCTION_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${PRODUCTION_SCRIPT_DIR}/../.." && pwd)"
-PRODUCTION_ENV_FILE="${WL_CHAT_PRODUCTION_ENV_FILE:-${REPO_ROOT}/deploy/production.env}"
+PRODUCTION_ENV_FILE="${WL_CHAT_PRODUCTION_ENV_FILE:-${REPO_ROOT}/production.env}"
 
 load_production_environment() {
   if [[ "${WL_CHAT_PRODUCTION_ENV_LOADED:-false}" == "true" ]]; then

@@ -2581,7 +2581,8 @@
         "kind": "component",
         "sourcePaths": [
           "deploy/nginx/conf.d/chat-backend.conf",
-          "deploy/compose.hardened.yaml"
+          "deploy/compose.hardened.yaml",
+          "deploy/compose.production.yaml"
         ]
       }
     },
@@ -2591,7 +2592,7 @@
       "x": 467,
       "y": 88.5,
       "width": 291,
-      "height": 38,
+      "height": 55,
       "angle": 0,
       "strokeColor": "#1f2937",
       "backgroundColor": "transparent",
@@ -2614,11 +2615,11 @@
       "locked": false,
       "fontSize": 14,
       "fontFamily": 3,
-      "text": "Cloudflare Tunnel → NGINX\nHTTPS / WSS policy boundary",
+      "text": "Cloudflare Tunnel → NGINX\nsole Internet-egress workload\ninternal HTTPS / WSS boundary",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "Cloudflare Tunnel → NGINX\nHTTPS / WSS policy boundary",
+      "originalText": "Cloudflare Tunnel → NGINX\nsole Internet-egress workload\ninternal HTTPS / WSS boundary",
       "lineHeight": 1.25,
       "autoResize": false,
       "customData": {
@@ -4504,7 +4505,7 @@
   },
   "files": {},
   "metadata": {
-    "updatedAt": "2026-10-15T11:25:46Z",
+    "updatedAt": "2026-10-15T14:42:14Z",
     "productionPackages": 30,
     "productionClasses": 161,
     "componentNodes": 26,

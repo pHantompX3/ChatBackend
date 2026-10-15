@@ -9,6 +9,9 @@ if ($AdministrationSource -notmatch '^[0-9a-fA-F:.]+(/[0-9]{1,3})?$') { throw 'U
 $group = 'WL Chat Production'
 if ($PSCmdlet.ShouldProcess($group, 'Replace ChatBackend firewall rules')) {
     Get-NetFirewallRule -Group $group -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+    Get-NetFirewallRule -Name 'OpenSSH-Server-In-TCP*' -ErrorAction SilentlyContinue |
+        Where-Object { $_.Group -ne $group } |
+        Disable-NetFirewallRule
     $sshRuleParameters = @{
         DisplayName    = 'WL Chat LAN SSH'
         Group          = $group

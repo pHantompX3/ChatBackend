@@ -282,6 +282,7 @@
                         <configuration>
                             <failBuildOnCVSS>7</failBuildOnCVSS>
                             <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+                            <dataDirectory>${user.home}/.cache/dependency-check</dataDirectory>
                             <ossIndexAnalyzerEnabled>false</ossIndexAnalyzerEnabled>
                             <formats>
                                 <format>HTML</format>

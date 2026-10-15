@@ -5,8 +5,21 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=common.sh
 source "${SCRIPT_DIR}/common.sh"
 load_production_environment
-release_manifest="${REPO_ROOT}/release-manifest.json"
-release_signature="${REPO_ROOT}/release-manifest.sig"
+mode="${1:-}"
+[[ -z "${mode}" || "${mode}" == "--activate-candidate" ]] \
+  || { echo "Usage: $0 [--activate-candidate]" >&2; exit 1; }
+active_release_dir="${REPO_ROOT}/active-release"
+if [[ "${mode}" == "--activate-candidate" ]]; then
+  release_manifest="${REPO_ROOT}/release-manifest.json"
+  release_signature="${REPO_ROOT}/release-manifest.sig"
+elif [[ -s "${active_release_dir}/release-manifest.json" \
+  && -s "${active_release_dir}/release-manifest.sig" ]]; then
+  release_manifest="${active_release_dir}/release-manifest.json"
+  release_signature="${active_release_dir}/release-manifest.sig"
+else
+  release_manifest="${REPO_ROOT}/release-manifest.json"
+  release_signature="${REPO_ROOT}/release-manifest.sig"
+fi
 "${SCRIPT_DIR}/verify-release.sh" "${release_manifest}" "${release_signature}" \
   "${WL_CHAT_SECRET_ROOT}/release-public-key.pem"
 export WL_CHAT_APP_IMAGE="$(sed -n 's/.*"applicationImage": "\([^"]*\)".*/\1/p' "${release_manifest}")"
@@ -63,4 +76,13 @@ export WL_CHAT_PRESERVE_RUNTIME_FIXED_ROLES=false
 
 "${COMPOSE[@]}" up -d app proxy cloudflared
 "${COMPOSE[@]}" ps
+if [[ "${mode}" == "--activate-candidate" ]]; then
+  mkdir -p "${active_release_dir}"
+  install -m 0644 "${release_manifest}" "${active_release_dir}/release-manifest.json.next"
+  install -m 0644 "${release_signature}" "${active_release_dir}/release-manifest.sig.next"
+  mv -f "${active_release_dir}/release-manifest.json.next" \
+    "${active_release_dir}/release-manifest.json"
+  mv -f "${active_release_dir}/release-manifest.sig.next" \
+    "${active_release_dir}/release-manifest.sig"
+fi
 echo "Production candidate deployed. Run public smoke and observation checks before acceptance."

@@ -17,6 +17,13 @@ release tags begin when the project intentionally performs a production release 
 
 ### Fixed
 
+- Closed production-foundation review gaps by serializing all release tags, correcting artifact
+  extraction, authenticating the deployment archive, isolating application/proxy networking from
+  Internet egress, persisting rollback selection, and making Windows startup/prerequisite/firewall
+  controls fail closed. Hardened backup mount detection, verified-package retention, staging cleanup,
+  isolated restore permissions, TLS consumer permissions, resolved-path/ACL validation, and X3
+  release authority. Added cached, bounded retries for transient NVD service failures and refreshed
+  the architecture map to show `cloudflared` as the sole Internet-egress workload.
 - Corrected the X1 Windows task and firewall entrypoints to use valid PowerShell parameter
   splatting, prevented isolated-restore SQL credentials from being recorded in Docker container
   metadata, measured SQL Server Express data-file usage without transaction-log inflation, made

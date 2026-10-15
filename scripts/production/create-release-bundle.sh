@@ -61,9 +61,19 @@ done < <(git -C "${REPO_ROOT}" ls-files --cached --others --exclude-standard \
   'deploy/secrets/*.example' 'deploy/secrets/README.md')
 cp "${output_dir}/release-manifest.json" "${output_dir}/bundle/release-manifest.json"
 tar -C "${output_dir}/bundle" -czf "${output_dir}/deployment-bundle.tar.gz" .
+if command -v sha256sum >/dev/null 2>&1; then
+  bundle_sha="$(sha256sum "${output_dir}/deployment-bundle.tar.gz" | awk '{print $1}')"
+else
+  bundle_sha="$(shasum -a 256 "${output_dir}/deployment-bundle.tar.gz" | awk '{print $1}')"
+fi
+printf '%s  %s\n' "${bundle_sha}" deployment-bundle.tar.gz \
+  > "${output_dir}/deployment-bundle.sha256"
 
 if [[ -n "${WL_CHAT_RELEASE_SIGNING_KEY:-}" ]]; then
   openssl dgst -sha256 -sign "${WL_CHAT_RELEASE_SIGNING_KEY}" \
     -out "${output_dir}/release-manifest.sig" "${output_dir}/release-manifest.json"
+  openssl dgst -sha256 -sign "${WL_CHAT_RELEASE_SIGNING_KEY}" \
+    -out "${output_dir}/deployment-bundle.sha256.sig" \
+    "${output_dir}/deployment-bundle.sha256"
 fi
-echo "Release manifest and artifact-only deployment bundle created under ${output_dir}."
+echo "Release manifest and authenticated artifact-only deployment bundle created under ${output_dir}."

@@ -13,7 +13,8 @@ evidence to retain. Use only the named repository commands; do not invent substi
 complete without their required evidence.
 
 Passing this manual produces an X1 production candidate. It does not authorize normal production use
-or the `1.0.0` release; those decisions belong to X2.
+or the `1.0.0` release; those decisions belong to X3 after the independently accepted X2 monitoring
+foundation is available.
 
 ## 1. Safety rules
 
@@ -252,7 +253,8 @@ or Cloudflare administrative authority.
 ### C4. Deploy the private stack
 
 1. Transfer the signed deployment bundle through LAN SSH from the operations workstation.
-2. Verify its manifest and checksums before use.
+2. Verify the release-manifest signature and the separately signed deployment-bundle checksum before
+   extracting or executing the archive.
 3. Authenticate Docker using the production pull-only credential.
 4. Pull application and migration images by recorded digest.
 5. Run `scripts/production/validate-production-config.sh`.
@@ -338,9 +340,12 @@ connector-to-origin TLS connection.
 4. From Windows, connect using SMB and confirm authenticated create/read/delete behavior in that
    directory.
 5. Verify the negotiated protocol is SMB 2 or SMB 3. Do not enable SMB1.
-6. Confirm the production backup job can write while the ChatBackend application cannot browse the
+6. Mount that exact share at the configured `WL_CHAT_BACKUP_DESTINATION`, record its expected
+   `findmnt` source as `WL_CHAT_BACKUP_MOUNT_SOURCE`, and prove the backup command fails closed when
+   the share is unmounted rather than writing into the local mountpoint directory.
+7. Confirm the production backup job can write while the ChatBackend application cannot browse the
    share.
-7. If authenticated SMB 2/3 cannot be made to work, stop and document the result. Plain FTP requires
+8. If authenticated SMB 2/3 cannot be made to work, stop and document the result. Plain FTP requires
    a separate residual-risk decision and is not the default fallback.
 
 Expected result: an authenticated LAN-only off-host destination is available.
@@ -356,8 +361,11 @@ Expected result: an authenticated LAN-only off-host destination is available.
    identity, sizes, and checksums.
 6. Transfer the encrypted package and manifest to the router share.
 7. Verify the destination checksum after transfer.
-8. Apply bounded retention without deleting the only verified recovery point.
-9. Confirm overdue or failed backup/transfer status is visible to the operator.
+8. Confirm local staging is removed only after the off-host package passes checksum and signature
+   verification and receives its completion marker.
+9. Apply bounded retention while protecting the newest cryptographically verified completed package;
+   retention must refuse changes when no such package exists.
+10. Confirm overdue or failed backup/transfer status is visible to the operator.
 
 Expected result: the off-host location contains a verified encrypted package, not plaintext database
 backup material.
@@ -432,7 +440,7 @@ private keys.
 1. Review every X1 exit criterion against evidence, not recollection.
 2. Mark each item passed, blocked, or risk-accepted with owner and review date.
 3. Confirm this manual and the governing X1 guide match the deployed candidate.
-4. Produce the X2 handoff package.
+4. Produce the independent X2 monitoring-foundation and X3 production-activation handoff packages.
 5. Describe the result as a **secure and recoverable production candidate**, never as production
    approval.
 

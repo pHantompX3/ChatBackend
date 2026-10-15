@@ -19,6 +19,20 @@ release="${WL_CHAT_RELEASE_ID:-unknown}"
 
 staging="${WL_CHAT_BACKUP_STAGING_ROOT}/${timestamp}"
 destination="${WL_CHAT_BACKUP_DESTINATION}/${timestamp}"
+backup_mount="${WL_CHAT_BACKUP_DESTINATION:?WL_CHAT_BACKUP_DESTINATION is required}"
+if ! mountpoint -q "${backup_mount}"; then
+  echo "Backup destination is not a mounted off-host filesystem: ${backup_mount}" >&2
+  exit 1
+fi
+mount_source="$(findmnt -n -o SOURCE --target "${backup_mount}")"
+mount_type="$(findmnt -n -o FSTYPE --target "${backup_mount}")"
+[[ "${mount_type}" == "cifs" || "${mount_type}" == "smb3" ]] \
+  || { echo "Backup destination must be an SMB/CIFS mount; found ${mount_type}." >&2; exit 1; }
+if [[ -n "${WL_CHAT_BACKUP_MOUNT_SOURCE:-}" \
+  && "${mount_source}" != "${WL_CHAT_BACKUP_MOUNT_SOURCE}" ]]; then
+  echo "Backup mount source mismatch: expected ${WL_CHAT_BACKUP_MOUNT_SOURCE}, found ${mount_source}." >&2
+  exit 1
+fi
 mkdir -p "${staging}" "${destination}" "${WL_CHAT_PRODUCTION_ROOT}/status"
 chmod 0700 "${staging}"
 backup="wl_chat_${timestamp}.bak"
@@ -69,7 +83,9 @@ cp "${staging}/${archive}" "${staging}/manifest.json" "${staging}/manifest.sig" 
   "${staging}/package.sha256" "${destination}/"
 [[ "$(sha256_file "${destination}/${archive}")" == "${archive_sha}" ]] \
   || { echo "Off-host package checksum mismatch." >&2; exit 1; }
+"${SCRIPT_DIR}/verify-production-backup.sh" "${destination}" >/dev/null
+touch "${destination}/backup.complete"
 
-rm -f -- "${staging:?}/${backup}"
+rm -rf -- "${staging:?}"
 printf '%s\n' "${timestamp}" > "${WL_CHAT_PRODUCTION_ROOT}/status/last-successful-backup-utc"
 echo "Verified encrypted backup package transferred to ${destination}."

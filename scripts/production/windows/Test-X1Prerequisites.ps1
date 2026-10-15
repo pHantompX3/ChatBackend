@@ -16,8 +16,12 @@ if ((Get-BitLockerVolume -MountPoint $env:SystemDrive).ProtectionStatus -ne 'On'
 Test-Command docker
 Test-Command wsl
 Test-Command sshd
-try { docker version --format '{{.Server.Version}}' | Out-Null } catch { $failures.Add('Docker Engine is not ready') }
-try { docker compose version | Out-Null } catch { $failures.Add('Docker Compose is unavailable') }
+if (Get-Command docker -ErrorAction SilentlyContinue) {
+    docker version --format '{{.Server.Version}}' 2>$null | Out-Null
+    if ($LASTEXITCODE -ne 0) { $failures.Add('Docker Engine is not ready') }
+    docker compose version 2>$null | Out-Null
+    if ($LASTEXITCODE -ne 0) { $failures.Add('Docker Compose is unavailable') }
+}
 $wslState = wsl --list --verbose 2>&1 | Out-String
 if ($wslState -notmatch '\s+2\s') { $failures.Add('No WSL2 distribution was detected') }
 $timeService = Get-Service W32Time -ErrorAction SilentlyContinue
@@ -30,4 +34,3 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 Write-Output "X1 prerequisite checks passed: $($os.Caption); free=$([math]::Round($systemDrive.SizeRemaining / 1GB, 1))GB."
-

@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: production-release-${{ github.ref }}
+  group: production-release
   cancel-in-progress: false
 
 jobs:
@@ -71,6 +71,7 @@ jobs:
           ./scripts/production/create-release-bundle.sh "${GITHUB_REF_NAME}" \
             "${APP_DIGEST}" "${MIGRATION_DIGEST}" release-output
           test -s release-output/release-manifest.sig
+          test -s release-output/deployment-bundle.sha256.sig
       - name: Upload immutable candidate evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -91,7 +92,7 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: production-candidate-${{ github.ref_name }}
-          path: release-output
+          path: .
       - name: Verify and transfer from the operations workstation
         env:
           WL_CHAT_PRODUCTION_SSH_TARGET: ${{ vars.WL_CHAT_PRODUCTION_SSH_TARGET }}

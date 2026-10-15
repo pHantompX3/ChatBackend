@@ -16,14 +16,13 @@ public_key="${WL_CHAT_RELEASE_PUBLIC_KEY:-}"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 "${SCRIPT_DIR}/verify-release.sh" "${artifact_dir}/release-manifest.json" \
   "${artifact_dir}/release-manifest.sig" "${public_key}"
-archive_sha="$(shasum -a 256 "${artifact_dir}/deployment-bundle.tar.gz" | awk '{print $1}')"
-printf '%s\n' "${archive_sha}" > "${artifact_dir}/deployment-bundle.sha256"
+"${SCRIPT_DIR}/verify-release-bundle.sh" "${artifact_dir}" "${public_key}"
 
 ssh "${target}" "powershell -NoProfile -NonInteractive -Command \"New-Item -ItemType Directory -Force -Path '${remote_root}' | Out-Null\""
 scp "${artifact_dir}/deployment-bundle.tar.gz" "${artifact_dir}/deployment-bundle.sha256" \
+  "${artifact_dir}/deployment-bundle.sha256.sig" \
   "${artifact_dir}/release-manifest.json" "${artifact_dir}/release-manifest.sig" \
   "${target}:${remote_root}/"
-ssh "${target}" "powershell -NoProfile -NonInteractive -Command \"Set-Location '${remote_root}'; if ((Get-FileHash deployment-bundle.tar.gz -Algorithm SHA256).Hash.ToLower() -ne (Get-Content deployment-bundle.sha256).Trim()) { throw 'Bundle checksum mismatch' }; tar.exe -xzf deployment-bundle.tar.gz\""
-ssh "${target}" "wsl.exe -- bash -lc \"cd '${wsl_root}' && export WL_CHAT_PRODUCTION_ENV_FILE='${wsl_root}/production.env' && ./scripts/production/deploy-production.sh\""
+ssh "${target}" "powershell -NoProfile -NonInteractive -Command \"Set-Location '${remote_root}'; \$expected = ((Get-Content deployment-bundle.sha256).Trim() -split '\\s+')[0]; if ((Get-FileHash deployment-bundle.tar.gz -Algorithm SHA256).Hash.ToLower() -ne \$expected) { throw 'Bundle checksum mismatch after transfer' }; tar.exe -xzf deployment-bundle.tar.gz\""
+ssh "${target}" "wsl.exe -- bash -lc \"cd '${wsl_root}' && export WL_CHAT_PRODUCTION_ENV_FILE='${wsl_root}/production.env' && ./scripts/production/deploy-production.sh --activate-candidate\""
 echo "Verified release bundle transferred and production deployment completed."
-

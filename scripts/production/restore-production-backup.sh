@@ -46,7 +46,7 @@ sa_password="$(read_secret sql-sa-password)"
 docker volume create "${volume}" >/dev/null
 docker run -d --name "${container}" -e ACCEPT_EULA=Y -e MSSQL_PID=Express \
   --mount "type=bind,source=${WL_CHAT_SECRET_ROOT}/sql-sa-password,target=/run/secrets/sql-sa-password,readonly" \
-  -v "${volume}:/var/opt/mssql" -v "${work_dir}:/restore:ro" \
+  -v "${volume}:/var/opt/mssql" \
   --entrypoint /bin/bash "${WL_CHAT_SQL_IMAGE}" -c \
   'export MSSQL_SA_PASSWORD="$(cat /run/secrets/sql-sa-password)"; exec /opt/mssql/bin/sqlservr' >/dev/null
 for attempt in {1..60}; do
@@ -56,7 +56,11 @@ for attempt in {1..60}; do
   sleep 2
 done
 
-backup_container="/restore/$(basename -- "${backup}")"
+backup_container="/var/opt/mssql/backup/$(basename -- "${backup}")"
+docker exec -u 0 "${container}" mkdir -p /var/opt/mssql/backup
+docker cp "${backup}" "${container}:${backup_container}"
+docker exec -u 0 "${container}" chown 10001:10001 "${backup_container}"
+docker exec -u 0 "${container}" chmod 0600 "${backup_container}"
 file_list="$(docker exec "${container}" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa \
   -P "${sa_password}" -C -W -h -1 -s '|' -Q "RESTORE FILELISTONLY FROM DISK=N'${backup_container}';")"
 data_name="$(printf '%s\n' "${file_list}" | awk -F'|' '$3 ~ /D/ {gsub(/^ +| +$/, "", $1); print $1; exit}')"

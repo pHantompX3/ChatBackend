@@ -34,7 +34,8 @@ rm -f -- "${WL_CHAT_SECRET_ROOT}/sql-truststore.p12"
 keytool -importcert -noprompt -alias wl-chat-production-sql-ca -file "${ca_cert}" \
   -keystore "${WL_CHAT_SECRET_ROOT}/sql-truststore.p12" -storetype PKCS12 \
   -storepass "$(read_secret sql-truststore-password)"
-chmod 0600 "${ca_key}" "${WL_CHAT_SECRET_ROOT}/sql-truststore.p12"
-chmod 0644 "${ca_cert}"
+chmod 0600 "${ca_key}"
+# The truststore contains only the public SQL CA certificate. Host-directory ACLs remain the
+# administrative boundary, while read permission lets the non-root app and migrator consume it.
+chmod 0644 "${ca_cert}" "${WL_CHAT_SECRET_ROOT}/sql-truststore.p12"
 openssl x509 -in "${WL_CHAT_SECRET_ROOT}/sqlserver.crt" -noout -subject -issuer -dates
-
