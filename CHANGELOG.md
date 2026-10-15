@@ -22,7 +22,8 @@ release tags begin when the project intentionally performs a production release 
   metadata, measured SQL Server Express data-file usage without transaction-log inflation, made
   signed rollback compatibility an explicit fail-closed release input, and retired misleading
   legacy production-branch deployment guidance. Kept the clean-install CI bootstrap aligned by
-  supplying its required ephemeral maintenance-principal credential.
+  supplying its required ephemeral maintenance-principal credential, and upgraded the RabbitMQ
+  Java client to 5.34.0 to resolve CVE-2026-75516 oversized-frame denial of service.
 
 ### Added
 
