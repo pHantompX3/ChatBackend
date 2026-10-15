@@ -17,6 +17,10 @@ release tags begin when the project intentionally performs a production release 
 
 ### Fixed
 
+- Attached the production SQL-volume and proxy-TLS initializer containers exclusively to internal
+  Compose networks, preventing Docker from creating an implicit Internet-capable default network and
+  preserving the invariant that only the Cloudflare Tunnel connector has outbound Internet access.
+
 - Closed production-foundation review gaps by serializing all release tags, correcting artifact
   extraction, authenticating the deployment archive, isolating application/proxy networking from
   Internet egress, persisting rollback selection, and making Windows startup/prerequisite/firewall

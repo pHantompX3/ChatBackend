@@ -18,6 +18,7 @@ services:
       - sql-secrets:/var/opt/mssql/secrets
       - "${WL_CHAT_SECRET_ROOT:?secret root required}/sqlserver.crt:/source-tls/sqlserver.crt:ro"
       - "${WL_CHAT_SECRET_ROOT:?secret root required}/sqlserver.key:/source-tls/sqlserver.key:ro"
+    networks: [data]
     cap_drop: [ALL]
     cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
     security_opt: ["no-new-privileges:true"]
@@ -130,6 +131,7 @@ services:
       - "${WL_CHAT_SECRET_ROOT}/origin.crt:/source/origin.crt:ro"
       - "${WL_CHAT_SECRET_ROOT}/origin.key:/source/origin.key:ro"
       - proxy-tls:/target
+    networks: [edge-internal]
     cap_drop: [ALL]
     cap_add: [CHOWN, DAC_OVERRIDE]
     security_opt: ["no-new-privileges:true"]
