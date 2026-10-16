@@ -16,7 +16,10 @@
 - Active local database name: `wl_chat`
 - Active app login: `wl_chat_app`
 - Audit transport: RabbitMQ-backed delivery is optional; if the audit transport is not configured, the app falls back to local async persistence and still boots cleanly
-- Original roadmap status: Milestones 0–9 complete; Milestone X production activation paused
+- Original roadmap status: Milestones 0–9 complete; X1 repository implementation is complete and
+  locally verified, X2 monitoring implementation is planned, and X3 owns all production-host and
+  external activation work.
+- No production deployment is claimed until the X1 operator evidence is accepted.
 - Production client-ingress decision: public HTTPS/WSS through one hardened NGINX edge; user
   authentication and server authorization are initially authoritative. The required post-X sequence
   adds IE-01 native per-installation trust, IE-02 mobile-authorized linked-browser protocol support,
@@ -367,7 +370,7 @@ Use these only if you want branch-based pre-push checks locally.
 2. `scripts/cicd/local-trigger.sh <branch>`
 
 - For `main`: runs local DB init + compile.
-- For `production`: runs production deploy placeholder.
+- For `production`: fails safe through a retired compatibility guard; it never deploys.
 
 ## Health Endpoints
 
@@ -438,7 +441,7 @@ To mirror branch-based remote triggers locally, this repository includes a Git `
   - Runs `./mvnw -q -DskipTests compile`
 - `production` push trigger:
   - Runs `./scripts/cicd/production-deploy-placeholder.sh`
-  - Intended to be replaced later with real AWS deployment steps
+  - Remains a legacy no-op; production releases use the protected, annotated-tag workflow below
 
 Install local hooks once:
 
@@ -451,6 +454,12 @@ Key files:
 - `.githooks/pre-push`
 - `scripts/cicd/local-trigger.sh`
 - `scripts/cicd/production-deploy-placeholder.sh`
+
+Production candidates are built once by `.github/workflows/production-release.yml` from an annotated
+semantic-version tag. The workflow publishes distinct application and migration tags to the private
+Docker Hub repository, resolves immutable digests, scans and signs the release bundle, then requires
+approval through the protected `production` environment before the operations runner verifies and
+transfers artifacts to the production host. See the X1 operator manual for setup and evidence.
 
 Temporarily skip local triggers for one push:
 
@@ -543,8 +552,12 @@ production-activation prerequisites and are not claimed.
     `docs/development-guide/milestone-x-production-activation.md`
   - X1 production infrastructure and recovery foundation:
     `docs/development-guide/milestone-x1-production-infrastructure-and-recovery.md`
-  - X2 monitoring, operational validation, and production acceptance:
+  - X1 step-by-step production operator manual:
+    `docs/operations/x1-production-operator-manual.md`
+  - X2 monitoring foundation:
     `docs/development-guide/milestone-x2-monitoring-and-production-acceptance.md`
+  - X3 production deployment, external integration, and acceptance:
+    `docs/development-guide/milestone-x3-production-deployment-and-acceptance.md`
 - Canonical client responsibility, offline behavior, and recovery guide:
   - `docs/client-integration/client-responsibility-and-recovery-guide.md`
 - Human-run two-participant WebSocket/Postman integration guide:

@@ -1,5 +1,5 @@
 ARG TEMURIN_JDK_IMAGE=eclipse-temurin:25-jdk
-ARG TEMURIN_JRE_IMAGE=eclipse-temurin:25-jre-jammy
+ARG TEMURIN_JRE_IMAGE=eclipse-temurin:25-jre-noble
 
 FROM ${TEMURIN_JDK_IMAGE} AS builder
 

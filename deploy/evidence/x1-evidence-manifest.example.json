@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "candidateStatus": "NOT_VERIFIED",
+  "release": {
+    "tag": "<annotated-tag>",
+    "sourceCommit": "<commit>",
+    "applicationImageDigest": "<digest>",
+    "migrationImageDigest": "<digest>",
+    "databaseSchemaVersion": "<flyway-version>"
+  },
+  "host": {
+    "profileId": "<sanitized-host-id>",
+    "prerequisites": "NOT_RUN",
+    "coldReboot": "NOT_RUN",
+    "powerLossRecovery": "NOT_RUN",
+    "firewallAndPortExposure": "NOT_RUN"
+  },
+  "edge": {
+    "hostname": "chat-api.wmkjsolutions.com",
+    "publicTls": "NOT_RUN",
+    "httpsWssSmoke": "NOT_RUN",
+    "tunnelRotation": "NOT_RUN",
+    "zeroPublicOriginPorts": "NOT_RUN"
+  },
+  "data": {
+    "sqlExpressAndPermissions": "NOT_RUN",
+    "rabbitMqPersistenceAndDegradation": "NOT_RUN",
+    "auditRetention": "NOT_RUN",
+    "offHostBackup": "NOT_RUN",
+    "isolatedRestore": "NOT_RUN",
+    "achievedRpo": null,
+    "achievedRto": null
+  },
+  "characterization": {
+    "result": "NOT_RUN",
+    "evidenceReference": null
+  },
+  "risks": [],
+  "approvals": [],
+  "updatedAtUtc": "<timestamp>"
+}
+

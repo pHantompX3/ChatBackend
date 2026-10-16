@@ -37,6 +37,10 @@ scripts/database/rotate-sql-logins.sh
 postman/config.properties
 # Hardened rehearsal secrets and generated operational artifacts
 /deploy/hardened.env
+/deploy/production.env
+deploy/secrets/*
+!deploy/secrets/README.md
+!deploy/secrets/*.example
 deploy/tls/generated/*
 !deploy/tls/generated/.gitkeep
 backups/

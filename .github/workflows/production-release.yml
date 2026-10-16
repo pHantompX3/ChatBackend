@@ -1,0 +1,100 @@
+name: Production Candidate Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
+jobs:
+  build-once:
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY_REPOSITORY: ${{ vars.WL_CHAT_DOCKERHUB_REPOSITORY }}
+      WL_CHAT_TEMURIN_JDK_IMAGE: eclipse-temurin:25-jdk@sha256:e787e08ef76f4c16866108cd7f9fcd96a68eef3ac6cc76866897d4d02d5a2262
+      WL_CHAT_TEMURIN_JRE_IMAGE: eclipse-temurin:25-jre-noble@sha256:d9a39a23634650173f1e2bbc176227af9728587ecf0f4b62d53e9355cd7a19ab
+      WL_CHAT_FLYWAY_BASE_IMAGE: flyway/flyway:13.10.0-alpine@sha256:c0c2592aa3ab9edf4dde3939d36df3d5f6ee27b8dcc51924ad8bca2470d24fdd
+      WL_CHAT_TRIVY_IMAGE: aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - name: Require an annotated release tag
+        run: git cat-file -t "${GITHUB_REF_NAME}" | grep -Fx tag
+      - name: Verify source
+        run: ./mvnw --batch-mode --no-transfer-progress clean verify
+      - name: Authenticate publisher
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
+        with:
+          username: ${{ secrets.WL_CHAT_DOCKERHUB_USERNAME }}
+          password: ${{ secrets.WL_CHAT_DOCKERHUB_PUBLISH_TOKEN }}
+      - name: Build, push, and resolve immutable digests
+        run: |
+          set -euo pipefail
+          test -n "${REGISTRY_REPOSITORY}"
+          export WL_CHAT_BUILD_IMAGE_TAG="${REGISTRY_REPOSITORY}:app-${GITHUB_REF_NAME}"
+          export WL_CHAT_MIGRATION_BUILD_IMAGE_TAG="${REGISTRY_REPOSITORY}:migration-${GITHUB_REF_NAME}"
+          ./scripts/ci/build-image.sh
+          ./scripts/ci/build-migration-image.sh
+          docker push "${WL_CHAT_BUILD_IMAGE_TAG}"
+          docker push "${WL_CHAT_MIGRATION_BUILD_IMAGE_TAG}"
+          docker pull "${WL_CHAT_BUILD_IMAGE_TAG}"
+          docker pull "${WL_CHAT_MIGRATION_BUILD_IMAGE_TAG}"
+          APP_DIGEST="$(docker image inspect --format '{{index .RepoDigests 0}}' "${WL_CHAT_BUILD_IMAGE_TAG}")"
+          MIGRATION_DIGEST="$(docker image inspect --format '{{index .RepoDigests 0}}' "${WL_CHAT_MIGRATION_BUILD_IMAGE_TAG}")"
+          echo "APP_DIGEST=${APP_DIGEST}" >> "${GITHUB_ENV}"
+          echo "MIGRATION_DIGEST=${MIGRATION_DIGEST}" >> "${GITHUB_ENV}"
+      - name: Scan pushed candidate locally
+        run: |
+          export WL_CHAT_SCAN_IMAGE="${APP_DIGEST}"
+          export WL_CHAT_SCAN_MIGRATION_IMAGE="${MIGRATION_DIGEST}"
+          ./scripts/ci/scan.sh
+      - name: Create and sign release bundle
+        env:
+          SIGNING_KEY_B64: ${{ secrets.WL_CHAT_RELEASE_SIGNING_KEY_B64 }}
+        run: |
+          set -euo pipefail
+          test -n "${SIGNING_KEY_B64}"
+          umask 077
+          printf '%s' "${SIGNING_KEY_B64}" | base64 --decode > "${RUNNER_TEMP}/release-signing-key.pem"
+          export WL_CHAT_RELEASE_SIGNING_KEY="${RUNNER_TEMP}/release-signing-key.pem"
+          ./scripts/production/create-release-bundle.sh "${GITHUB_REF_NAME}" \
+            "${APP_DIGEST}" "${MIGRATION_DIGEST}" release-output
+          test -s release-output/release-manifest.sig
+          test -s release-output/deployment-bundle.sha256.sig
+      - name: Upload immutable candidate evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: production-candidate-${{ github.ref_name }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            release-output/*
+            security-reports/*.json
+            target/bom.*
+
+  approve-and-transfer:
+    needs: build-once
+    runs-on: [self-hosted, production-operator]
+    environment: production
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: production-candidate-${{ github.ref_name }}
+          path: .
+      - name: Verify and transfer from the operations workstation
+        env:
+          WL_CHAT_PRODUCTION_SSH_TARGET: ${{ vars.WL_CHAT_PRODUCTION_SSH_TARGET }}
+          WL_CHAT_RELEASE_PUBLIC_KEY: ${{ vars.WL_CHAT_RELEASE_PUBLIC_KEY_PATH }}
+        run: ./scripts/production/deploy-from-workstation.sh release-output

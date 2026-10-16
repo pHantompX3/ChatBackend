@@ -1,0 +1,196 @@
+name: wl-chat-production
+
+services:
+  sql-volume-init:
+    image: ${WL_CHAT_SQL_IMAGE:?digest-pinned SQL Server image required}
+    user: "0:0"
+    entrypoint: ["/bin/bash", "-ceu"]
+    command:
+      - |
+        chown -R 10001:10001 /var/opt/mssql/data /var/opt/mssql/log /var/opt/mssql/backup /var/opt/mssql/secrets
+        chmod -R u+rwX,g+rwX,o-rwx /var/opt/mssql/data /var/opt/mssql/log /var/opt/mssql/backup /var/opt/mssql/secrets
+        install -o 10001 -g 10001 -m 0640 /source-tls/sqlserver.crt /var/opt/mssql/secrets/sqlserver.crt
+        install -o 10001 -g 10001 -m 0640 /source-tls/sqlserver.key /var/opt/mssql/secrets/sqlserver.key
+    volumes:
+      - sql-data:/var/opt/mssql/data
+      - sql-logs:/var/opt/mssql/log
+      - sql-backups:/var/opt/mssql/backup
+      - sql-secrets:/var/opt/mssql/secrets
+      - "${WL_CHAT_SECRET_ROOT:?secret root required}/sqlserver.crt:/source-tls/sqlserver.crt:ro"
+      - "${WL_CHAT_SECRET_ROOT:?secret root required}/sqlserver.key:/source-tls/sqlserver.key:ro"
+    networks: [data]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+
+  sqlserver:
+    image: ${WL_CHAT_SQL_IMAGE:?digest-pinned SQL Server image required}
+    entrypoint: ["/bin/bash", "-ceu"]
+    command:
+      - |
+        export MSSQL_SA_PASSWORD="$$(cat /run/secrets/sql-sa-password)"
+        exec /opt/mssql/bin/launch_sqlservr.sh
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: ${WL_CHAT_SQL_EDITION:?SQL edition required}
+    volumes:
+      - sql-data:/var/opt/mssql/data
+      - sql-logs:/var/opt/mssql/log
+      - sql-backups:/var/opt/mssql/backup
+      - sql-secrets:/var/opt/mssql/secrets
+      - ./sql/mssql.conf:/var/opt/mssql/mssql.conf:ro
+      - "${WL_CHAT_SECRET_ROOT}/sql-sa-password:/run/secrets/sql-sa-password:ro"
+    networks: [data]
+    depends_on:
+      sql-volume-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$(cat /run/secrets/sql-sa-password)\" -C -Q \"SELECT 1\" >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "${WL_CHAT_SQL_CPU_LIMIT:-4}"
+          memory: ${WL_CHAT_SQL_MEMORY_LIMIT_MB:-2048}m
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+
+  queue:
+    image: ${WL_CHAT_RABBITMQ_IMAGE:?digest-pinned RabbitMQ image required}
+    entrypoint: ["/bin/sh", "-ceu"]
+    command:
+      - |
+        export RABBITMQ_DEFAULT_PASS="$$(cat /run/secrets/rabbitmq-operator-password)"
+        exec docker-entrypoint.sh rabbitmq-server
+    environment:
+      RABBITMQ_DEFAULT_USER: wl_chat_queue_operator
+      RABBITMQ_DEFAULT_VHOST: /wl-chat
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbitmq_management load_definitions "/etc/rabbitmq/definitions.json"
+    volumes:
+      - rabbit-data:/var/lib/rabbitmq
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - "${WL_CHAT_SECRET_ROOT}/rabbitmq-operator-password:/run/secrets/rabbitmq-operator-password:ro"
+    networks: [audit]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: ${WL_CHAT_QUEUE_MEMORY_LIMIT:-512m}
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+
+  app:
+    image: ${WL_CHAT_APP_IMAGE:?digest-pinned ChatBackend image required}
+    user: "10001:10001"
+    read_only: true
+    tmpfs:
+      - "/tmp:size=64m,mode=1777"
+      - "/app/native-tmp:size=16m,mode=0700,uid=10001,gid=10001,exec"
+    environment:
+      JAVA_TOOL_OPTIONS: -Djna.tmpdir=/app/native-tmp
+      QUARKUS_PROFILE: hardened
+      QUARKUS_HTTP_HOST: 0.0.0.0
+      WL_CHAT_CONFIG_FILE: /run/secrets/application.properties
+      CHAT_HTTP_TRUSTED_PROXIES: 172.31.90.0/24
+    volumes:
+      - "${WL_CHAT_SECRET_ROOT}/application.properties:/run/secrets/application.properties:ro"
+      - "${WL_CHAT_SECRET_ROOT}/sql-truststore.p12:/app/tls/sql-truststore.p12:ro"
+    networks: [edge-internal, data, audit]
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      queue:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: ${WL_CHAT_APP_MEMORY_LIMIT:-768m}
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+  proxy-tls-init:
+    image: ${WL_CHAT_NGINX_IMAGE:?digest-pinned NGINX image required}
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-ceu"]
+    command:
+      - |
+        install -o 101 -g 101 -m 0644 /source/origin.crt /target/origin.crt
+        install -o 101 -g 101 -m 0640 /source/origin.key /target/origin.key
+    volumes:
+      - "${WL_CHAT_SECRET_ROOT}/origin.crt:/source/origin.crt:ro"
+      - "${WL_CHAT_SECRET_ROOT}/origin.key:/source/origin.key:ro"
+      - proxy-tls:/target
+    networks: [edge-internal]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+
+  proxy:
+    image: ${WL_CHAT_NGINX_IMAGE:?digest-pinned NGINX image required}
+    read_only: true
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d/chat-backend.production.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/proxy_params:/etc/nginx/proxy_params:ro
+      - proxy-tls:/etc/nginx/tls:ro
+    networks: [edge-internal]
+    depends_on:
+      app:
+        condition: service_started
+      proxy-tls-init:
+        condition: service_completed_successfully
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+  cloudflared:
+    image: ${WL_CHAT_CLOUDFLARED_IMAGE:?digest-pinned cloudflared image required}
+    command: ["tunnel", "--config", "/etc/cloudflared/config.yml", "run"]
+    volumes:
+      - "${WL_CHAT_PRODUCTION_ROOT}/cloudflared/config.yml:/etc/cloudflared/config.yml:ro"
+      - "${WL_CHAT_SECRET_ROOT}/cloudflared-credentials.json:/run/secrets/cloudflared-credentials.json:ro"
+      - "${WL_CHAT_SECRET_ROOT}/origin-ca.pem:/run/secrets/origin-ca.pem:ro"
+    networks: [edge-internal, tunnel-egress]
+    depends_on:
+      proxy:
+        condition: service_started
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+networks:
+  edge-internal:
+    internal: true
+    ipam:
+      config: [{subnet: 172.31.90.0/24}]
+  tunnel-egress:
+    internal: false
+  data:
+    internal: true
+    ipam:
+      config: [{subnet: 172.31.91.0/24}]
+  audit:
+    internal: true
+    ipam:
+      config: [{subnet: 172.31.92.0/24}]
+
+volumes:
+  sql-data:
+  sql-logs:
+  sql-backups:
+  sql-secrets:
+  rabbit-data:
+  proxy-tls:

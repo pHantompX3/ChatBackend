@@ -1,0 +1,15 @@
+# The credentials file is created by Cloudflare and remains outside Git.
+tunnel: <tunnel-uuid>
+credentials-file: /run/secrets/cloudflared-credentials.json
+
+ingress:
+  - hostname: chat-api.wmkjsolutions.com
+    service: https://proxy:8443
+    originRequest:
+      originServerName: chat-api.wmkjsolutions.com
+      caPool: /run/secrets/origin-ca.pem
+      noTLSVerify: false
+      connectTimeout: 10s
+      httpHostHeader: chat-api.wmkjsolutions.com
+  - service: http_status:404
+

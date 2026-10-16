@@ -50,7 +50,12 @@ final class MigrationHarnessTest {
                     + "WHERE s.name IN ('identity', 'audit') "
                     + "AND t.name IN ('user_account', 'invitation', 'http_audit_event')");
         var historyStatement =
-            connection.prepareStatement(TestSqlSupport.FLYWAY_HISTORY_SCHEMA_SQL)) {
+            connection.prepareStatement(TestSqlSupport.FLYWAY_HISTORY_SCHEMA_SQL);
+        var maintenanceStatement =
+            connection.prepareStatement(
+                "SELECT "
+                    + "CASE WHEN DATABASE_PRINCIPAL_ID('audit_maintenance') IS NOT NULL THEN 1 ELSE 0 END, "
+                    + "CASE WHEN OBJECT_ID('audit.purge_http_audit_events', 'P') IS NOT NULL THEN 1 ELSE 0 END")) {
 
       try (var schemaResult = schemaStatement.executeQuery()) {
         schemaResult.next();
@@ -65,6 +70,12 @@ final class MigrationHarnessTest {
       try (var tableResult = tableStatement.executeQuery()) {
         tableResult.next();
         assertEquals(3, tableResult.getInt(1));
+      }
+
+      try (var maintenanceResult = maintenanceStatement.executeQuery()) {
+        maintenanceResult.next();
+        assertEquals(1, maintenanceResult.getInt(1));
+        assertEquals(1, maintenanceResult.getInt(2));
       }
     } catch (Exception exception) {
       throw new IllegalStateException("Failed to validate migrated schema state", exception);

@@ -1,5 +1,5 @@
 ARG TEMURIN_JDK_IMAGE=eclipse-temurin:25-jdk
-ARG FLYWAY_BASE_IMAGE=flyway/flyway:13.3.0-alpine
+ARG FLYWAY_BASE_IMAGE=flyway/flyway:13.10.0-alpine
 
 FROM ${TEMURIN_JDK_IMAGE} AS driver
 

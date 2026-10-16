@@ -4,7 +4,7 @@
 
 **Document version:** 0.3
 **Status:** Authoritative post-Milestone enhancement roadmap
-**Last reviewed:** 2026-08-30
+**Last reviewed:** 2026-09-02
 **Applies after:** Completed Milestones 0–9
 **Production boundary:** Milestone X remains the separate, paused production-activation program
 **Product audit basis:**
@@ -483,8 +483,8 @@ pagination under concurrent activity; and indexes justified by the chosen query 
 **Principles:** Understandable, expressive, accessible, portable
 **Preliminary assessment:** Value 4; effort 2; 1–2 weeks; medium confidence
 **Dependencies:** ET-02 only for profile or conversation images
-**Last reviewed:** 2026-08-29
-**Stakeholder decision:** Not selected
+**Last reviewed:** 2026-09-02
+**Stakeholder decision:** Candidate contract accepted for planning; implementation not selected
 
 **Problem:** Current identity summaries expose stable IDs and usernames, while conversation summaries
 expose title and role. They do not provide a shared platform basis for display identity or richer group
@@ -545,18 +545,59 @@ RabbitMQ, audit payloads, or WebSocket frames would weaken performance and opera
 **Outcome:** Introduce one generic, authorized attachment lifecycle with SQL-authoritative metadata
 and persistent on-premises filesystem content.
 
-**Candidate scope:** Pending upload, completion verification, checksum, bounded size/type policy,
-authorized streaming download, range delivery where needed, one or multiple ordered attachments,
-captions and alternative descriptions, filename/dimensions/duration metadata, thumbnail or processing
-state, message association, cancellation/retry, deletion/retention, orphan cleanup, capacity evidence,
-backup, and restore.
+**Resolved transfer contract:** Use a dedicated binary-transfer surface rather than embedding bytes
+in message JSON, multipart message creation, RabbitMQ, or WebSocket frames. Adopt the mature tus 1.0
+HTTP protocol for resumable uploads: create an upload resource, append bytes through offset-checked
+`PATCH` requests, and recover the authoritative offset through `HEAD`. Limit each assembled
+attachment to 50 MiB and each upload request body to 25 MiB. Require a declared total length at
+creation; deferred or unknown-length uploads and tus concatenation are out of scope. Use the tus
+expiration, checksum, and termination behavior needed for safe recovery and cleanup. Reassess the
+IETF Resumable Uploads for HTTP draft immediately before implementation, but do not build against an
+unstable draft merely because it may later become a standard.
 
-**Non-goals:** S3-compatible infrastructure without evidence, CDN, distributed transcoding, global
-deduplication, or third-party media hosting.
+The development guide should preserve the following explicit route families unless its repository
+audit proves a necessary refinement:
 
-**Discovery focus:** Upload protocol and resumability threshold, atomic association, path isolation,
-malware/type validation proportional to the trust model, storage limits, processing failure state,
-edit/delete/forward behavior, and reconciliation after partial upload.
+- `OPTIONS /api/v1/attachment-uploads` — advertise supported tus version, extensions, and maximum;
+- `POST /api/v1/attachment-uploads` — authorize and create one upload resource;
+- `HEAD|PATCH|DELETE /api/v1/attachment-uploads/{uploadId}` — inspect offset, append one bounded
+  binary chunk, or cancel;
+- `GET /api/v1/attachments/{attachmentId}` — read authoritative metadata and lifecycle state; and
+- `GET /api/v1/attachments/{attachmentId}/content` — stream authorized full or ranged bytes.
+
+These are HTTP resources because HTTP is the interoperable transport through the existing public
+edge, but they are not generic JSON message endpoints. Upload bodies use
+`application/offset+octet-stream`; content downloads use the verified media type; message mutations
+contain attachment identifiers only.
+
+Authorized downloads stream from the on-premises content store and support the HTTP byte-range
+contract (`Range`, `206 Partial Content`, `Accept-Ranges`, `Content-Range`, `ETag`, and `If-Range`) so
+clients can seek and resume without loading an entire object into application memory. Authorization
+is evaluated for every full or ranged request. WebSockets signal committed attachment/message state
+only; they do not carry binary content.
+
+**Candidate lifecycle and scope:** `PENDING`, `UPLOADING`, `VERIFYING`, `AVAILABLE`, `ABORTED`, and
+`EXPIRED` metadata states; owner and conversation authorization; SHA-256 whole-object verification
+plus supported per-chunk integrity; bounded type policy and server-side content sniffing; opaque
+server paths; temporary-file isolation; atomic promotion after verification; ordered message
+association; captions and alternative descriptions; safe filename, dimensions, duration, and media
+type metadata; cancellation and resume; retention and orphan cleanup; capacity evidence; backup; and
+restore. A message may reference only an `AVAILABLE` attachment. Completion and message association
+must be idempotent and transactionally prevent visible messages from pointing at incomplete content.
+
+Clients own pre-upload compression, image resizing, and audio/video transcoding when a source exceeds
+the contract or an efficient representation is desired. The backend never extracts arbitrary
+archives or trusts filename extensions/client MIME declarations as proof of content type.
+
+**Non-goals:** S3-compatible infrastructure without evidence, CDN, server-side distributed
+transcoding, global deduplication, third-party media hosting, live call media, payloads above 50 MiB,
+or client-selected upload chunks above 25 MiB.
+
+**Remaining discovery focus:** Library fit with Quarkus, exact tus extensions, upload expiration,
+atomic association, path isolation, malware/type validation proportional to the trust model, per-user
+and global storage limits, processing failure state, edit/delete/forward behavior, cache policy,
+Cloudflare behavior tests, and reconciliation after partial upload. ADR-0020 accepts the bounded
+Tunnel path and its possible future-redesign risk for this personal non-scaling deployment.
 
 ### ET-03 — Voice Notes and Media Semantics
 
