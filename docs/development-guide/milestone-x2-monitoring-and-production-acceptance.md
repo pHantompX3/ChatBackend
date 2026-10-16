@@ -2,11 +2,11 @@
 
 ## Status
 
-**Status:** Planned for independent implementation on the administrator machine; no production-host
-or Cloudflare dependency
+**Status:** Implementation-ready on `codex/milestone-x2-monitoring-foundation`; administrator-machine
+deployment is in scope, while production onboarding remains X3 work
 **Parent program:** [Milestone X — Production Activation](milestone-x-production-activation.md)  
 **Required successor:** [Milestone X3 — Production Deployment, Integration, and Acceptance](milestone-x3-production-deployment-and-acceptance.md)
-**Last refined:** 2026-10-15
+**Last refined:** 2026-10-16
 
 ## 1. Purpose and boundary
 
@@ -35,6 +35,35 @@ Before X2 implementation begins:
    spots; and
 6. confirm authoritative audit retention remains long enough for monitor catch-up and never below
    the accepted 62-day detailed-history floor without an explicit stakeholder decision.
+
+The following implementation decisions are now frozen for X2:
+
+| Decision | X2 value |
+|---|---|
+| Initial deployment host | The administrator's Apple-silicon macOS workstation |
+| Runtime baseline | Installed Node.js `22.17.0` and npm `11.6.0`; `package.json` and preflight scripts enforce the supported major/runtime range |
+| ChatMonitor exposure | Loopback-only `127.0.0.1:8090`; no public or LAN listener in X2 |
+| Process lifecycle | Native `launchd` user agent, with bounded restart behavior and visible logs |
+| Installed state root | `~/Library/Application Support/ChatMonitor/`, separating versioned application files from persistent data, configuration, logs, backups, and evidence |
+| Local persistence | SQLite in WAL mode, foreign keys enabled, bounded busy timeout, explicit migrations, and consistent backup API |
+| Server/API | Fastify with explicit schemas and bounded same-origin routes |
+| Source access | `mssql` driver using encrypted SQL Server connections and a dedicated projection-only principal |
+| Validation | Zod at configuration, source-envelope, and internal boundary crossings; database constraints remain authoritative for persisted invariants |
+| SQLite driver | `better-sqlite3`, isolated behind the persistence adapter so native-module replacement does not alter domain contracts |
+| Dashboard/charting | Vite vanilla JavaScript, standards-based HTML/CSS, and Chart.js behind the documented chart adapter |
+| Logging | Structured redacted server logs; no message content, credentials, raw headers, or unrestricted source metadata |
+| Automated verification | Node test runner for server/domain tests, targeted DOM tests for browser-safe modules, and Playwright for the built-dashboard/accessibility smoke path |
+| Availability/host tools | Uptime Kuma and Beszel remain separate bounded monitoring layers; their local hub deployment is X2, while production targets/agents and live notification delivery are X3 |
+
+Exact package versions must be selected from supported releases at implementation time, committed in
+`package-lock.json`, licence-checked, vulnerability-scanned, and recorded in ChatMonitor's dependency
+inventory. The listed products and libraries are architectural selections, not permission to float
+unreviewed versions.
+
+The unresolved stakeholder choices in items 2–5 above do not block core implementation. X2 uses
+deterministic local alert sinks, fixture thresholds, a loopback deployment, and documented defaults.
+X3 replaces those placeholders with live production credentials, targets, alert destinations,
+characterized thresholds, and operational ownership evidence.
 
 ChatMonitor is built and accepted in X2 against deterministic fixtures and the hardened local
 rehearsal. X3 validates its production SQL projection, live credentials, network path, query plans,
@@ -824,7 +853,125 @@ The X2 implementation must define exact commands and retain local/rehearsal evid
 
 ---
 
-## 11. X2 Exit Criteria
+## 11. Ordered implementation plan and verification gates
+
+Implementation proceeds in the following bounded slices. A later slice may build on an earlier one,
+but it may not conceal a failed gate. Each slice updates ChatMonitor's README/changelog and the root
+changelog when it creates a notable repository capability.
+
+### X2-A — Scaffold, contracts, and reproducible toolchain
+
+Create the single-package `chat-monitor/` project, committed lockfile, Vite vanilla client, Node
+service composition root, validated configuration, structured logging, lint/test/build scripts,
+fixture format, and root CI integration. Add the ChatMonitor-specific architecture, security,
+operations, and metrics-catalog documents. Keep runtime state and credentials ignored.
+
+**Gate:** `npm ci` and `npm run verify` pass from a clean checkout on the supported Node runtime; the
+built browser assets contain no secret/configuration values; the server binds only to loopback; and a
+fresh contributor can start fixture mode using only documented commands.
+
+### X2-B — Backend monitoring projection and least privilege
+
+Add a forward-only ChatBackend Flyway migration defining the minimal monitoring projection and its
+seek index only after representative plan/insert-overhead evidence justifies that index. Extend the
+hardened principal tooling with `wl_chat_monitor`, granting `SELECT` only on the approved projection.
+Add positive projection tests and negative tests for raw audit, identity, conversation, message,
+write, execute, and schema authority. Provide sanitized deterministic projection fixtures for
+ChatMonitor without copying production audit records.
+
+**Gate:** `./mvnw clean verify` plus clean/upgrade migration harnesses pass; the monitoring principal
+can page the projection by `(created_at,event_id)` and cannot read or mutate any other application
+surface; the query is bounded and parameterized; and the client-integration audit records either the
+verified operational impact or that no client-facing contract changed.
+
+### X2-C — Durable local ingestion, aggregation, and retention
+
+Implement immutable SQLite migrations, event/cursor/state repositories, one transactional bounded
+collection cycle, non-overlapping scheduling, idempotency, delayed-event handling, explicit collector
+states, hourly/daily aggregation, and aggregate-before-detail retention. Implement fixture and SQL
+source adapters behind one normalized envelope; do not create a public client-ingestion endpoint.
+
+**Gate:** automated tests prove crash/retry idempotency, cursor atomicity, deterministic ordering,
+multi-page catch-up, delayed persistence, source outage/recovery, local persistence failure,
+`HISTORY_GAP`, 62-day minimum detail retention, 365-day aggregate retention, and bounded source
+queries. Stopping ChatMonitor must have no effect on ChatBackend.
+
+### X2-D — Local API and operator dashboard
+
+Implement bounded health, status, metrics, and sanitized-failure APIs; serve the immutable Vite build
+from the Node service; and build overview, operation, and collector-health pages. Present freshness
+before metrics, distinguish expected 4xx outcomes from failures, provide accessible non-colour-only
+state semantics, and keep Chart.js behind the chart adapter.
+
+**Gate:** API contract/integration tests, built-dashboard Playwright smoke tests, keyboard navigation,
+accessible-name/contrast checks, empty/loading/error/stale/gap states, time-filter bounds, CSP/security
+headers, and production-build secret scanning all pass. `npm start` serves no Vite development server.
+
+### X2-E — Alert state and bounded monitoring-layer integration
+
+Implement the local alert state machine, deterministic alert sink, maintenance/suppression expiry,
+recovery confirmation, privacy-safe notification payloads, and tested fixture thresholds. Add pinned
+loopback-only administrator-workstation definitions for Uptime Kuma and the Beszel hub after licence,
+backup, authentication, and update checks. Do not enroll the production host or configure live
+notification credentials in this slice.
+
+**Gate:** fixtures deterministically exercise `PENDING`, `FIRING`, `ACKNOWLEDGED` where supported, and
+`RECOVERED`; alert retries remain bounded; delivery failure is visible; dashboards are not public;
+and Uptime Kuma/Beszel configuration can be backed up, restored, and removed without affecting
+ChatBackend or ChatMonitor's authoritative local store.
+
+### X2-F — macOS packaging, deployment, recovery, and X3 handoff
+
+Create an installation bundle and scripts that place immutable application files beneath the chosen
+ChatMonitor state root while preserving configuration/data across upgrades. Add a `launchd` user
+agent, preflight, start/stop/status, log rotation, SQLite backup/restore, clean-host recovery, and
+rollback instructions. Install and run the accepted candidate on the administrator workstation in
+fixture/rehearsal mode. Assemble sanitized evidence and the explicit X3 onboarding manifest.
+
+**Gate:** a clean install, login auto-start, bounded restart failure, upgrade, rollback, SQLite
+backup/restore, replacement-directory recovery, monitor-offline/catch-up exercise, and complete
+uninstall rehearsal pass without losing retained data or exposing credentials. The installed service
+binds only to loopback and reports `CURRENT`, `CATCHING_UP`, `SOURCE_UNAVAILABLE`,
+`COLLECTION_FAILED`, or `HISTORY_GAP` truthfully.
+
+### 11.1 Command contract
+
+The implementation must converge on these stable commands:
+
+```text
+cd chat-monitor
+npm ci
+npm run dev
+npm run build
+npm test
+npm run test:browser
+npm run lint
+npm run verify
+npm run package
+npm run install:local
+npm run service:start
+npm run service:stop
+npm run service:status
+npm run backup
+npm run restore -- <verified-backup>
+```
+
+The root verification path must invoke ChatMonitor verification explicitly, either from
+`./mvnw clean verify` through a documented integration or from a dedicated required CI job. It must
+not rely on a developer remembering to run a second project manually.
+
+### 11.2 Definition of deployed for X2
+
+“Deployed” in X2 means the accepted ChatMonitor candidate and selected monitoring hubs are installed
+on the administrator workstation, start through the documented local lifecycle, operate against
+fixtures or the hardened rehearsal source, retain and recover their local state, and expose only
+loopback interfaces. It does **not** mean they have production SQL credentials, production agents,
+live external probes, public dashboard reachability, or approved notification destinations. Those
+connections and their evidence belong to X3.
+
+---
+
+## 12. X2 Exit Criteria
 
 X2 is complete when:
 
@@ -839,10 +986,11 @@ X2 is complete when:
   recovery are reproducible, with no SQL credential in browser-delivered assets;
 - the SQL projection/principal contract has migrations and positive/negative integration tests, while
   live query-plan and lock evidence is explicitly handed to X3;
-- the source-adapter contract accepts SQL audit and synthetic official-client fixtures without
+- the source-adapter contract accepts SQL-audit and synthetic source-neutral fixtures without
   changing normalized persistence, aggregation, or dashboard APIs;
-- malformed, oversized, unknown-version, duplicate, high-cardinality, content-bearing, and
-  unauthorized synthetic client events are rejected without contaminating retained telemetry;
+- malformed, oversized, unknown-version, duplicate, high-cardinality, or content-bearing fixture
+  envelopes are rejected without contaminating retained telemetry; authentication and authorization
+  for future remote client ingestion remain explicitly out of X2 scope;
 - local alert-state, monitoring-outage/catch-up, ChatMonitor backup/restore, and clean-host recovery
   exercises are recorded;
 - the monitoring threat model and canonical runbooks match the implemented foundation;
@@ -854,7 +1002,7 @@ X2 is complete when:
 Passing X2 means the monitoring foundation is independently deployable and ready for production
 onboarding. It does not claim a production deployment or authorize normal production use.
 
-## 12. Non-goals
+## 13. Non-goals
 
 X2 does not introduce multi-tenancy, end-to-end encryption, multi-instance realtime distribution,
 new messaging features, enterprise analytics, invasive user-behavior tracking, a mandatory cloud

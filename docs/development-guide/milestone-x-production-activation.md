@@ -2,11 +2,12 @@
 
 ## Status
 
-**Status:** X1 repository implementation complete and locally verified; X2 remains planned; all
-production-machine, Cloudflare, DNS, Internet-access, and live acceptance work is isolated in X3.
+**Status:** X1 repository implementation complete, verified, and merged; X2 implementation planning
+is active on its dedicated branch; all production-machine, Cloudflare, DNS, Internet-access, and live
+acceptance work is isolated in X3.
 No production environment is currently claimed.
 
-**Last refined:** 2026-08-30
+**Last refined:** 2026-10-16
 
 **Program increments:** X1 foundation, X2 monitoring foundation, then X3 production activation
 
