@@ -1,15 +1,16 @@
 ---
 name: quarkus-graph-generator
-description: Scan a Quarkus Maven repository and generate or incrementally update its Excalidraw architecture, dependency, and canonical-documentation navigation map plus an SVG preview. Use when asked to update the codebase graph, generate a project map, visualize architecture, or refresh the map after represented source, dependency, deployment, or documentation-route changes.
+description: Scan this Quarkus Maven repository and its repository-owned companion projects, then generate or incrementally update the Excalidraw architecture, dependency, and canonical-documentation navigation map plus an SVG preview. Use when asked to update the codebase graph, generate a project map, visualize architecture, or refresh the map after represented source, dependency, deployment, or documentation-route changes.
 ---
 
-# Quarkus Architecture Graph Generator
+# ChatBackend Workspace Architecture Graph Generator
 
 ## Outcome
 
 Keep `project-architecture.excalidraw` synchronized with the repository's implemented structure and
-dependencies. Also generate `project-architecture.svg` as a reviewable preview and report scan totals,
-detected Quarkus capabilities, validation results, and an ISO-8601 UTC update timestamp.
+dependencies, including independently runnable companion projects such as `chat-monitor/`. Also
+generate `project-architecture.svg` as a reviewable preview and report scan totals, detected backend
+and companion-project capabilities, validation results, and an ISO-8601 UTC update timestamp.
 
 The graph is evidence derived from source and configuration. Do not infer components merely because
 they are common in Quarkus projects.
@@ -19,10 +20,13 @@ they are common in Quarkus projects.
 1. Read repository instructions and inspect an existing graph before scanning. Preserve intentional
    zones, labels, and spatial familiarity where they remain accurate.
 2. Inspect `pom.xml`, module POMs, `src/main/java`, `src/main/resources/application.properties` or
-   YAML equivalents, `src/main/docker`, Compose/deployment files, migrations, any repository-owned
-   frontend source, and the canonical documentation routed from `AGENTS.md`. Include documentation
-   as a navigation map—not as one node per Markdown file. Exclude Maven wrappers, generated output,
-   vendored code, and ordinary test fixtures.
+   YAML equivalents, `src/main/docker`, Compose/deployment files, migrations, and the canonical
+   documentation routed from `AGENTS.md`. Discover repository-owned companion projects from their
+   manifests and scoped agent entrypoints; for `chat-monitor/`, inspect `package.json`, lockfile,
+   `src/client`, `src/server`, `src/shared`, local migrations, operational definitions, and canonical
+   project docs. Include documentation as a navigation map—not as one node per Markdown file. Exclude
+   Maven/npm wrappers, `node_modules`, build output, runtime state, vendored code, and ordinary test
+   fixtures.
 3. Catalog primary packages and production classes. Classify using source evidence, including:
    - HTTP/interface: `@Path`, `@Provider`, filters, exception mappers, and WebSocket endpoints;
    - application/service: CDI scopes, observers, use-case services, transaction boundaries, and
@@ -38,9 +42,12 @@ they are common in Quarkus projects.
 4. Derive relationships from imports, constructor/field injection, implemented interfaces, method
    calls where needed, configuration wiring, messaging channels, and durable data ownership. Record
    confidence and omit a relationship when evidence is insufficient.
-5. Detect capabilities from resolved Maven dependencies and configuration, not names alone. Examples
-   include RESTEasy Reactive/Quarkus REST, JDBC, Hibernate/Panache, Flyway, OpenAPI, WebSockets,
-   RabbitMQ/Reactive Messaging, OIDC, health, and container-image support.
+5. Detect capabilities from resolved manifests/dependencies and configuration, not names alone.
+   Backend examples include RESTEasy Reactive/Quarkus REST, JDBC, Hibernate/Panache, Flyway, OpenAPI,
+   WebSockets, RabbitMQ/Reactive Messaging, OIDC, health, and container-image support. Companion
+   examples include Vite, the local Node API, SQLite, SQL Server collection, charting, browser tests,
+   macOS lifecycle integration, and third-party monitoring definitions. Keep their runtime and
+   dependency boundaries visually distinct.
 
 Use `rg`/`rg --files` for discovery. Never include secret values from properties, environment files,
 Compose secrets, credentials, tokens, or certificates in either artifact.
@@ -57,6 +64,8 @@ the canvas into the smallest useful set of zones:
 - messaging and external/runtime dependencies: light purple;
 - deployment and operational support: light orange when needed.
 - documentation and agent navigation: light teal.
+- independently runnable companion projects: use their applicable interface/application/persistence
+  colors inside a clearly labelled project boundary rather than blending them into backend modules.
 
 Group related classes or documents into a component/module node when item-level nodes would make the
 map noisy. The documentation zone must let a cold agent navigate from `AGENTS.md` to the canonical
@@ -100,8 +109,9 @@ Report:
 
 | Measure | Required value |
 | --- | --- |
-| Production packages | Count |
-| Production classes | Count |
+| Backend production packages | Count |
+| Backend production classes | Count |
+| Companion projects/modules | Count and names |
 | Represented component nodes | Count |
 | Detected capabilities | Evidence-backed list |
 | Updated at | ISO-8601 UTC timestamp |

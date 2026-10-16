@@ -864,11 +864,15 @@ changelog when it creates a notable repository capability.
 Create the single-package `chat-monitor/` project, committed lockfile, Vite vanilla client, Node
 service composition root, validated configuration, structured logging, lint/test/build scripts,
 fixture format, and root CI integration. Add the ChatMonitor-specific architecture, security,
-operations, and metrics-catalog documents. Keep runtime state and credentials ignored.
+operations, and metrics-catalog documents. Add a scoped `chat-monitor/AGENTS.md`, mirrored scoped
+rules for `.agents/` and `.github/`, root-agent navigation, and stable ChatMonitor nodes in both
+architecture-map artifacts. Keep runtime state and credentials ignored.
 
 **Gate:** `npm ci` and `npm run verify` pass from a clean checkout on the supported Node runtime; the
 built browser assets contain no secret/configuration values; the server binds only to loopback; and a
-fresh contributor can start fixture mode using only documented commands.
+fresh contributor can start fixture mode using only documented commands. A cold-agent walk must find
+the ChatMonitor architecture, source boundaries, commands, tests, operational guide, and X3 handoff
+from the root `AGENTS.md` and graph without loading the entire X2 specification.
 
 ### X2-B — Backend monitoring projection and least privilege
 
@@ -968,6 +972,36 @@ fixtures or the hardened rehearsal source, retain and recover their local state,
 loopback interfaces. It does **not** mean they have production SQL credentials, production agents,
 live external probes, public dashboard reachability, or approved notification destinations. Those
 connections and their evidence belong to X3.
+
+### 11.3 Agent context and architecture-map contract
+
+ChatMonitor is independently runnable but remains part of this workspace until extraction. Agent
+context must therefore use progressive disclosure:
+
+1. root `AGENTS.md` remains the small universal router and gains one ChatMonitor code/docs/verify
+   route only after those paths exist;
+2. `chat-monitor/AGENTS.md` provides scoped identity, source map, canonical documents, commands,
+   migration rules, runtime-state exclusions, and extraction constraints without duplicating the X2
+   specification;
+3. `.agents/rules/chat-monitor.md` and `.github/instructions/chat-monitor.instructions.md` carry
+   equivalent narrowly scoped implementation guardrails, following the repository parity rule;
+4. `chat-monitor/README.md` is the human/operator entrypoint, while its architecture, security,
+   operations, and metrics-catalog files remain the canonical detailed sources;
+5. `project-architecture.excalidraw` and `project-architecture.svg` retain their existing spatial
+   zones and stable identifiers while adding a clear ChatMonitor project boundary, source/API/store
+   flow, SQL projection contract, monitoring-tool relationships, deployment boundary, and canonical
+   documentation routes; and
+6. the graph-generator skill scans both Maven/Quarkus and repository-owned companion manifests and
+   source trees, excluding `node_modules`, generated assets, runtime SQLite/log data, and ordinary
+   fixtures.
+
+Every X2 slice audits whether it materially added, removed, or rewired a represented component,
+dependency, deployment boundary, capability, or canonical documentation route. If so, both graph
+artifacts are updated in the same change set. Internal edits that do not change navigation or
+architecture do not trigger redraws. X2-F repeats the cold-agent walk and records whether a new agent
+can identify both projects, their one-way integration contract, their independent verification
+commands, and the X2/X3 responsibility boundary using routed context rather than broad document
+loading.
 
 ---
 

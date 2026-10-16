@@ -45,7 +45,9 @@ release tags begin when the project intentionally performs a production release 
 - Refined X2 into an implementation-ready, six-slice delivery plan from reproducible ChatMonitor
   scaffolding through macOS loopback deployment, with frozen technology choices, per-slice gates,
   stable operator commands, a precise definition of X2 deployment, and an explicit X3 production
-  onboarding boundary.
+  onboarding boundary. Extended the graph workflow and X2 acceptance contract for multi-project
+  agent navigation, scoped ChatMonitor rules, stable graph nodes, and cold-agent validation without
+  loading the complete planning specification.
 - Split the production program into independently closable X1 repository foundation, X2 monitoring
   foundation, and X3 production deployment/integration/acceptance increments, isolating Windows-host,
   Cloudflare, DNS, Internet, live-backup, and operational-evidence dependencies in X3.
