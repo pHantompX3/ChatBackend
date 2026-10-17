@@ -1,0 +1,15 @@
+name: chat-monitor
+
+services:
+  monitor:
+    environment:
+      CHAT_MONITOR_ENVIRONMENTS_FILE: /run/environments/environments.json
+      NODE_EXTRA_CA_CERTS: /run/secrets/local-sql-ca.pem
+    networks:
+      - default
+      - hardened-local-data
+
+networks:
+  hardened-local-data:
+    external: true
+    name: wl-chat-hardened_data

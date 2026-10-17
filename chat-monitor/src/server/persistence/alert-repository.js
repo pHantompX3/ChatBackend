@@ -43,6 +43,7 @@ export function createAlertRepository(database) {
     UPDATE alert_state SET suppressed_until = ?, last_observed_at = ?
     WHERE environment_id = ? AND rule_id = ?
   `);
+  const clear = database.prepare('DELETE FROM alert_state WHERE environment_id = ?');
 
   return Object.freeze({
     get(environmentId, ruleId) {
@@ -70,6 +71,9 @@ export function createAlertRepository(database) {
       return suppress.run(
         suppressedUntil.toISOString(), now.toISOString(), environmentId, ruleId
       ).changes === 1;
+    },
+    clear(environmentId) {
+      return clear.run(environmentId).changes;
     }
   });
 }

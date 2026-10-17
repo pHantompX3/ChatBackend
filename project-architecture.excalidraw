@@ -4691,6 +4691,7 @@
           "chat-monitor/src/shared",
           "chat-monitor/Dockerfile",
           "chat-monitor/compose.yaml",
+          "chat-monitor/compose.hardened-local.yaml",
           "chat-monitor/compose.monitoring-tools.yaml",
           "chat-monitor/src/server/alerting",
           "chat-monitor/src/server/api/metrics-routes.js"
@@ -5290,7 +5291,7 @@
   },
   "files": {},
   "metadata": {
-    "updatedAt": "2026-10-17T00:09:15Z",
+    "updatedAt": "2026-10-17T00:50:00Z",
     "productionPackages": 30,
     "productionClasses": 161,
     "componentNodes": 31,

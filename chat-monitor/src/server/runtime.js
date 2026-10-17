@@ -39,7 +39,7 @@ export function createMonitorRuntime(config, logger) {
       detail: profile.unavailableReason,
       updatedAt: now
     });
-    alertService.evaluate(profile.id);
+    alertRepository.clear(profile.id);
   }
   const environments = new Map(config.environments.map((profile) => {
     if (profile.mode === 'planned') {

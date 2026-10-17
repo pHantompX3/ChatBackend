@@ -47,5 +47,5 @@ test('dashboard switches between independently collected environments', async ({
   expect(productionCanvas).toBe('rgb(23, 18, 7)');
   await expect(page).toHaveURL(/environment=production/);
   await expect(page.locator('[data-event-count]')).toHaveText('0');
-  await expect(page.getByText('collector-health: FIRING')).toBeVisible();
+  await expect(page.getByText('No alerts observed.')).toBeVisible();
 });

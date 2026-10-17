@@ -81,6 +81,19 @@ npm run container:stop
 npm run container:down
 ```
 
+The base Compose command intentionally starts with deterministic fixture sources. To monitor the
+currently running hardened local ChatBackend instead, create the ignored
+`environments/environments.json`, `secrets/local-monitor-password`, and
+`secrets/local-sql-ca.pem` files described in [operations.md](docs/operations.md), then use:
+
+```bash
+npm run container:local:config
+npm run container:local:up
+```
+
+This explicit override joins ChatMonitor to the existing internal `wl-chat-hardened_data` network;
+SQL Server remains unpublished and the monitor still exposes only `127.0.0.1:8090`.
+
 Create and restore a consistent verified backup:
 
 ```bash

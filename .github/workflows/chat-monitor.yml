@@ -58,7 +58,9 @@ jobs:
         run: npm run test:browser
 
       - name: Validate container definition
-        run: npm run container:config
+        run: |
+          npm run container:config
+          npm run container:local:config
 
       - name: Verify persistent container lifecycle
         run: |

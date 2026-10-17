@@ -145,6 +145,12 @@ function renderFailures(failures) {
 }
 
 function renderAlerts(alerts) {
+  if (!alerts.length) {
+    const item = document.createElement('li');
+    item.textContent = 'No alerts observed.';
+    elements.alertList.replaceChildren(item);
+    return;
+  }
   elements.alertList.replaceChildren(...alerts.map((alert) => {
     const item = document.createElement('li');
     item.dataset.state = alert.state;

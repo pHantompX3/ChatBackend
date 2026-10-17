@@ -27,6 +27,9 @@ not independently released while it remains embedded in the ChatBackend reposito
   freshness-first Chart.js dashboard, durable confirmed alert states, acknowledgement and bounded
   suppression, checksum-verified SQLite backup/restore, package/install commands, and pinned
   loopback-only Uptime Kuma/Beszel workstation definitions.
+- Added the explicit hardened-local Compose override and operator route that securely joins
+  ChatMonitor to the private SQL network, reads the live audit projection, and keeps intentionally
+  planned environments from generating false outage alerts.
 
 ### Changed
 

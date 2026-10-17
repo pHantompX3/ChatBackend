@@ -133,6 +133,31 @@ agents or configure notification secrets. Back up their named-volume application
 product's documented export/backup procedure before upgrade; removing either stack cannot affect
 ChatMonitor's authoritative `chat-monitor-data` volume.
 
+## Monitor the hardened local ChatBackend
+
+The default Compose profile is fixture-backed so a clean checkout remains deterministic. It will
+not display requests sent to a live ChatBackend. For the hardened local stack:
+
+1. Apply the current ChatBackend migrations and provision the `wl_chat_monitor` principal.
+2. Copy the monitor password into ignored `secrets/local-monitor-password` with owner-only access.
+3. Copy the public SQL CA certificate to ignored `secrets/local-sql-ca.pem`.
+4. Copy `environments/environments.example.json` to ignored
+   `environments/environments.json`. Keep `local-hardened` pointed at `sqlserver:1433`.
+5. Start the live-source override:
+
+   ```bash
+   npm run container:local:config
+   npm run container:local:up
+   ```
+
+The override attaches only the monitor container to `wl-chat-hardened_data`. It does not publish SQL
+Server, does not grant ChatMonitor write access, and retains the loopback-only dashboard boundary.
+The collector can lag by up to its configured poll interval (60 seconds by default); the dashboard
+then refreshes within another 30 seconds.
+
+Use `npm run container:local:status` to verify the process. Return to the deterministic fixture mode
+with `npm run container:local:down && npm run container:up`.
+
 ## X4 handoff
 
 Real production SQL credentials, connectivity, query-plan/lock evidence, production agents,

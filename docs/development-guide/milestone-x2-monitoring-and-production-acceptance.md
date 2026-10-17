@@ -1079,6 +1079,10 @@ loading.
 - `npm run container:config` and `npm run tools:config`: both Compose models validated.
 - `npm run container:up`: the non-root read-only ChatMonitor image rebuilt and became healthy on
   `127.0.0.1:8090` while retaining the existing named volume.
+- `npm run container:local:up`: the explicit local override joined the private hardened data network
+  without publishing SQL Server. The collector reached `CURRENT` through verified TLS and the
+  projection-only principal; a new HTTPS request advanced retained history from 46 to 47 events and
+  appeared in the 24-hour overview with its 16 ms duration.
 - `npm run backup` followed by `npm run restore -- <backup>`: online SQLite backup, SHA-256 and
   integrity verification, replacement, restart, and health recovery passed.
 - Uptime Kuma 2.5.5 and Beszel hub 0.21.0 are pinned, isolated, and verified healthy on loopback-only

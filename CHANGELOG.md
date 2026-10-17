@@ -48,6 +48,9 @@ release tags begin when the project intentionally performs a production release 
   alert states; supports checksum-verified SQLite backup/restore and package/install commands; and
   supplies pinned loopback-only Uptime Kuma and Beszel hub definitions. Production onboarding and
   final operational acceptance remain explicitly assigned to X4 after X3 deployment.
+- Added an explicit hardened-local ChatMonitor override so the green local environment consumes the
+  live least-privilege SQL audit projection instead of deterministic fixture events, while keeping
+  SQL unpublished and the dashboard loopback-only.
 
 - Split the remaining production program by execution host: X3 now independently owns the remote
   Windows production machine, Cloudflare/DNS edge, deployment, backup, and host recovery, while the
