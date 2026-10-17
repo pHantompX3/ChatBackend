@@ -55,7 +55,9 @@ final class MigrationHarnessTest {
             connection.prepareStatement(
                 "SELECT "
                     + "CASE WHEN DATABASE_PRINCIPAL_ID('audit_maintenance') IS NOT NULL THEN 1 ELSE 0 END, "
-                    + "CASE WHEN OBJECT_ID('audit.purge_http_audit_events', 'P') IS NOT NULL THEN 1 ELSE 0 END")) {
+                    + "CASE WHEN OBJECT_ID('audit.purge_http_audit_events', 'P') IS NOT NULL THEN 1 ELSE 0 END, "
+                    + "CASE WHEN DATABASE_PRINCIPAL_ID('audit_monitor') IS NOT NULL THEN 1 ELSE 0 END, "
+                    + "CASE WHEN OBJECT_ID('audit.monitoring_http_event', 'V') IS NOT NULL THEN 1 ELSE 0 END")) {
 
       try (var schemaResult = schemaStatement.executeQuery()) {
         schemaResult.next();
@@ -76,6 +78,8 @@ final class MigrationHarnessTest {
         maintenanceResult.next();
         assertEquals(1, maintenanceResult.getInt(1));
         assertEquals(1, maintenanceResult.getInt(2));
+        assertEquals(1, maintenanceResult.getInt(3));
+        assertEquals(1, maintenanceResult.getInt(4));
       }
     } catch (Exception exception) {
       throw new IllegalStateException("Failed to validate migrated schema state", exception);

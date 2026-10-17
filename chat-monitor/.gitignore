@@ -1,0 +1,17 @@
+.env
+dist/
+node_modules/
+coverage/
+playwright-report/
+test-results/
+var/data/
+var/logs/
+var/backups/
+var/packages/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.log
+/secrets/*
+!/secrets/README.md
+/environments/environments.json

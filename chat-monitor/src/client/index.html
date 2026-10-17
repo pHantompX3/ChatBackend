@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>ChatMonitor</title>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">ChatBackend operations</p>
+          <h1>ChatMonitor</h1>
+          <p class="lede">A local, source-neutral view of service health and audit-derived signals.</p>
+        </div>
+        <div class="environment-control">
+          <label for="environment-select">Viewing environment</label>
+          <div class="environment-control__row">
+            <select id="environment-select" data-environment-select disabled>
+              <option>Loading environments</option>
+            </select>
+            <span class="environment-badge" data-environment-classification>Loading</span>
+          </div>
+          <p data-environment-description aria-live="polite">Reading the server-managed environment registry.</p>
+          <label for="time-window">Metric window</label>
+          <select id="time-window" data-time-window>
+            <option value="1">Last hour</option>
+            <option value="24" selected>Last 24 hours</option>
+            <option value="168">Last 7 days</option>
+            <option value="720">Last 30 days</option>
+          </select>
+        </div>
+      </header>
+
+      <section class="freshness" data-freshness-banner role="status" aria-live="polite">
+        <strong>Loading</strong>
+        <span>Reading the local monitor state.</span>
+      </section>
+
+      <section aria-labelledby="foundation-heading">
+        <div class="section-heading">
+          <p class="eyebrow">X2 verified foundation</p>
+          <h2 id="foundation-heading">Monitor runtime</h2>
+        </div>
+        <div class="metric-grid">
+          <article class="metric-card">
+            <h3>Environment</h3>
+            <p data-environment-label>Loading</p>
+          </article>
+          <article class="metric-card">
+            <h3>Source mode</h3>
+            <p data-source-mode>Loading</p>
+          </article>
+          <article class="metric-card">
+            <h3>Status generated</h3>
+            <p data-generated-at>Loading</p>
+          </article>
+          <article class="metric-card">
+            <h3>Last collection</h3>
+            <p data-last-collection>Loading</p>
+          </article>
+          <article class="metric-card">
+            <h3>Retained events</h3>
+            <p data-event-count>Loading</p>
+          </article>
+          <article class="metric-card">
+            <h3>Exposure</h3>
+            <p>Loopback only</p>
+          </article>
+        </div>
+      </section>
+
+      <section aria-labelledby="overview-heading">
+        <div class="section-heading">
+          <p class="eyebrow">Service experience</p>
+          <h2 id="overview-heading">Request overview</h2>
+        </div>
+        <div class="metric-grid">
+          <article class="metric-card"><h3>Requests</h3><p data-request-count>Loading</p></article>
+          <article class="metric-card"><h3>Server failures</h3><p data-failure-count>Loading</p></article>
+          <article class="metric-card"><h3>Expected 4xx</h3><p data-expected-count>Loading</p></article>
+          <article class="metric-card"><h3>Failure rate</h3><p data-failure-rate>Loading</p></article>
+          <article class="metric-card"><h3>Average latency</h3><p data-average-duration>Loading</p></article>
+          <article class="metric-card"><h3>Maximum latency</h3><p data-maximum-duration>Loading</p></article>
+        </div>
+        <div class="chart-panel">
+          <canvas data-request-chart aria-label="Request and server-failure trend"></canvas>
+          <p class="empty-state" data-chart-empty hidden>No request metrics are retained for this window.</p>
+        </div>
+      </section>
+
+      <section class="data-grid" aria-label="Operational details">
+        <article class="table-panel">
+          <h2>Operations</h2>
+          <p class="panel-help">Expected client errors remain separate from server failures.</p>
+          <div class="table-scroll"><table>
+            <thead><tr><th scope="col">Operation</th><th scope="col">Requests</th><th scope="col">5xx</th><th scope="col">Avg.</th></tr></thead>
+            <tbody data-operations-body><tr><td colspan="4">Loading</td></tr></tbody>
+          </table></div>
+        </article>
+        <article class="table-panel">
+          <h2>Sanitized failures</h2>
+          <p class="panel-help">No message content, token, request body, or raw stack trace is retained.</p>
+          <div class="table-scroll"><table>
+            <thead><tr><th scope="col">Time</th><th scope="col">Operation</th><th scope="col">Code</th></tr></thead>
+            <tbody data-failures-body><tr><td colspan="3">Loading</td></tr></tbody>
+          </table></div>
+        </article>
+      </section>
+
+      <section class="table-panel alerts-panel" aria-labelledby="alerts-heading">
+        <h2 id="alerts-heading">Alert state</h2>
+        <p class="panel-help">Local deterministic alerts; production destinations are onboarded in X4.</p>
+        <ul class="alert-list" data-alert-list><li>Loading</li></ul>
+      </section>
+    </main>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

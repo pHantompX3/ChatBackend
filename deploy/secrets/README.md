@@ -9,7 +9,8 @@ Required files:
 - `application.properties`: runtime-only Quarkus properties containing the runtime SQL and RabbitMQ
   credentials and the production origin allowlist;
 - `flyway.conf`: migrator-only JDBC URL, username, password, schemas, and history-table settings;
-- `sql-backup-password`, `sql-restore-password`, and `sql-maintenance-password`: bounded SQL
+- `sql-backup-password`, `sql-restore-password`, `sql-maintenance-password`, and
+  `sql-monitor-password`: bounded SQL
   operational identities;
 - `rabbitmq-operator-password`: RabbitMQ bootstrap/operator password;
 - `rabbitmq-runtime-password`: application RabbitMQ password used when provisioning the runtime user;

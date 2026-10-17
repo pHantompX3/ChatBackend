@@ -24,6 +24,8 @@ final class SchemaVerificationTest {
   private static final String DB_PASSWORD = "StrongPassw0rd!";
   private static final String APP_LOGIN = "wl_chat_app";
   private static final String APP_PASSWORD = "AppPassw0rd!";
+  private static final String MONITOR_LOGIN = "wl_chat_monitor_test";
+  private static final String MONITOR_PASSWORD = "MonitorPassw0rd!";
 
   static {
     Logger.getLogger("com.microsoft.sqlserver.jdbc.internals.SQLServerConnection")
@@ -142,6 +144,69 @@ final class SchemaVerificationTest {
   }
 
   @Test
+  void monitoringPrincipalShouldPageOnlyTheSanitizedAuditProjection() {
+    migrateMaster();
+    migrateApplicationSchemas();
+
+    UUID eventId = UUID.randomUUID();
+    UUID unmatchedEventId = UUID.randomUUID();
+    LocalDateTime occurredAt = LocalDateTime.now(ZoneOffset.UTC).minusSeconds(1);
+    LocalDateTime createdAt = occurredAt.plusSeconds(1);
+    provisionMonitoringPrincipalAndEvents(eventId, unmatchedEventId, occurredAt, createdAt);
+
+    try (var connection =
+        TestSqlSupport.openConnection(
+            SQL_SERVER.getHost(),
+            SQL_SERVER.getMappedPort(1433),
+            "wl_chat",
+            MONITOR_LOGIN,
+            MONITOR_PASSWORD)) {
+      try (var statement =
+          connection.prepareStatement(
+              "SELECT TOP (?) event_id, created_at, occurred_at, operation, method, "
+                  + "route_template, response_status, response_code, duration_ms, error_code "
+                  + "FROM audit.monitoring_http_event "
+                  + "WHERE created_at > ? OR (created_at = ? AND event_id > ?) "
+                  + "ORDER BY created_at, event_id")) {
+        statement.setInt(1, 500);
+        statement.setObject(2, createdAt.minusSeconds(1));
+        statement.setObject(3, createdAt.minusSeconds(1));
+        statement.setObject(4, new UUID(0L, 0L));
+        try (var result = statement.executeQuery()) {
+          assertTrue(result.next());
+          assertEquals(eventId, result.getObject("event_id", UUID.class));
+          assertEquals("monitor.fixture", result.getString("operation"));
+          assertEquals("GET", result.getString("method"));
+          assertEquals("/api/v1/ping", result.getString("route_template"));
+          assertEquals(200, result.getInt("response_status"));
+          assertEquals(18, result.getLong("duration_ms"));
+          assertTrue(result.next());
+          assertEquals(unmatchedEventId, result.getObject("event_id", UUID.class));
+          assertEquals("unknown.operation", result.getString("operation"));
+          assertEquals("unmatched", result.getString("route_template"));
+          assertFalse(result.next());
+        }
+      }
+
+      assertPermissionDenied(connection, "SELECT TOP (1) event_id FROM audit.http_audit_event");
+      assertPermissionDenied(connection, "SELECT TOP (1) id FROM [identity].[user_account]");
+      assertPermissionDenied(connection, "SELECT TOP (1) id FROM [messaging].[conversation]");
+      assertPermissionDenied(connection, "SELECT TOP (1) id FROM [messaging].[message]");
+      assertPermissionDenied(
+          connection,
+          "UPDATE audit.monitoring_http_event SET duration_ms = duration_ms WHERE 1 = 0");
+      assertPermissionDenied(
+          connection,
+          "EXEC audit.purge_http_audit_events "
+              + "@retention_days=90, @batch_size=1, @max_batches=1");
+      assertPermissionDenied(
+          connection, "CREATE TABLE dbo.__forbidden_monitor_ddl (id int NOT NULL)");
+    } catch (SQLException exception) {
+      throw new IllegalStateException("Failed monitoring projection verification", exception);
+    }
+  }
+
+  @Test
   void failedMessageInsertShouldRollbackSequenceAllocation() {
     migrateMaster();
     migrateApplicationSchemas();
@@ -214,6 +279,97 @@ final class SchemaVerificationTest {
         result.next();
         return result.getInt(1);
       }
+    }
+  }
+
+  private static void assertPermissionDenied(java.sql.Connection connection, String sql) {
+    SQLException exception =
+        org.junit.jupiter.api.Assertions.assertThrows(
+            SQLException.class,
+            () -> {
+              try (var statement = connection.createStatement()) {
+                statement.execute(sql);
+              }
+            });
+    String message = exception.getMessage().toLowerCase();
+    assertTrue(
+        message.contains("permission")
+            || message.contains("denied")
+            || message.contains("invalid object name"),
+        () -> "Expected a permission or metadata-visibility denial but received: " + message);
+  }
+
+  private static void provisionMonitoringPrincipalAndEvents(
+      UUID eventId, UUID unmatchedEventId, LocalDateTime occurredAt, LocalDateTime createdAt) {
+    try (var connection =
+            TestSqlSupport.openConnection(
+                SQL_SERVER.getHost(),
+                SQL_SERVER.getMappedPort(1433),
+                "wl_chat",
+                "sa",
+                DB_PASSWORD);
+        var provision = connection.createStatement()) {
+      provision.execute(
+          "IF SUSER_ID(N'"
+              + MONITOR_LOGIN
+              + "') IS NULL CREATE LOGIN ["
+              + MONITOR_LOGIN
+              + "] WITH PASSWORD = '"
+              + MONITOR_PASSWORD
+              + "', CHECK_POLICY = OFF; "
+              + "IF USER_ID(N'"
+              + MONITOR_LOGIN
+              + "') IS NULL CREATE USER ["
+              + MONITOR_LOGIN
+              + "] FOR LOGIN ["
+              + MONITOR_LOGIN
+              + "]; "
+              + "IF IS_ROLEMEMBER(N'audit_monitor', N'"
+              + MONITOR_LOGIN
+              + "') <> 1 ALTER ROLE [audit_monitor] ADD MEMBER ["
+              + MONITOR_LOGIN
+              + "]; ");
+
+      try (var insert =
+          connection.prepareStatement(
+              "INSERT INTO audit.http_audit_event "
+                  + "(event_id, schema_version, event_type, occurred_at, request_id, operation, "
+                  + "method, route_template, path, response_status, response_code, duration_ms, "
+                  + "request_timestamp, response_timestamp, error_code, record_hash, created_at) "
+                  + "VALUES (?, '1.0', 'http.request.completed', ?, ?, 'monitor.fixture', "
+                  + "'GET', '/api/v1/ping', '/api/v1/ping', 200, 'OK', 18, ?, ?, NULL, "
+                  + "HASHBYTES('SHA2_256', CONVERT(varbinary(max), ?)), ?)")) {
+        insert.setObject(1, eventId);
+        insert.setObject(2, occurredAt);
+        insert.setString(3, "monitor-" + eventId);
+        insert.setObject(4, occurredAt);
+        insert.setObject(5, occurredAt.plusNanos(18_000_000));
+        insert.setString(6, eventId.toString());
+        insert.setObject(7, createdAt);
+        assertEquals(1, insert.executeUpdate());
+      }
+      try (var insert =
+          connection.prepareStatement(
+              "INSERT INTO audit.http_audit_event "
+                  + "(event_id, schema_version, event_type, occurred_at, request_id, operation, "
+                  + "method, route_template, path, response_status, response_code, duration_ms, "
+                  + "request_timestamp, response_timestamp, error_code, record_hash, created_at) "
+                  + "VALUES (?, '1.0', 'http.request.completed', ?, ?, 'unknown.operation', "
+                  + "'GET', '/private/raw/identifier', '/private/raw/identifier', 404, "
+                  + "'NOT_FOUND', 4, ?, ?, NULL, "
+                  + "HASHBYTES('SHA2_256', CONVERT(varbinary(max), ?)), ?)")) {
+        insert.setObject(1, unmatchedEventId);
+        insert.setObject(2, occurredAt.plusNanos(100));
+        insert.setString(3, "unmatched-" + unmatchedEventId);
+        insert.setObject(4, occurredAt.plusNanos(100));
+        insert.setObject(5, occurredAt.plusNanos(4_000_100));
+        insert.setString(6, unmatchedEventId.toString());
+        insert.setObject(7, createdAt.plusNanos(100));
+        assertEquals(1, insert.executeUpdate());
+      }
+    } catch (SQLException exception) {
+      throw new IllegalStateException(
+          "Failed to provision monitoring verification data", exception);
     }
   }
 

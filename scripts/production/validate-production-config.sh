@@ -43,6 +43,7 @@ esac
 secret_files=(
   sql-sa-password application.properties flyway.conf rabbitmq-operator-password
   rabbitmq-runtime-password sql-backup-password sql-restore-password sql-maintenance-password
+  sql-monitor-password
   cloudflared-credentials.json origin-ca.pem origin-ca.key origin.crt origin.key
   sql-ca.pem sql-ca.key sqlserver.crt sqlserver.key sql-truststore.p12 sql-truststore-password
   backup-archive-password

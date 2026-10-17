@@ -2,13 +2,15 @@
 
 ## Status
 
-**Status:** X1 repository implementation complete and locally verified; X2 remains planned; all
-production-machine, Cloudflare, DNS, Internet-access, and live acceptance work is isolated in X3.
+**Status:** X1 repository implementation complete, verified, and merged; X2 implementation is active
+on its dedicated branch; production-machine, Cloudflare, DNS, and Internet-access work is isolated
+in X3, while administrator-Mac monitoring onboarding and final acceptance are isolated in X4.
 No production environment is currently claimed.
 
-**Last refined:** 2026-08-30
+**Last refined:** 2026-10-16
 
-**Program increments:** X1 foundation, X2 monitoring foundation, then X3 production activation
+**Program increments:** X1 foundation, X2 monitoring foundation, X3 production-host activation, then
+X4 administrator-monitoring onboarding and final acceptance
 
 ## 1. Purpose
 
@@ -16,18 +18,21 @@ Milestone X converts the completed single-instance backend and Milestone 9 harde
 into an operated production deployment. It is an operational activation program, not a messaging
 feature milestone.
 
-The program is intentionally split into three independently reviewable increments:
+The program is intentionally split into four independently reviewable increments:
 
 1. [Milestone X1 — Production Infrastructure and Recovery Foundation](milestone-x1-production-infrastructure-and-recovery.md)
    implements and locally verifies the deployable, recoverable production foundation.
 2. [Milestone X2 — Monitoring Foundation](milestone-x2-monitoring-and-production-acceptance.md)
    builds ChatMonitor and its admin-workstation operating model against fixtures and rehearsal
    environments, without depending on a production machine.
-3. [Milestone X3 — Production Deployment, Integration, and Acceptance](milestone-x3-production-deployment-and-acceptance.md)
-   performs all external integration: production-host setup, Cloudflare/DNS, live deployment,
-   monitoring onboarding, recovery exercises, and the deliberate `1.0.0` decision. Its operator
-   procedure is the [X1 Production Operator Manual](../operations/x1-production-operator-manual.md),
-   which X3 executes and will rename only when doing so no longer harms established links.
+3. [Milestone X3 — Production Host Deployment and Edge Activation](milestone-x3-production-host-deployment-and-edge-activation.md)
+   performs Windows production-host setup, Cloudflare/DNS edge activation, live deployment, backup,
+   restore, and host recovery without depending on the administrator Mac. Its operator procedure is
+   the [X1 Production Operator Manual](../operations/x1-production-operator-manual.md).
+4. [Milestone X4 — Administrator Monitoring Onboarding and Production Acceptance](milestone-x4-admin-monitoring-and-production-acceptance.md)
+   runs on the administrator Mac, connects the accepted X2 monitor to the accepted X3 production
+   candidate, characterizes live behavior, feeds learning through lower environments, and owns the
+   deliberate `1.0.0` decision.
 
 Post-Milestone product enhancements remain governed by the
 [Platform Evolution Specification](../platform-evolution-specification.md).
@@ -35,7 +40,7 @@ Post-Milestone product enhancements remain governed by the
 ## 2. Canonical routing and precedence
 
 Use this file for program scope, shared decisions, increment dependency, and overall completion.
-Use the X1, X2, and X3 guides for implementation-grade requirements and evidence.
+Use the X1, X2, X3, and X4 guides for implementation-grade requirements and evidence.
 
 | Concern | Canonical implementation guide |
 |---|---|
@@ -46,13 +51,14 @@ Use the X1, X2, and X3 guides for implementation-grade requirements and evidence
 | Secrets, privileged identities, image promotion, migration, rollback | X1 |
 | SQL Server, RabbitMQ, backup, restore, incidents, initial capacity | X1 |
 | Monitoring workstation implementation and local/rehearsal validation | X2 |
-| Live monitoring onboarding, alert delivery, operational exercises, final acceptance | X3 |
+| Production-host deployment, Cloudflare/DNS edge, host backup/recovery | X3 |
+| Live monitoring onboarding, alert delivery, characterization, final acceptance | X4 |
 | Existing single-host architecture and rehearsal controls | ADR-0017 and Milestone 9 |
 | Public authenticated edge and future enrolled-client boundary | ADR-0019 |
 | Client behavior and recovery responsibilities | Client Integration and Recovery Guide |
 
 When wording conflicts, accepted ADRs govern architecture decisions, executable operations runbooks
-govern already-implemented rehearsal commands, and the applicable X1/X2/X3 guide governs unresolved
+govern already-implemented rehearsal commands, and the applicable X1/X2/X3/X4 guide governs unresolved
 production implementation scope. Production-specific secrets, private topology, and raw operational
 evidence remain in protected operator storage.
 
@@ -144,7 +150,12 @@ X2: monitoring foundation on the admin machine
         locally verified monitor
                  |
                  v
-X3: production deployment + external integration + acceptance
+X3: production host deployment + external edge activation
+                 |
+        deployed production candidate
+                 |
+                 v
+X4: administrator monitoring onboarding + final acceptance
                  |
             stakeholder approval
                  |
@@ -152,11 +163,13 @@ X3: production deployment + external integration + acceptance
           production release 1.0.0
 ```
 
-All three increments are implemented and reviewed separately. X2 may use fixtures and hardened local
-rehearsal and has no production dependency. X3 consumes the accepted X1 and X2 handoffs.
+All four increments are implemented and reviewed separately. X2 may use fixtures and hardened local
+rehearsal and has no production dependency. X3 consumes accepted X1 artifacts and X2's
+repository-owned production prerequisites without depending on a running administrator-Mac monitor.
+X4 consumes the independently accepted X2 and X3 handoffs.
 
-X1 or X2 completion does not authorize normal production use. Milestone X is complete only when all
-three increments pass and the stakeholder records the final release decision in X3.
+X1, X2, or X3 completion does not authorize normal production use. Milestone X is complete only when
+all four increments pass and the stakeholder records the final release decision in X4.
 
 ## 6. Shared evidence and governance
 
@@ -174,7 +187,7 @@ evidence must cover:
 - unresolved risks, risk acceptances, review dates, and final approval.
 
 Every implementation change must update the changelog and affected architecture, operations, security,
-and client-responsibility documents. Neither increment may claim completion based only on the local
+and client-responsibility documents. No increment may claim completion based only on the local
 Milestone 9 rehearsal.
 
 ## 7. Program exit criteria
@@ -183,7 +196,8 @@ Milestone X is complete only when:
 
 - every X1 repository-foundation exit criterion passes;
 - every X2 exit criterion passes;
-- every X3 deployment and acceptance criterion passes;
+- every X3 production-host deployment and edge-activation criterion passes;
+- every X4 monitoring-onboarding and final-acceptance criterion passes;
 - production HTTPS/WSS, private SQL/RabbitMQ boundaries, secrets, release promotion, rollback, backup
   recovery, monitoring, alerting, capacity, and incident ownership are proven in the selected
   environment;
@@ -216,5 +230,8 @@ Milestone X does not introduce:
    **Completed for X1 on 2026-08-30.**
 2. Review, merge, and close X1 after its repository evidence is accepted.
 3. Implement, verify, document, and close the X2 monitoring foundation on the admin machine.
-4. Execute X3 against the production machine, Cloudflare, DNS, backup destination, and live network.
-5. Run the X3 readiness review and make the deliberate production/`1.0.0` decision.
+4. Execute and independently accept X3 against the production machine, Cloudflare, DNS, backup
+   destination, and live network without depending on the administrator Mac.
+5. Execute X4 on the administrator Mac: onboard the production candidate, characterize it, exercise
+   monitoring and alerts, and feed required changes through Local and Staging.
+6. Run the X4 readiness review and make the deliberate production/`1.0.0` decision.

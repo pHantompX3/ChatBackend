@@ -1,0 +1,67 @@
+name: chat-monitor
+
+services:
+  monitor:
+    image: chat-monitor:${CHAT_MONITOR_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${CHAT_MONITOR_APP_VERSION:-0.1.0}
+        VCS_REF: ${CHAT_MONITOR_VCS_REF:-local}
+        BUILD_DATE: ${CHAT_MONITOR_BUILD_DATE:-unknown}
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    environment:
+      CHAT_MONITOR_DEPLOYMENT_MODE: container
+      CHAT_MONITOR_MODE: ${CHAT_MONITOR_MODE:-fixture}
+      CHAT_MONITOR_HOST: 0.0.0.0
+      CHAT_MONITOR_PORT: 8090
+      CHAT_MONITOR_LOG_LEVEL: ${CHAT_MONITOR_LOG_LEVEL:-info}
+      CHAT_MONITOR_FIXTURE_PATH: /app/test/fixtures/normalized-events.json
+      CHAT_MONITOR_SQLITE_PATH: /var/lib/chat-monitor/chat-monitor.sqlite
+      CHAT_MONITOR_POLL_INTERVAL_SECONDS: ${CHAT_MONITOR_POLL_INTERVAL_SECONDS:-60}
+      CHAT_MONITOR_PAGE_SIZE: ${CHAT_MONITOR_PAGE_SIZE:-500}
+      CHAT_MONITOR_DETAIL_RETENTION_DAYS: ${CHAT_MONITOR_DETAIL_RETENTION_DAYS:-90}
+      CHAT_MONITOR_AGGREGATE_RETENTION_DAYS: ${CHAT_MONITOR_AGGREGATE_RETENTION_DAYS:-365}
+      CHAT_MONITOR_ENVIRONMENTS_FILE: ${CHAT_MONITOR_ENVIRONMENTS_FILE:-}
+      CHAT_MONITOR_DEFAULT_ENVIRONMENT_ID: ${CHAT_MONITOR_DEFAULT_ENVIRONMENT_ID:-}
+      CHAT_MONITOR_SOURCE_HOST: ${CHAT_MONITOR_SOURCE_HOST:-}
+      CHAT_MONITOR_SOURCE_PORT: ${CHAT_MONITOR_SOURCE_PORT:-1433}
+      CHAT_MONITOR_SOURCE_DATABASE: ${CHAT_MONITOR_SOURCE_DATABASE:-wl_chat}
+      CHAT_MONITOR_SOURCE_USERNAME: ${CHAT_MONITOR_SOURCE_USERNAME:-}
+      CHAT_MONITOR_SOURCE_PASSWORD_FILE: ${CHAT_MONITOR_SOURCE_PASSWORD_FILE:-/run/secrets/sql-monitor-password}
+      CHAT_MONITOR_SOURCE_ENCRYPT: "true"
+      CHAT_MONITOR_SOURCE_TRUST_SERVER_CERTIFICATE: "false"
+      NODE_EXTRA_CA_CERTS: ${CHAT_MONITOR_SQL_CA_FILE:-}
+    ports:
+      - 127.0.0.1:${CHAT_MONITOR_PUBLISHED_PORT:-8090}:8090
+    volumes:
+      - monitor-data:/var/lib/chat-monitor
+      - ./var/backups:/var/backups
+      - ./secrets:/run/secrets:ro
+      - ./environments:/run/environments:ro
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8090/api/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  monitor-data:
+    name: chat-monitor-data

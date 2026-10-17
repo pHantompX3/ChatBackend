@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "events": [
+    {
+      "eventId": "fixture:chatbackend:0001",
+      "schemaVersion": 1,
+      "sourceType": "CHATBACKEND_AUDIT",
+      "sourceInstanceId": "fixture-backend",
+      "eventName": "http.request.completed",
+      "occurredAt": "2026-10-16T12:00:00.000Z",
+      "receivedAt": "2026-10-16T12:00:00.020Z",
+      "severity": "INFO",
+      "dimensions": {
+        "method": "GET",
+        "route": "/api/v1/ping",
+        "statusClass": "2xx"
+      },
+      "measurements": {
+        "durationMs": 18
+      }
+    },
+    {
+      "eventId": "fixture:client:0001",
+      "schemaVersion": 1,
+      "sourceType": "CLIENT_TELEMETRY",
+      "sourceInstanceId": "fixture-installation",
+      "eventName": "client.recovery.completed",
+      "occurredAt": "2026-10-16T12:01:00.000Z",
+      "receivedAt": "2026-10-16T12:01:00.050Z",
+      "severity": "INFO",
+      "dimensions": {
+        "clientType": "synthetic"
+      },
+      "measurements": {
+        "durationMs": 42
+      }
+    }
+  ]
+}

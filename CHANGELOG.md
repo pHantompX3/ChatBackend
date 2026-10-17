@@ -17,6 +17,16 @@ release tags begin when the project intentionally performs a production release 
 
 ### Fixed
 
+- Corrected ChatMonitor environment routing so green Local reads the original `localhost:1433`
+  database, blue Dev reads the hardened rehearsal database, and gold Production remains unavailable
+  until the remote hardened production source exists.
+- Closed the X2 review findings: packages now reject active environment and secret files; SQLite
+  restore safely handles WAL/SHM sidecars; retained-history gaps resume from the oldest available
+  boundary; SQL cursors preserve `DATETIME2(7)` precision and textual UUID ordering; aggregation
+  accepts only completed HTTP-request events and includes partial time buckets; alert delivery resumes
+  after suppression; mutations are loopback/same-origin action guarded; unmatched request routes are
+  privacy-sanitized; and monitor-principal provisioning is repeated after migrations.
+
 - Attached the production SQL-volume and proxy-TLS initializer containers exclusively to internal
   Compose networks, preventing Docker from creating an implicit Internet-capable default network and
   preserving the invariant that only the Cloudflare Tunnel connector has outbound Internet access.
@@ -25,7 +35,7 @@ release tags begin when the project intentionally performs a production release 
   extraction, authenticating the deployment archive, isolating application/proxy networking from
   Internet egress, persisting rollback selection, and making Windows startup/prerequisite/firewall
   controls fail closed. Hardened backup mount detection, verified-package retention, staging cleanup,
-  isolated restore permissions, TLS consumer permissions, resolved-path/ACL validation, and X3
+  isolated restore permissions, TLS consumer permissions, resolved-path/ACL validation, and X4
   release authority. Added cached, bounded retries for transient NVD service failures and refreshed
   the architecture map to show `cloudflared` as the sole Internet-egress workload.
 - Corrected the X1 Windows task and firewall entrypoints to use valid PowerShell parameter
@@ -42,15 +52,57 @@ release tags begin when the project intentionally performs a production release 
 
 ### Added
 
+- Completed the X2 administrator-workstation monitoring foundation: ChatMonitor now exposes bounded
+  environment-specific request, latency, expected-4xx, server-failure, operation, and sanitized
+  failure views; renders a freshness-first Chart.js dashboard; persists deterministic confirmed
+  alert states; supports checksum-verified SQLite backup/restore and package/install commands; and
+  supplies pinned loopback-only Uptime Kuma and Beszel hub definitions. Production onboarding and
+  final operational acceptance remain explicitly assigned to X4 after X3 deployment.
+- Added an explicit hardened-local ChatMonitor override so the green local environment consumes the
+  live least-privilege SQL audit projection instead of deterministic fixture events, while keeping
+  SQL unpublished and the dashboard loopback-only.
+
+- Split the remaining production program by execution host: X3 now independently owns the remote
+  Windows production machine, Cloudflare/DNS edge, deployment, backup, and host recovery, while the
+  new X4 guide exclusively owns administrator-Mac monitoring onboarding, live characterization,
+  alerting, production-to-lower-environment learning, final acceptance, and the `1.0.0` decision.
+  Synchronized canonical routes, handoffs, scoped agent instructions, ChatMonitor terminology, and
+  the architecture navigation map.
+- Added an explicit ChatMonitor planned-environment state so the undeployed Production target stays
+  visible without fabricating healthy telemetry, while Local and Staging remain independently
+  available.
+- Began X2 implementation with the independently runnable `chat-monitor/` Node.js 22 companion
+  project: a loopback-only Fastify server, immutable Vite dashboard build, validated fixture/SQL
+  configuration, verified-TLS guardrails, redacted structured logs, response protections,
+  source-neutral fixtures, Node/API/browser tests, bundle secret scanning, dedicated CI, scoped
+  documentation, and synchronized agent-navigation rules.
+- Implemented X2-B and X2-C monitoring foundations: a sanitized projection-only SQL principal with
+  positive/negative permission tests, plus immutable checksummed SQLite migrations, validated
+  source-neutral fixture/SQL adapters, atomic event/cursor persistence, bounded catch-up scheduling,
+  explicit outage/failure/history-gap states, hourly/daily aggregation, and local retention.
+- Standardized ChatMonitor's workstation lifecycle on Docker Compose with a hardened non-root,
+  read-only container, loopback-only host publication, bounded health/restart/log controls, and a
+  Docker-managed named volume that survives container replacement and ordinary Compose shutdown.
+- Added dynamic ChatMonitor environment onboarding and UX switching: a server-only validated
+  registry composes concurrent independent collectors, SQLite partitions events/cursors/state/
+  aggregates by stable environment ID, the local API exposes only safe environment metadata, and
+  the dashboard switches color-coded environment views without interrupting background collection.
+- Refined X2 into an implementation-ready, six-slice delivery plan from reproducible ChatMonitor
+  scaffolding through macOS loopback deployment, with frozen technology choices, per-slice gates,
+  stable operator commands, a precise definition of X2 deployment, and an explicit X4 production
+  onboarding boundary. Extended the graph workflow and X2 acceptance contract for multi-project
+  agent navigation, scoped ChatMonitor rules, stable graph nodes, and cold-agent validation without
+  loading the complete planning specification.
 - Split the production program into independently closable X1 repository foundation, X2 monitoring
-  foundation, and X3 production deployment/integration/acceptance increments, isolating Windows-host,
-  Cloudflare, DNS, Internet, live-backup, and operational-evidence dependencies in X3.
+  foundation, X3 production-host/edge activation, and X4 administrator-monitoring/final-acceptance
+  increments, isolating Windows-host, Cloudflare, DNS, Internet, and live-backup work in X3 and all
+  administrator-Mac production monitoring work in X4.
 - Future-proofed ChatMonitor for official mobile, desktop, and web clients through a versioned,
   source-neutral telemetry envelope and adapter boundary, privacy/cardinality controls, synthetic
   client fixtures, and a deliberately deferred authenticated public-ingestion edge. The monitor's
   initial home remains the administrator machine with loopback-only access by default.
-- Added the X3 production deployment and acceptance guide and synchronized its canonical route across
-  AGENTS, Antigravity/Gemini, and Copilot instruction surfaces.
+- Added distinct X3 production-host activation and X4 administrator-monitoring acceptance guides and
+  synchronized their canonical routes across AGENTS, Antigravity/Gemini, and Copilot surfaces.
 - Implemented the X1 repository-owned production foundation: a private-network SQL Server Express,
   RabbitMQ, ChatBackend, NGINX, and Cloudflare Tunnel Compose stack with file-mounted secrets,
   private origin TLS, no public origin ports, minimal liveness, and bounded WebSocket handshakes.

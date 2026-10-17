@@ -4375,7 +4375,8 @@
           "docs/development-guide/milestone-x-production-activation.md",
           "docs/development-guide/milestone-x1-production-infrastructure-and-recovery.md",
           "docs/development-guide/milestone-x2-monitoring-and-production-acceptance.md",
-          "docs/development-guide/milestone-x3-production-deployment-and-acceptance.md",
+          "docs/development-guide/milestone-x3-production-host-deployment-and-edge-activation.md",
+          "docs/development-guide/milestone-x4-admin-monitoring-and-production-acceptance.md",
           "docs/client-integration/client-responsibility-and-recovery-guide.md"
         ]
       }
@@ -4409,11 +4410,11 @@
       "locked": false,
       "fontSize": 14,
       "fontFamily": 3,
-      "text": "Implementation & Client Guides\nX1 foundation · X2 monitor · X3 activation\nclient responsibility + recovery",
+      "text": "Implementation & Client Guides\nX1 · X2 monitor · X3 host · X4 accept\nclient responsibility + recovery",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "Implementation & Client Guides\nX1 foundation · X2 monitor · X3 activation\nclient responsibility + recovery",
+      "originalText": "Implementation & Client Guides\nX1 · X2 monitor · X3 host · X4 accept\nclient responsibility + recovery",
       "lineHeight": 1.25,
       "autoResize": false,
       "customData": {
@@ -4486,15 +4487,800 @@
       "locked": false,
       "fontSize": 14,
       "fontFamily": 3,
-      "text": "Operations & Security\nX3 executes operator manual · runbooks\nthreat model",
+      "text": "Operations & Security\nX3 host manual · X4 monitor acceptance\nthreat model + runbooks",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "Operations & Security\nX3 executes operator manual · runbooks\nthreat model",
+      "originalText": "Operations & Security\nX3 host manual · X4 monitor acceptance\nthreat model + runbooks",
       "lineHeight": 1.25,
       "autoResize": false,
       "customData": {
         "kind": "label"
+      }
+    },
+    {
+      "id": "monitor-zone",
+      "type": "rectangle",
+      "x": 30,
+      "y": 1385,
+      "width": 1740,
+      "height": 330,
+      "angle": 0,
+      "strokeColor": "#7c3aed",
+      "backgroundColor": "#ede9fe",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "zmonitor-zone",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 20261029,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "zone",
+        "sourcePaths": [
+          "chat-monitor"
+        ]
+      }
+    },
+    {
+      "id": "monitor-zone-label",
+      "type": "text",
+      "x": 44,
+      "y": 1393,
+      "width": 1712,
+      "height": 21,
+      "angle": 0,
+      "strokeColor": "#7c3aed",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "zmonitor-zone-label",
+      "roundness": null,
+      "seed": 20261036,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "fontSize": 16,
+      "fontFamily": 3,
+      "text": "CHATMONITOR COMPANION PROJECT · X2",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "CHATMONITOR COMPANION PROJECT · X2",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "monitor-sources",
+      "type": "rectangle",
+      "x": 75,
+      "y": 1435,
+      "width": 320,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#a16207",
+      "backgroundColor": "#fef9c3",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "amonitor-sources",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 20261032,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "chat-monitor/test/fixtures/normalized-events.json",
+          "chat-monitor/src/server/fixtures/fixture-source.js",
+          "chat-monitor/src/server/production/audit-projection.js",
+          "scripts/database/flyway/wl_chat/V20261016220000__create_audit_monitoring_projection.sql",
+          "docs/development-guide/milestone-x2-monitoring-and-production-acceptance.md"
+        ]
+      }
+    },
+    {
+      "id": "monitor-sources-label",
+      "type": "text",
+      "x": 87,
+      "y": 1459,
+      "width": 296,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bmonitor-sources",
+      "roundness": null,
+      "seed": 20261033,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Source Adapters\nLocal + Dev SQL projections\nProduction planned",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Source Adapters\nLocal + Dev SQL projections\nProduction planned",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "monitor-service",
+      "type": "rectangle",
+      "x": 500,
+      "y": 1435,
+      "width": 350,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#15803d",
+      "backgroundColor": "#dcfce7",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "amonitor-service",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 20261032,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "chat-monitor/src/server",
+          "chat-monitor/config",
+          "chat-monitor/src/shared",
+          "chat-monitor/Dockerfile",
+          "chat-monitor/compose.yaml",
+          "chat-monitor/compose.hardened-local.yaml",
+          "chat-monitor/compose.monitoring-tools.yaml",
+          "chat-monitor/src/server/alerting",
+          "chat-monitor/src/server/api/metrics-routes.js"
+        ]
+      }
+    },
+    {
+      "id": "monitor-service-label",
+      "type": "text",
+      "x": 512,
+      "y": 1459,
+      "width": 326,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bmonitor-service",
+      "roundness": null,
+      "seed": 20261033,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Containerized Fastify Service\nmetrics API · collectors · alerts\npinned local monitoring hubs",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Containerized Fastify Service\nmetrics API · collectors · alerts\npinned local monitoring hubs",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "monitor-store",
+      "type": "rectangle",
+      "x": 955,
+      "y": 1435,
+      "width": 320,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#a16207",
+      "backgroundColor": "#fef9c3",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "amonitor-store",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 20261030,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "chat-monitor/migrations/sqlite",
+          "chat-monitor/src/server/persistence",
+          "chat-monitor/src/server/aggregation",
+          "chat-monitor/src/server/persistence/alert-repository.js",
+          "chat-monitor/scripts/operations",
+          "chat-monitor/docs/architecture.md",
+          "chat-monitor/compose.yaml"
+        ]
+      }
+    },
+    {
+      "id": "monitor-store-label",
+      "type": "text",
+      "x": 967,
+      "y": 1459,
+      "width": 296,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bmonitor-store",
+      "roundness": null,
+      "seed": 20261031,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Docker Volume + SQLite\nenvironment-partitioned data\nevents · metrics · alerts · backups",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Docker Volume + SQLite\nenvironment-partitioned data\nevents · metrics · alerts · backups",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "monitor-dashboard",
+      "type": "rectangle",
+      "x": 1380,
+      "y": 1435,
+      "width": 320,
+      "height": 105,
+      "angle": 0,
+      "strokeColor": "#1d4ed8",
+      "backgroundColor": "#dbeafe",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "amonitor-dashboard",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 20261034,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "chat-monitor/src/client",
+          "chat-monitor/vite.config.js",
+          "chat-monitor/test/browser"
+        ]
+      }
+    },
+    {
+      "id": "monitor-dashboard-label",
+      "type": "text",
+      "x": 1392,
+      "y": 1459,
+      "width": 296,
+      "height": 57,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bmonitor-dashboard",
+      "roundness": null,
+      "seed": 20261035,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "Vite Dashboard\nfreshness · metrics · failures\nalerts · themed environments",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "Vite Dashboard\nfreshness · metrics · failures\nalerts · themed environments",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "monitor-docs",
+      "type": "rectangle",
+      "x": 500,
+      "y": 1580,
+      "width": 850,
+      "height": 85,
+      "angle": 0,
+      "strokeColor": "#0f766e",
+      "backgroundColor": "#ccfbf1",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "amonitor-docs",
+      "roundness": {
+        "type": 3
+      },
+      "seed": 20261029,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "customData": {
+        "kind": "component",
+        "sourcePaths": [
+          "chat-monitor/AGENTS.md",
+          "chat-monitor/README.md",
+          "chat-monitor/docs",
+          ".github/workflows/chat-monitor.yml"
+        ]
+      }
+    },
+    {
+      "id": "monitor-docs-label",
+      "type": "text",
+      "x": 512,
+      "y": 1604,
+      "width": 826,
+      "height": 38,
+      "angle": 0,
+      "strokeColor": "#1f2937",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "bmonitor-docs",
+      "roundness": null,
+      "seed": 20261030,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "fontSize": 14,
+      "fontFamily": 3,
+      "text": "ChatMonitor Navigation & Verification\nAGENTS · README · architecture/security/operations/metrics · Compose · CI · X4 handoff",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": null,
+      "originalText": "ChatMonitor Navigation & Verification\nAGENTS · README · architecture/security/operations/metrics · Compose · CI · X4 handoff",
+      "lineHeight": 1.25,
+      "autoResize": false,
+      "customData": {
+        "kind": "label"
+      }
+    },
+    {
+      "id": "arrow-monitor-sources-service",
+      "type": "arrow",
+      "x": 235,
+      "y": 1487.5,
+      "width": 440,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c35",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 20261021,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          440,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "monitor-sources",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "monitor-service",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "normalized envelope",
+        "planned": false
+      }
+    },
+    {
+      "id": "arrow-monitor-service-store",
+      "type": "arrow",
+      "x": 675,
+      "y": 1487.5,
+      "width": 440,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c36",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 20261021,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          440,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "monitor-service",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "monitor-store",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "transactional persistence",
+        "planned": false
+      }
+    },
+    {
+      "id": "arrow-monitor-service-dashboard",
+      "type": "arrow",
+      "x": 675,
+      "y": 1487.5,
+      "width": 865,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c37",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 20261021,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          865,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "monitor-service",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "monitor-dashboard",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "same-origin API + static",
+        "planned": false
+      }
+    },
+    {
+      "id": "arrow-monitor-router-docs",
+      "type": "arrow",
+      "x": 200,
+      "y": 1262.5,
+      "width": 450,
+      "height": 360,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c38",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 20261021,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -150,
+          0
+        ],
+        [
+          -150,
+          360
+        ],
+        [
+          300,
+          360
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "repo-router",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "monitor-docs",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "progressive-disclosure route",
+        "planned": false
+      }
+    },
+    {
+      "id": "arrow-monitor-sql-source",
+      "type": "arrow",
+      "x": 685,
+      "y": 857.5,
+      "width": 665,
+      "height": 630,
+      "angle": 0,
+      "strokeColor": "#64748b",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 42,
+      "groupIds": [],
+      "frameId": null,
+      "index": "c39",
+      "roundness": {
+        "type": 2
+      },
+      "seed": 20261021,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1792187522996,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -665,
+          0
+        ],
+        [
+          -665,
+          630
+        ],
+        [
+          -610,
+          630
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "sql-server",
+        "focus": 0,
+        "gap": 4
+      },
+      "endBinding": {
+        "elementId": "monitor-sources",
+        "focus": 0,
+        "gap": 4
+      },
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "elbowed": false,
+      "customData": {
+        "label": "X2-B read-only projection",
+        "planned": false
       }
     }
   ],
@@ -4505,10 +5291,10 @@
   },
   "files": {},
   "metadata": {
-    "updatedAt": "2026-10-15T14:42:14Z",
+    "updatedAt": "2026-10-17T03:27:14Z",
     "productionPackages": 30,
     "productionClasses": 161,
-    "componentNodes": 26,
+    "componentNodes": 31,
     "capabilities": [
       "Quarkus REST/Jackson",
       "JDBC SQL Server",
@@ -4519,7 +5305,16 @@
       "JSON Logging",
       "WebSockets Next",
       "RabbitMQ AMQP",
-      "Argon2"
-    ]
+      "Argon2",
+      "Node.js 22 / Fastify",
+      "Vite",
+      "Playwright",
+      "SQLite / better-sqlite3",
+      "Docker Compose",
+      "Chart.js",
+      "Uptime Kuma",
+      "Beszel Hub"
+    ],
+    "companionSourceFiles": 89
   }
 }

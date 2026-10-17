@@ -33,6 +33,7 @@ jobs:
       WL_CHAT_BACKUP_PASSWORD: ${{ secrets.WL_CHAT_BACKUP_PASSWORD || format('CiBackup!Run{0}Attempt{1}', github.run_id, github.run_attempt) }}
       WL_CHAT_RESTORE_PASSWORD: ${{ secrets.WL_CHAT_RESTORE_PASSWORD || format('CiRestore!Run{0}Attempt{1}', github.run_id, github.run_attempt) }}
       WL_CHAT_MAINTENANCE_PASSWORD: ${{ secrets.WL_CHAT_MAINTENANCE_PASSWORD || format('CiMaintenance!Run{0}Attempt{1}', github.run_id, github.run_attempt) }}
+      WL_CHAT_MONITOR_PASSWORD: ${{ secrets.WL_CHAT_MONITOR_PASSWORD || format('CiMonitor!Run{0}Attempt{1}', github.run_id, github.run_attempt) }}
       WL_CHAT_FLYWAY_IMAGE: flyway/flyway:10.17.3@sha256:c3f6c156dc928ac0e90c4328c0bf79441495b446231df8118c99cc05e2dd4404
       WL_CHAT_DB_URL: jdbc:sqlserver://localhost:1433;databaseName=wl_chat;encrypt=true;trustServerCertificate=true
 

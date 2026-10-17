@@ -9,6 +9,8 @@ These are concise repository-wide rules. Keep them stable and avoid duplicating 
 - Prefer minimal, targeted changes over broad refactors.
 - Preserve existing architecture/documentation conventions unless a task explicitly requires change.
 - Use `./mvnw clean verify` as the default validation command for meaningful changes.
+- For changes scoped to the independently runnable ChatMonitor project, use
+  `cd chat-monitor && npm ci && npm run verify`; run `npm run test:browser` for dashboard/static-serving changes.
 - When changing behavior, verify corresponding tests in [src/test](../../src/test).
 - For database evolution, add new Flyway versions under [scripts/database/flyway](../../scripts/database/flyway); do not alter already-applied migration history.
 - New application migrations under [scripts/database/flyway/wl_chat](../../scripts/database/flyway/wl_chat) must use `VYYYYMMDDHHMMSS__description_in_snake_case.sql`; existing `V1`-`V3` files are grandfathered history and must not be renamed.
@@ -61,6 +63,7 @@ An API implementation change is incomplete when corresponding Postman artifacts 
 - GitHub Copilot instructions: [.github/copilot-instructions.md](../../.github/copilot-instructions.md)
 - Scoped Java rules: [.agents/rules/backend-java.md](backend-java.md) <-> [.github/instructions/backend-java.instructions.md](../../.github/instructions/backend-java.instructions.md)
 - Scoped DB rules: [.agents/rules/database-scripts.md](database-scripts.md) <-> [.github/instructions/database-scripts.instructions.md](../../.github/instructions/database-scripts.instructions.md)
+- Scoped ChatMonitor rules: [.agents/rules/chat-monitor.md](chat-monitor.md) <-> [.github/instructions/chat-monitor.instructions.md](../../.github/instructions/chat-monitor.instructions.md)
 - Context architecture skill: [skills/workspace-context-architecture/SKILL.md](../skills/workspace-context-architecture/SKILL.md) <-> [.github/skills/workspace-context-architecture/SKILL.md](../../.github/skills/workspace-context-architecture/SKILL.md)
 - Quarkus graph skill: [skills/quarkus-graph-generator/SKILL.md](../skills/quarkus-graph-generator/SKILL.md) <-> [.github/skills/quarkus-graph-generator/SKILL.md](../../.github/skills/quarkus-graph-generator/SKILL.md)
 
@@ -76,6 +79,10 @@ An API implementation change is incomplete when corresponding Postman artifacts 
 - Post-production infrastructure evolution and IE Track register: [docs/infrastructure-evolution-specification.md](../../docs/infrastructure-evolution-specification.md)
 - Client integration and recovery contract: [docs/client-integration/client-responsibility-and-recovery-guide.md](../../docs/client-integration/client-responsibility-and-recovery-guide.md)
 - X1 production operator procedure: [docs/operations/x1-production-operator-manual.md](../../docs/operations/x1-production-operator-manual.md)
-- X3 production deployment and acceptance: [docs/development-guide/milestone-x3-production-deployment-and-acceptance.md](../../docs/development-guide/milestone-x3-production-deployment-and-acceptance.md)
+- X3 production-host deployment and edge activation: [docs/development-guide/milestone-x3-production-host-deployment-and-edge-activation.md](../../docs/development-guide/milestone-x3-production-host-deployment-and-edge-activation.md)
+- X4 administrator monitoring onboarding and production acceptance: [docs/development-guide/milestone-x4-admin-monitoring-and-production-acceptance.md](../../docs/development-guide/milestone-x4-admin-monitoring-and-production-acceptance.md)
+- X2 monitoring delivery contract: [docs/development-guide/milestone-x2-monitoring-and-production-acceptance.md](../../docs/development-guide/milestone-x2-monitoring-and-production-acceptance.md)
+- ChatMonitor scoped entrypoint: [chat-monitor/AGENTS.md](../../chat-monitor/AGENTS.md)
+- ChatMonitor human/operator entrypoint: [chat-monitor/README.md](../../chat-monitor/README.md)
 - Context architecture skill: [skills/workspace-context-architecture/SKILL.md](../skills/workspace-context-architecture/SKILL.md)
 - Quarkus graph skill: [skills/quarkus-graph-generator/SKILL.md](../skills/quarkus-graph-generator/SKILL.md)

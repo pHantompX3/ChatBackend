@@ -1,0 +1,79 @@
+name: ChatMonitor Verify
+
+on:
+  pull_request:
+    paths:
+      - 'chat-monitor/**'
+      - '.github/workflows/chat-monitor.yml'
+      - '.agents/rules/chat-monitor.md'
+      - '.github/instructions/chat-monitor.instructions.md'
+  push:
+    branches:
+      - main
+    paths:
+      - 'chat-monitor/**'
+      - '.github/workflows/chat-monitor.yml'
+      - '.agents/rules/chat-monitor.md'
+      - '.github/instructions/chat-monitor.instructions.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chat-monitor-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: chat-monitor
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22.17.0
+          cache: npm
+          cache-dependency-path: chat-monitor/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Verify application
+        run: npm run verify
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify built dashboard
+        run: npm run test:browser
+
+      - name: Validate container definition
+        run: |
+          npm run container:config
+          npm run container:local:config
+
+      - name: Verify persistent container lifecycle
+        run: |
+          npm run container:up
+          test "$(docker compose port monitor 8090)" = "127.0.0.1:8090"
+          test "$(curl --fail --silent http://127.0.0.1:8090/api/v1/status | jq -r '.retention.eventCount')" = "2"
+          before="$(docker compose exec -T monitor node --input-type=module -e "import Database from 'better-sqlite3'; const db = new Database('/var/lib/chat-monitor/chat-monitor.sqlite', { readonly: true }); process.stdout.write(db.prepare('SELECT applied_at FROM schema_migration ORDER BY version LIMIT 1').get().applied_at);")"
+          npm run container:down
+          docker compose up --detach --wait
+          test "$(curl --fail --silent http://127.0.0.1:8090/api/v1/status | jq -r '.retention.eventCount')" = "2"
+          after="$(docker compose exec -T monitor node --input-type=module -e "import Database from 'better-sqlite3'; const db = new Database('/var/lib/chat-monitor/chat-monitor.sqlite', { readonly: true }); process.stdout.write(db.prepare('SELECT applied_at FROM schema_migration ORDER BY version LIMIT 1').get().applied_at);")"
+          test "$before" = "$after"
+
+      - name: Clean up container verification
+        if: always()
+        run: docker compose down --volumes --remove-orphans

@@ -1,0 +1,11 @@
+.git
+.env
+dist
+node_modules
+playwright-report
+test-results
+var
+secrets
+environments/environments.json
+*.log
+*.sqlite*
