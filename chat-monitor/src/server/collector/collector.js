@@ -44,16 +44,20 @@ export function createCollector({
           && compareCursors(cursor, retentionBoundary) < 0
         ) {
           stateRepository.recordGap(environmentId, cursor, retentionBoundary, startedAt);
-          const gapState = createState({
+          cursor = {
+            createdAt: retentionBoundary.createdAt,
+            eventId: '',
+            initialized: true
+          };
+          cursorRepository.save(environmentId, cursor, startedAt);
+          stateRepository.save(createState({
             sourceId: environmentId,
             state: MONITOR_STATES.HISTORY_GAP,
             now: startedAt,
             previous: stateRepository.get(environmentId),
             errorCode: 'SOURCE_RETENTION_GAP',
-            detail: 'The source retention boundary advanced beyond the durable cursor.'
-          });
-          stateRepository.save(gapState);
-          return { state: gapState.state, pages, inserted };
+            detail: 'A source retention gap was recorded; collection resumed at the oldest retained timestamp.'
+          }));
         }
 
         while (pages < maxPagesPerCycle) {

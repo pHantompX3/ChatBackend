@@ -81,8 +81,10 @@ If `dist/client/` is absent, health/status APIs remain inspectable while `/` ret
 that instructs the operator to build. One source outage changes only that environment to
 `SOURCE_UNAVAILABLE`; other collectors and views remain available. A
 local transaction/validation failure changes it to `COLLECTION_FAILED`; a cursor older than the
-available source boundary changes it to `HISTORY_GAP`. SIGINT/SIGTERM closes HTTP, stops scheduling,
-waits for every active bounded cycle, then closes all source and SQLite resources.
+available source boundary records a durable `HISTORY_GAP`, advances to the oldest retained source
+boundary, and resumes collection. The gap remains visible for diagnosis without permanently
+stalling that environment. SIGINT/SIGTERM closes HTTP, stops scheduling, waits for every active
+bounded cycle, then closes all source and SQLite resources.
 
 ## State, backup, and service installation
 
@@ -98,14 +100,20 @@ npm run restore -- var/backups/chat-monitor-<timestamp>.sqlite
 
 Restore refuses paths outside the ignored `var/backups/` directory, verifies both SHA-256 and SQLite
 integrity, stops the service, keeps the displaced database as a `pre-restore` recovery copy, restores
-the verified file, and waits for health. Copy backup plus sidecar off this workstation periodically;
-the local backup directory is recovery staging, not an off-host backup boundary.
+the verified file, also displaces stale `-wal`/`-shm` sidecars, and waits for health. If installation
+of the verified database fails, it rolls the displaced files back. Copy backup plus checksum sidecar
+off this workstation periodically; the local backup directory is recovery staging, not an off-host
+backup boundary.
 
 For an upgrade, run `npm ci`, `npm run verify`, `npm run package`, and `npm run container:up`. The
 named volume survives image/container replacement. Roll back by checking out the last accepted
 source or unpacking its verified package and rerunning `npm run container:up`; immutable SQLite
 migrations are forward-compatible and are not reversed. Restore a pre-upgrade backup only when the
 operator has explicitly accepted losing newer monitor history.
+
+`npm run package` excludes active `.env` overrides, `secrets/`, runtime data, and the ignored active
+environment registry while retaining distributable examples. It validates the archive contents
+before writing the checksum; never distribute a package that fails this check.
 
 To uninstall the runtime without destroying history, run `npm run container:down`. Remove the image
 separately if desired. Delete `chat-monitor-data` only after a verified backup and an explicit
@@ -138,11 +146,14 @@ ChatMonitor's authoritative `chat-monitor-data` volume.
 The default Compose profile is fixture-backed so a clean checkout remains deterministic. It will
 not display requests sent to a live ChatBackend. For the hardened local stack:
 
-1. Apply the current ChatBackend migrations and provision the `wl_chat_monitor` principal.
+1. Apply the current ChatBackend migrations and provision the `wl_chat_monitor` principal in both
+   the original Local database and the hardened Dev/rehearsal database.
 2. Copy the monitor password into ignored `secrets/local-monitor-password` with owner-only access.
 3. Copy the public SQL CA certificate to ignored `secrets/local-sql-ca.pem`.
 4. Copy `environments/environments.example.json` to ignored
-   `environments/environments.json`. Keep `local-hardened` pointed at `sqlserver:1433`.
+   `environments/environments.json`. Keep green `local` pointed at
+   `host.docker.internal:1433`, blue `dev-hardened` pointed at `sqlserver:1433` on the private
+   hardened data network, and gold `production` unavailable until X4 supplies its verified source.
 5. Start the live-source override:
 
    ```bash

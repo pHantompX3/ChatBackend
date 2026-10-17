@@ -51,14 +51,18 @@ export async function registerMetricsRoutes(application, config, runtime) {
     };
   });
 
-  application.post(`${API_BASE_PATH}/environments/:environmentId/alerts/:ruleId/acknowledge`, async (request, reply) => {
+  application.post(`${API_BASE_PATH}/environments/:environmentId/alerts/:ruleId/acknowledge`, {
+    preHandler: requireLocalMutation
+  }, async (request, reply) => {
     const profile = findProfile(config, request.params.environmentId, reply);
     if (!profile) return;
     const acknowledged = runtime.alertService.acknowledge(profile.id, request.params.ruleId);
     return acknowledged ? reply.code(204).send() : reply.code(409).send({ code: 'ALERT_NOT_FIRING' });
   });
 
-  application.post(`${API_BASE_PATH}/environments/:environmentId/alerts/:ruleId/suppress`, async (request, reply) => {
+  application.post(`${API_BASE_PATH}/environments/:environmentId/alerts/:ruleId/suppress`, {
+    preHandler: requireLocalMutation
+  }, async (request, reply) => {
     const profile = findProfile(config, request.params.environmentId, reply);
     if (!profile) return;
     return withBounds(reply, () => {
@@ -68,6 +72,27 @@ export async function registerMetricsRoutes(application, config, runtime) {
       return suppressed ? reply.code(204).send() : reply.code(404).send({ code: 'ALERT_NOT_FOUND' });
     });
   });
+}
+
+function requireLocalMutation(request, reply, done) {
+  const host = request.headers.host ?? '';
+  const origin = request.headers.origin;
+  const hostIsLoopback = /^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host);
+  let originMatches = true;
+  if (origin) {
+    try {
+      const parsedOrigin = new URL(origin);
+      originMatches = parsedOrigin.host === host
+        && ['http:', 'https:'].includes(parsedOrigin.protocol);
+    } catch {
+      originMatches = false;
+    }
+  }
+  if (!hostIsLoopback || !originMatches || request.headers['x-chat-monitor-action'] !== '1') {
+    reply.code(403).send({ code: 'LOCAL_MUTATION_FORBIDDEN' });
+    return;
+  }
+  done();
 }
 
 function findProfile(config, environmentId, reply) {

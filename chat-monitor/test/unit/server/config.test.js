@@ -143,3 +143,38 @@ test('environment registry resolves profiles and secrets without exposing them',
   assert.equal(JSON.stringify(publicConfig(config)).includes('profile-secret'), false);
   assert.equal(JSON.stringify(publicConfig(config)).includes(directory), false);
 });
+
+test('environment registry permits certificate trust bypass only for Local SQL', (context) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'chat-monitor-local-sql-'));
+  context.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(directory, 'password'), 'profile-secret\n', { mode: 0o600 });
+
+  const localDocument = {
+    schemaVersion: 1,
+    defaultEnvironmentId: 'local',
+    environments: [{
+      id: 'local',
+      label: 'Local',
+      classification: 'local',
+      mode: 'sql',
+      source: {
+        host: 'host.docker.internal',
+        username: 'monitor',
+        passwordFile: './password',
+        encrypt: true,
+        trustServerCertificate: true
+      }
+    }]
+  };
+  fs.writeFileSync(path.join(directory, 'environments.json'), JSON.stringify(localDocument));
+  const config = loadConfig({ CHAT_MONITOR_ENVIRONMENTS_FILE: './environments.json' }, directory);
+  assert.equal(config.environments[0].source.trustServerCertificate, true);
+  assert.equal(publicConfig(config).environments[0].sqlTlsVerification, false);
+
+  localDocument.environments[0].classification = 'staging';
+  fs.writeFileSync(path.join(directory, 'environments.json'), JSON.stringify(localDocument));
+  assert.throws(
+    () => loadConfig({ CHAT_MONITOR_ENVIRONMENTS_FILE: './environments.json' }, directory),
+    /SQL certificate trust bypass is permitted only/
+  );
+});

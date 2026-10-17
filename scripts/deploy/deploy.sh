@@ -45,6 +45,7 @@ export WL_CHAT_PRESERVE_RUNTIME_FIXED_ROLES=false
 "${REPO_ROOT}/scripts/database/provision-hardened-principals.sh"
 "${REPO_ROOT}/scripts/database/provision-backup-encryption.sh"
 "${REPO_ROOT}/scripts/database/migrate-hardened.sh"
+"${REPO_ROOT}/scripts/database/provision-hardened-principals.sh"
 "${REPO_ROOT}/scripts/database/verify-hardened-permissions.sh" \
   --scenario "$(if [[ "${MODE}" == "clean" ]]; then echo clean; else echo upgrade-milestone-8; fi)"
 

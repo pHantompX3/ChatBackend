@@ -17,6 +17,16 @@ release tags begin when the project intentionally performs a production release 
 
 ### Fixed
 
+- Corrected ChatMonitor environment routing so green Local reads the original `localhost:1433`
+  database, blue Dev reads the hardened rehearsal database, and gold Production remains unavailable
+  until the remote hardened production source exists.
+- Closed the X2 review findings: packages now reject active environment and secret files; SQLite
+  restore safely handles WAL/SHM sidecars; retained-history gaps resume from the oldest available
+  boundary; SQL cursors preserve `DATETIME2(7)` precision and textual UUID ordering; aggregation
+  accepts only completed HTTP-request events and includes partial time buckets; alert delivery resumes
+  after suppression; mutations are loopback/same-origin action guarded; unmatched request routes are
+  privacy-sanitized; and monitor-principal provisioning is repeated after migrations.
+
 - Attached the production SQL-volume and proxy-TLS initializer containers exclusively to internal
   Compose networks, preventing Docker from creating an implicit Internet-capable default network and
   preserving the invariant that only the Cloudflare Tunnel connector has outbound Internet access.

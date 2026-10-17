@@ -303,7 +303,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
 
   private String resolveRouteTemplate() {
     if (resourceInfo == null) {
-      return safe(requestAuditContext.getPath());
+      return "unmatched";
     }
 
     StringBuilder templateBuilder = new StringBuilder();
@@ -330,9 +330,7 @@ public class HttpAuditFilter implements ContainerRequestFilter, ContainerRespons
       }
     }
 
-    return templateBuilder.length() > 0
-        ? templateBuilder.toString()
-        : safe(requestAuditContext.getPath());
+    return templateBuilder.length() > 0 ? templateBuilder.toString() : "unmatched";
   }
 
   private String normalizePathTemplate(String value) {

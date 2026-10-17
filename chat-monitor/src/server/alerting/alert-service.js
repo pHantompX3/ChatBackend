@@ -40,9 +40,14 @@ export function createAlertService({ alertRepository, metricRepository, stateRep
         const evaluated = evaluateAlert(previous, observation, now);
         const changed = previous?.state !== evaluated.state;
         const suppressed = evaluated.suppressedUntil && new Date(evaluated.suppressedUntil) > now;
-        const deliveryStatus = changed && evaluated.state === ALERT_STATES.FIRING && !suppressed
+        const shouldDeliver = evaluated.state === ALERT_STATES.FIRING
+          && !suppressed
+          && (changed || previous?.lastDeliveryStatus === 'SUPPRESSED');
+        const deliveryStatus = shouldDeliver
           ? deliver(logger, environmentId, rule.id, evaluated)
-          : previous?.lastDeliveryStatus ?? 'NOT_ATTEMPTED';
+          : evaluated.state === ALERT_STATES.FIRING && suppressed
+            ? 'SUPPRESSED'
+            : previous?.lastDeliveryStatus ?? 'NOT_ATTEMPTED';
         const saved = {
           environmentId,
           ruleId: rule.id,

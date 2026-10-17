@@ -4643,11 +4643,11 @@
       "locked": false,
       "fontSize": 14,
       "fontFamily": 3,
-      "text": "Source Adapters\nfixture + SQL projection\nper-environment instances",
+      "text": "Source Adapters\nLocal + Dev SQL projections\nProduction planned",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "Source Adapters\nfixture + SQL projection\nper-environment instances",
+      "originalText": "Source Adapters\nLocal + Dev SQL projections\nProduction planned",
       "lineHeight": 1.25,
       "autoResize": false,
       "customData": {
@@ -5291,7 +5291,7 @@
   },
   "files": {},
   "metadata": {
-    "updatedAt": "2026-10-17T00:50:00Z",
+    "updatedAt": "2026-10-17T03:27:14Z",
     "productionPackages": 30,
     "productionClasses": 161,
     "componentNodes": 31,

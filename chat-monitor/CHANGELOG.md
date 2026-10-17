@@ -5,6 +5,16 @@ not independently released while it remains embedded in the ChatBackend reposito
 
 ## [Unreleased]
 
+### Fixed
+
+- Excluded and archive-validated local secrets and active environment registries from distributable
+  packages, and made restore safely displace or roll back the SQLite database plus WAL/SHM sidecars.
+- Preserved SQL `DATETIME2(7)` cursor precision and textual UUID ordering, resumed collection after
+  retained-history gaps, restricted HTTP aggregation to completed-request events, and retained
+  partially overlapping time buckets.
+- Delivered still-firing alerts after suppression expires, protected alert mutations with loopback,
+  same-origin, and explicit-action checks, and sanitized unmatched backend routes before monitoring.
+
 ### Added
 
 - Created the X2-A single-package Node/Vite foundation with loopback-only Fastify serving, validated

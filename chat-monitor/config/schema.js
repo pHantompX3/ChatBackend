@@ -159,7 +159,7 @@ const sqlProfile = z.object({
     username: z.string().trim().min(1),
     passwordFile: z.string().trim().min(1),
     encrypt: z.literal(true).default(true),
-    trustServerCertificate: z.literal(false).default(false)
+    trustServerCertificate: z.boolean().default(false)
   }).strict()
 }).strict();
 
@@ -180,6 +180,15 @@ const environmentsDocumentSchema = z.object({
       });
     }
     identifiers.add(profile.id);
+    if (profile.mode === 'sql'
+        && profile.source.trustServerCertificate
+        && profile.classification !== 'local') {
+      context.addIssue({
+        code: 'custom',
+        path: ['environments', index, 'source', 'trustServerCertificate'],
+        message: 'SQL certificate trust bypass is permitted only for the loopback Local environment'
+      });
+    }
   }
   if (!identifiers.has(document.defaultEnvironmentId)) {
     context.addIssue({

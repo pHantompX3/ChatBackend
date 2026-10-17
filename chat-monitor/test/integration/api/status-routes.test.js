@@ -74,7 +74,12 @@ test('operational APIs reject unsafe bounds and return sanitized data', async (c
     stateRepository: { get: () => ({ state: 'CURRENT' }) },
     eventRepository: { retainedRange: () => ({}), count: () => 0 },
     metricRepository,
-    alertService: { evaluate() {}, list: () => [] }
+    alertService: {
+      evaluate() {},
+      list: () => [],
+      acknowledge: () => true,
+      suppress: () => true
+    }
   };
   const application = await buildApplication({
     config: loadConfig({ CHAT_MONITOR_ENVIRONMENTS_FILE: './test/fixtures/environments.json' }, process.cwd()),
@@ -94,4 +99,22 @@ test('operational APIs reject unsafe bounds and return sanitized data', async (c
   });
   assert.equal(invalid.statusCode, 400);
   assert.equal(invalid.json().code, 'INVALID_QUERY_BOUNDS');
+
+  const crossOriginMutation = await application.inject({
+    method: 'POST',
+    url: '/api/v1/environments/local-dev/alerts/collector-health/acknowledge',
+    headers: { origin: 'https://attacker.example' }
+  });
+  assert.equal(crossOriginMutation.statusCode, 403);
+
+  const localMutation = await application.inject({
+    method: 'POST',
+    url: '/api/v1/environments/local-dev/alerts/collector-health/acknowledge',
+    headers: {
+      host: '127.0.0.1:8090',
+      origin: 'http://127.0.0.1:8090',
+      'x-chat-monitor-action': '1'
+    }
+  });
+  assert.equal(localMutation.statusCode, 204);
 });

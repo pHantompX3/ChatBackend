@@ -36,6 +36,7 @@ export function createAggregator(database) {
 
   return Object.freeze({
     record(environmentId, event) {
+      if (event.eventName !== 'http.request.completed') return;
       const duration = event.measurements.durationMs;
       const values = {
         environmentId,

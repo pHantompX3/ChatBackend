@@ -149,9 +149,10 @@ final class SchemaVerificationTest {
     migrateApplicationSchemas();
 
     UUID eventId = UUID.randomUUID();
+    UUID unmatchedEventId = UUID.randomUUID();
     LocalDateTime occurredAt = LocalDateTime.now(ZoneOffset.UTC).minusSeconds(1);
     LocalDateTime createdAt = occurredAt.plusSeconds(1);
-    provisionMonitoringPrincipalAndEvent(eventId, occurredAt, createdAt);
+    provisionMonitoringPrincipalAndEvents(eventId, unmatchedEventId, occurredAt, createdAt);
 
     try (var connection =
         TestSqlSupport.openConnection(
@@ -179,6 +180,10 @@ final class SchemaVerificationTest {
           assertEquals("/api/v1/ping", result.getString("route_template"));
           assertEquals(200, result.getInt("response_status"));
           assertEquals(18, result.getLong("duration_ms"));
+          assertTrue(result.next());
+          assertEquals(unmatchedEventId, result.getObject("event_id", UUID.class));
+          assertEquals("unknown.operation", result.getString("operation"));
+          assertEquals("unmatched", result.getString("route_template"));
           assertFalse(result.next());
         }
       }
@@ -294,8 +299,8 @@ final class SchemaVerificationTest {
         () -> "Expected a permission or metadata-visibility denial but received: " + message);
   }
 
-  private static void provisionMonitoringPrincipalAndEvent(
-      UUID eventId, LocalDateTime occurredAt, LocalDateTime createdAt) {
+  private static void provisionMonitoringPrincipalAndEvents(
+      UUID eventId, UUID unmatchedEventId, LocalDateTime occurredAt, LocalDateTime createdAt) {
     try (var connection =
             TestSqlSupport.openConnection(
                 SQL_SERVER.getHost(),
@@ -341,6 +346,25 @@ final class SchemaVerificationTest {
         insert.setObject(5, occurredAt.plusNanos(18_000_000));
         insert.setString(6, eventId.toString());
         insert.setObject(7, createdAt);
+        assertEquals(1, insert.executeUpdate());
+      }
+      try (var insert =
+          connection.prepareStatement(
+              "INSERT INTO audit.http_audit_event "
+                  + "(event_id, schema_version, event_type, occurred_at, request_id, operation, "
+                  + "method, route_template, path, response_status, response_code, duration_ms, "
+                  + "request_timestamp, response_timestamp, error_code, record_hash, created_at) "
+                  + "VALUES (?, '1.0', 'http.request.completed', ?, ?, 'unknown.operation', "
+                  + "'GET', '/private/raw/identifier', '/private/raw/identifier', 404, "
+                  + "'NOT_FOUND', 4, ?, ?, NULL, "
+                  + "HASHBYTES('SHA2_256', CONVERT(varbinary(max), ?)), ?)")) {
+        insert.setObject(1, unmatchedEventId);
+        insert.setObject(2, occurredAt.plusNanos(100));
+        insert.setString(3, "unmatched-" + unmatchedEventId);
+        insert.setObject(4, occurredAt.plusNanos(100));
+        insert.setObject(5, occurredAt.plusNanos(4_000_100));
+        insert.setString(6, unmatchedEventId.toString());
+        insert.setObject(7, createdAt.plusNanos(100));
         assertEquals(1, insert.executeUpdate());
       }
     } catch (SQLException exception) {

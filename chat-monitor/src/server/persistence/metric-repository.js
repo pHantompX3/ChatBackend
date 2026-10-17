@@ -53,7 +53,7 @@ export function createMetricRepository(database) {
   return Object.freeze({
     overview(environmentId, hours, now = new Date()) {
       const boundedHours = boundedInteger(hours, 1, MAX_WINDOW_HOURS, 24);
-      const since = sinceTimestamp(boundedHours, now);
+      const since = alignedSinceTimestamp(boundedHours, now, 'hour');
       return normalizeSummary(summary.get(environmentId, since), boundedHours, now);
     },
     timeSeries(environmentId, { hours, resolution }, now = new Date()) {
@@ -63,7 +63,11 @@ export function createMetricRepository(database) {
         hours: boundedHours,
         resolution: selectedResolution,
         generatedAt: now.toISOString(),
-        points: series.all(environmentId, selectedResolution, sinceTimestamp(boundedHours, now))
+        points: series.all(
+          environmentId,
+          selectedResolution,
+          alignedSinceTimestamp(boundedHours, now, selectedResolution)
+        )
           .map(normalizeMetricRow)
       };
     },
@@ -75,7 +79,7 @@ export function createMetricRepository(database) {
         generatedAt: now.toISOString(),
         operations: operations.all(
           environmentId,
-          sinceTimestamp(boundedHours, now),
+          alignedSinceTimestamp(boundedHours, now, 'hour'),
           boundedLimit
         ).map(normalizeMetricRow)
       };
@@ -137,6 +141,16 @@ function normalizeMetricRow(row) {
 
 function sinceTimestamp(hours, now) {
   return new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
+}
+
+function alignedSinceTimestamp(hours, now, resolution) {
+  const since = new Date(now.getTime() - hours * 60 * 60 * 1000);
+  if (resolution === 'day') {
+    since.setUTCHours(0, 0, 0, 0);
+  } else {
+    since.setUTCMinutes(0, 0, 0);
+  }
+  return since.toISOString();
 }
 
 export function boundedInteger(value, minimum, maximum, fallback) {

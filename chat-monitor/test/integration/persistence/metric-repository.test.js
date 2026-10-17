@@ -37,3 +37,22 @@ test('metric repository separates expected client outcomes from server failures 
   });
   assert.throws(() => repository.overview('local-dev', 0, now), /between 1 and 2160/);
 });
+
+test('rolling windows retain the partially overlapping metric bucket', (context) => {
+  const database = openMonitorDatabase(':memory:');
+  context.after(() => database.close());
+  database.prepare(`
+    INSERT INTO metric_bucket(environment_id, resolution, bucket_start, event_name, method, route,
+      status_class, request_count, failure_count, duration_count, duration_sum, duration_min, duration_max)
+    VALUES ('local-dev', 'hour', '2026-10-16T12:00:00.000Z', 'http.request.completed',
+      'GET', '/api/v1/ping', '5xx', 1, 1, 1, 25, 25, 25)
+  `).run();
+
+  const overview = createMetricRepository(database).overview(
+    'local-dev',
+    1,
+    new Date('2026-10-16T13:00:01.000Z')
+  );
+  assert.equal(overview.requestCount, 1);
+  assert.equal(overview.failureCount, 1);
+});

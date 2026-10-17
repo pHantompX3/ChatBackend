@@ -22,9 +22,22 @@ try {
 }
 
 fs.mkdirSync(path.dirname(destinationPath), { recursive: true, mode: 0o700 });
-if (fs.existsSync(destinationPath)) {
-  fs.renameSync(destinationPath, `${destinationPath}.pre-restore-${Date.now()}`);
+const displacedPath = `${destinationPath}.pre-restore-${Date.now()}`;
+const displaced = [];
+for (const suffix of ['', '-wal', '-shm']) {
+  const source = `${destinationPath}${suffix}`;
+  if (fs.existsSync(source)) {
+    const target = `${displacedPath}${suffix}`;
+    fs.renameSync(source, target);
+    displaced.push({ source, target });
+  }
 }
-fs.copyFileSync(backupPath, destinationPath);
-fs.chmodSync(destinationPath, 0o600);
+try {
+  fs.copyFileSync(backupPath, destinationPath);
+  fs.chmodSync(destinationPath, 0o600);
+} catch (error) {
+  if (fs.existsSync(destinationPath)) fs.rmSync(destinationPath);
+  for (const { source, target } of displaced) fs.renameSync(target, source);
+  throw error;
+}
 process.stdout.write(`${destinationPath}\n`);

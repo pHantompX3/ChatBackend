@@ -59,7 +59,13 @@ Failure APIs return only allowlisted normalized dimensions and numeric measureme
 SQLite. Alert delivery contains environment ID, rule ID, state, and observation time only; it does
 not include user identifiers, request payloads, message content, raw SQL errors, or credentials.
 Acknowledgement and suppression are loopback-only administration actions, and suppression is bounded
-to 24 hours.
+to 24 hours. Mutations additionally require a same-origin browser request when an `Origin` header is
+present and the explicit `X-Chat-Monitor-Action: 1` action header. This prevents another website from
+using the operator's browser to mutate local alert state.
+
+The backend audit filter and monitoring projection never expose an unmatched raw request path. Such
+records use the fixed `unmatched` route dimension, preventing identifiers or query-derived content
+from becoming a metric label.
 
 ## Dependency inventory
 

@@ -75,8 +75,40 @@ test('collector reports retained-history gaps explicitly', async (context) => {
     createdAt: '2026-10-16T11:00:00.000Z',
     eventId: '00000000-0000-0000-0000-000000000001'
   }, now);
-  assert.equal((await gapHarness.collector.collect()).state, 'HISTORY_GAP');
+  const recovered = await gapHarness.collector.collect();
+  assert.equal(recovered.state, 'CURRENT');
+  assert.equal(recovered.inserted, 1);
   assert.equal(gapHarness.database.prepare('SELECT COUNT(*) AS count FROM history_gap').get().count, 1);
+  assert.equal((await gapHarness.collector.collect()).inserted, 0);
+  assert.equal(gapHarness.database.prepare('SELECT COUNT(*) AS count FROM history_gap').get().count, 1);
+});
+
+test('non-HTTP events are retained without contaminating HTTP request metrics', async (context) => {
+  const sourceRecords = records(1);
+  sourceRecords.push({
+    cursor: {
+      createdAt: '2026-10-16T12:02:00.000Z',
+      eventId: '00000000-0000-0000-0000-000000000002'
+    },
+    event: {
+      ...sourceRecords[0].event,
+      eventId: 'client:test:2',
+      eventName: 'client.recovery.completed',
+      occurredAt: '2026-10-16T12:01:30.000Z',
+      receivedAt: '2026-10-16T12:02:00.000Z',
+      dimensions: { clientType: 'synthetic' }
+    }
+  });
+  const harness = createHarness(context, sourceRecords);
+
+  assert.equal((await harness.collector.collect()).inserted, 2);
+  assert.equal(harness.events.count('test-environment'), 2);
+  assert.equal(
+    harness.database.prepare(
+      'SELECT SUM(request_count) AS count FROM metric_bucket WHERE environment_id = ? AND resolution = ?'
+    ).get('test-environment', 'hour').count,
+    1
+  );
 });
 
 test('collector pages by durable creation order even when an event occurred earlier', async (context) => {

@@ -83,8 +83,8 @@ deterministic local alert sinks, fixture thresholds, a loopback deployment, and 
 X4 replaces those placeholders with live production credentials, targets, alert destinations,
 characterized thresholds, and operational ownership evidence.
 
-ChatMonitor is built and accepted in X2 against deterministic fixtures and the hardened local
-rehearsal. X4 validates the X3 production SQL projection, live credentials, network path, query plans,
+ChatMonitor is built and accepted in X2 against the original Local SQL database and the hardened
+Dev/rehearsal database as distinct sources. X4 validates the X3 production SQL projection, live credentials, network path, query plans,
 locking behavior, thresholds, and alert destinations against the deployed candidate.
 
 ## 3. Preferred Monitoring Topology
@@ -1070,19 +1070,22 @@ loading.
 
 ## 12. X2 Exit Criteria
 
-### 12.1 Closeout evidence — 2026-10-16
+### 12.1 Closeout evidence — 2026-10-17
 
-- `npm run verify`: 27 Node unit/integration tests, lint, Vite production build, and browser-secret
+- `npm run verify`: 33 Node unit/integration tests, lint, Vite production build, and browser-secret
   scan passed.
 - `npm run test:browser`: the built dashboard passed its Chromium environment-switching,
   freshness, operational-view, theme, keyboard-focus, empty-state, and planned-production checks.
 - `npm run container:config` and `npm run tools:config`: both Compose models validated.
 - `npm run container:up`: the non-root read-only ChatMonitor image rebuilt and became healthy on
   `127.0.0.1:8090` while retaining the existing named volume.
-- `npm run container:local:up`: the explicit local override joined the private hardened data network
-  without publishing SQL Server. The collector reached `CURRENT` through verified TLS and the
-  projection-only principal; a new HTTPS request advanced retained history from 46 to 47 events and
-  appeared in the 24-hour overview with its 16 ms duration.
+- `npm run container:local:up`: the explicit local override kept green Local on the original
+  `localhost:1433` SQL database and joined blue Dev to the private hardened data network without
+  publishing either SQL Server. Both collectors reached `CURRENT` with zero reported lag through
+  their projection-only principals; retained partitions contained 303 Local and 48 Dev events.
+- `npm run package`: verification passed, the distributable retained examples, and the archive
+  content guard confirmed that active `.env` overrides, secrets, runtime state, and the active
+  environment registry were absent.
 - `npm run backup` followed by `npm run restore -- <backup>`: online SQLite backup, SHA-256 and
   integrity verification, replacement, restart, and health recovery passed.
 - Uptime Kuma 2.5.5 and Beszel hub 0.21.0 are pinned, isolated, and verified healthy on loopback-only
@@ -1090,6 +1093,11 @@ loading.
   not X2 secrets.
 - `./mvnw clean verify`: passed 139 ChatBackend tests with zero failures or errors, clean SpotBugs
   analysis, successful Quarkus packaging, and generated CycloneDX SBOMs.
+- Closeout review remediated every applicable PR finding: secret-safe package validation, WAL-aware
+  restore, recoverable history gaps, precision-safe deterministic SQL cursors, HTTP-only metrics,
+  privacy-safe unmatched routes, post-migration principal reconciliation, partial-bucket inclusion,
+  post-suppression alert delivery, and protected loopback alert mutations. Focused regression tests
+  cover each behavior.
 
 The client-responsibility audit found no new messaging-client recovery contract: X2 adds an
 administrator-only monitoring companion and does not change public HTTP/WebSocket behavior.
