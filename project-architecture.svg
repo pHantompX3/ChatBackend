@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1400" viewBox="0 0 1800 1400" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1750" viewBox="0 0 1800 1750" role="img" aria-labelledby="title desc">
   <title id="title">ChatBackend Quarkus architecture and repository navigation</title>
-  <desc id="desc">Layered architecture, dependency, and canonical documentation graph generated 2026-10-15T14:42:14Z</desc>
+  <desc id="desc">ChatBackend and ChatMonitor layered architecture, dependency, and canonical documentation graph generated 2026-10-17T00:09:15Z</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
@@ -353,7 +353,7 @@
     <rect x="1015" y="1210" width="310" height="105" rx="12" fill="#ccfbf1" stroke="#0f766e" stroke-width="2"/>
     <text x="1170" y="1248.5" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="600" fill="#1f2937">
       <tspan x="1170" dy="0">Implementation &amp; Client Guides</tspan>
-      <tspan x="1170" dy="19">X1 foundation &#xB7; X2 monitor &#xB7; X3 activation</tspan>
+      <tspan x="1170" dy="19">X1 &#xB7; X2 monitor &#xB7; X3 host &#xB7; X4 accept</tspan>
       <tspan x="1170" dy="19">client responsibility + recovery</tspan>
     </text>
   </g>
@@ -361,9 +361,84 @@
     <rect x="1355" y="1210" width="350" height="105" rx="12" fill="#ccfbf1" stroke="#0f766e" stroke-width="2"/>
     <text x="1530" y="1248.5" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="600" fill="#1f2937">
       <tspan x="1530" dy="0">Operations &amp; Security</tspan>
-      <tspan x="1530" dy="19">X3 executes operator manual &#xB7; runbooks</tspan>
-      <tspan x="1530" dy="19">threat model</tspan>
+      <tspan x="1530" dy="19">X3 host manual &#xB7; X4 monitor acceptance</tspan>
+      <tspan x="1530" dy="19">threat model + runbooks</tspan>
     </text>
   </g>
-  <text x="1760" y="1388" text-anchor="end" font-family="ui-monospace, monospace" font-size="11" fill="#64748b">Generated 2026-10-15T11:25:46Z &#xB7; 161 classes &#xB7; 30 packages</text>
+  <g>
+    <rect x="30" y="1385" width="1740" height="330" rx="16" fill="#ede9fe" fill-opacity=".36" stroke="#7c3aed" stroke-opacity=".45" stroke-dasharray="7 7"/>
+    <text x="900" y="1410" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" font-weight="700" fill="#7c3aed">
+      <tspan x="900" dy="0">CHATMONITOR COMPANION PROJECT &#xB7; X2</tspan>
+    </text>
+  </g>
+  <g opacity=".42">
+    <path d="M 235 1487.5 L 675 1487.5" fill="none" stroke="#64748b" stroke-width="1.1" marker-end="url(#arrow)"/>
+    <rect x="399" y="1477.5" width="112" height="16" rx="4" fill="white" fill-opacity=".92"/>
+    <text x="455" y="1488.5" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#475569">normalized envelope</text>
+  </g>
+  <g opacity=".42">
+    <path d="M 675 1487.5 L 1115 1487.5" fill="none" stroke="#64748b" stroke-width="1.1" marker-end="url(#arrow)"/>
+    <rect x="823" y="1477.5" width="144" height="16" rx="4" fill="white" fill-opacity=".92"/>
+    <text x="895" y="1488.5" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#475569">transactional persistence</text>
+  </g>
+  <g opacity=".42">
+    <path d="M 675 1487.5 L 1540 1487.5" fill="none" stroke="#64748b" stroke-width="1.1" marker-end="url(#arrow)"/>
+    <rect x="1027.5" y="1477.5" width="160" height="16" rx="4" fill="white" fill-opacity=".92"/>
+    <text x="1107.5" y="1488.5" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#475569">same-origin API + static</text>
+  </g>
+  <g opacity=".42">
+    <path d="M 200 1262.5 L 50 1262.5 L 50 1622.5 L 500 1622.5" fill="none" stroke="#64748b" stroke-width="1.1" marker-end="url(#arrow)"/>
+    <rect x="140" y="1612.5" width="160" height="16" rx="4" fill="white" fill-opacity=".92"/>
+    <text x="220" y="1623.5" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#475569">progressive-disclosure route</text>
+  </g>
+  <g opacity=".42">
+    <path d="M 685 857.5 L 20 857.5 L 20 1487.5 L 75 1487.5" fill="none" stroke="#64748b" stroke-width="1.1" marker-end="url(#arrow)"/>
+    <rect x="24" y="1162.5" width="152" height="16" rx="4" fill="white" fill-opacity=".92"/>
+    <text x="100" y="1173.5" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#475569">X2-B read-only projection</text>
+  </g>
+  <g filter="url(#shadow)">
+    <title>chat-monitor per-environment fixture and SQL source adapters; audit.monitoring_http_event</title>
+    <rect x="75" y="1435" width="320" height="105" rx="12" fill="#fef9c3" stroke="#a16207" stroke-width="2"/>
+    <text x="235" y="1473.5" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="600" fill="#1f2937">
+      <tspan x="235" dy="0">Source Adapters</tspan>
+      <tspan x="235" dy="19">fixture + SQL projection</tspan>
+      <tspan x="235" dy="19">per-environment instances</tspan>
+    </text>
+  </g>
+  <g filter="url(#shadow)">
+    <title>chat-monitor/src/server; alerting; metrics API; config; Dockerfile; Compose; Uptime Kuma; Beszel</title>
+    <rect x="500" y="1435" width="350" height="105" rx="12" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+    <text x="675" y="1473.5" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="600" fill="#1f2937">
+      <tspan x="675" dy="0">Containerized Fastify Service</tspan>
+      <tspan x="675" dy="19">metrics API &#xB7; collectors &#xB7; alerts</tspan>
+      <tspan x="675" dy="19">pinned local monitoring hubs</tspan>
+    </text>
+  </g>
+  <g filter="url(#shadow)">
+    <title>chat-monitor/migrations/sqlite; persistence; aggregation; alert state; verified backup/restore; chat-monitor-data volume</title>
+    <rect x="955" y="1435" width="320" height="105" rx="12" fill="#fef9c3" stroke="#a16207" stroke-width="2"/>
+    <text x="1115" y="1473.5" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="600" fill="#1f2937">
+      <tspan x="1115" dy="0">Docker Volume + SQLite</tspan>
+      <tspan x="1115" dy="19">environment-partitioned data</tspan>
+      <tspan x="1115" dy="19">events &#xB7; metrics &#xB7; alerts &#xB7; backups</tspan>
+    </text>
+  </g>
+  <g filter="url(#shadow)">
+    <title>chat-monitor/src/client; chat-monitor/vite.config.js; chat-monitor/test/browser</title>
+    <rect x="1380" y="1435" width="320" height="105" rx="12" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+    <text x="1540" y="1473.5" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="600" fill="#1f2937">
+      <tspan x="1540" dy="0">Vite Dashboard</tspan>
+      <tspan x="1540" dy="19">freshness &#xB7; metrics &#xB7; failures</tspan>
+      <tspan x="1540" dy="19">alerts &#xB7; themed environments</tspan>
+    </text>
+  </g>
+  <g filter="url(#shadow)">
+    <title>chat-monitor/AGENTS.md; chat-monitor/README.md; chat-monitor/docs; .github/workflows/chat-monitor.yml</title>
+    <rect x="500" y="1580" width="850" height="85" rx="12" fill="#ccfbf1" stroke="#0f766e" stroke-width="2"/>
+    <text x="925" y="1613" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="600" fill="#1f2937">
+      <tspan x="925" dy="0">ChatMonitor Navigation &amp; Verification</tspan>
+      <tspan x="925" dy="19">AGENTS &#xB7; README &#xB7; architecture/security/operations/metrics &#xB7; Compose &#xB7; CI &#xB7; X4 handoff</tspan>
+    </text>
+  </g>
+  <text x="1760" y="1738" text-anchor="end" font-family="ui-monospace, monospace" font-size="11" fill="#64748b">Generated 2026-10-17T00:09:15Z &#xB7; 161 Java classes &#xB7; 30 Java packages &#xB7; 89 ChatMonitor files</text>
 </svg>

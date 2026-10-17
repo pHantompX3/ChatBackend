@@ -6,7 +6,8 @@
 Production-host execution and live evidence are transferred to X3.
 **Parent program:** [Milestone X — Production Activation](milestone-x-production-activation.md)  
 **Successor increment:** [Milestone X2 — Monitoring Foundation](milestone-x2-monitoring-and-production-acceptance.md)
-**Production activation:** [Milestone X3 — Production Deployment, Integration, and Acceptance](milestone-x3-production-deployment-and-acceptance.md)
+**Production-host activation:** [Milestone X3 — Production Host Deployment and Edge Activation](milestone-x3-production-host-deployment-and-edge-activation.md)
+**Final monitoring and acceptance:** [Milestone X4 — Administrator Monitoring Onboarding and Production Acceptance](milestone-x4-admin-monitoring-and-production-acceptance.md)
 **Last refined:** 2026-10-15 after external production activation moved to X3
 
 **Operator procedure:** [X1 Production Operator Manual](../operations/x1-production-operator-manual.md)
@@ -21,8 +22,8 @@ X3 owns applying and proving those controls on the real production host and exte
 
 X1 does not approve normal production use or release version `1.0.0`. Its output is a production
 candidate that can be deployed and recovered safely. ChatMonitor implementation belongs to X2;
-production execution, live operational alerting, final acceptance exercises, and the release decision
-belong to X3.
+production-host execution belongs to X3; live operational monitoring, final acceptance exercises,
+and the release decision belong to X4.
 
 The operator manual is the step-by-step execution companion for this plan. It separates stakeholder
 actions, repository automation, production-host verification, evidence, stop conditions, and
@@ -196,7 +197,8 @@ and records a runtime decision instead of weakening the test or enabling insecur
 7. Run characterization and regression tests against production-representative resources and data,
    then record approved thresholds and capacity limits.
 8. Complete the X1 threat-model review and local production-representative verification; real-host
-   recovery, incident/alert exercises, and the deliberate `1.0.0` decision remain X3 responsibilities.
+   recovery remains an X3 responsibility, while live incident/alert exercises and the deliberate
+   `1.0.0` decision remain X4 responsibilities.
 
 The detailed contracts below refine these workstreams. They extend rather than replace the accepted
 single-host decision in
@@ -629,9 +631,10 @@ The X1 build-time candidate manifest must contain:
 
 The workflow retains the SBOM, scan reports, bundle checksum, and signature beside that manifest.
 X3 then records the selected infrastructure-image digests, prior compatible application digest,
-production hostname/profile, approval, observation window, smoke evidence, and final disposition in
-the production evidence manifest. These values depend on the real environment and must not be
-invented during X1 candidate creation.
+production hostname/profile, deployment approval, host observation window, smoke evidence, and X3
+candidate disposition in the production evidence manifest. X4 records the final normal-use and
+`1.0.0` disposition after monitoring onboarding. These values depend on the real environment and
+must not be invented during X1 candidate creation.
 
 #### 3.5.2 Deployment state machine
 
@@ -681,7 +684,7 @@ rollback script is not production compatibility evidence.
 
 #### 3.5.4 Production-candidate release acceptance
 
-The first production release becomes `1.0.0` only after all X1, X2, and X3 exit criteria and final
+The first production release becomes `1.0.0` only after all X1, X2, X3, and X4 exit criteria and final
 evidence are accepted. Finalization includes changelog promotion from Unreleased, version alignment,
 release notes, image/tag provenance, known-risk register, recovery contacts, and an explicit statement
 of the selected network exposure, RPO/RTO, availability objective, and unsupported capabilities.
@@ -1092,23 +1095,25 @@ X1 is complete only when:
   action without embedding secrets;
 - the threat model, architecture, operations, client responsibility guide, and changelog match the
   implemented foundation; and
-- every remaining real-host, Cloudflare, DNS, Internet, router-share, live-alert, and operational
-  proof is explicitly handed to X3 rather than silently claimed.
+- every remaining real-host, Cloudflare, DNS, Internet, and router-share proof is explicitly handed
+  to X3, while live monitoring and alert proof is handed to X4 rather than silently claimed.
 
 Passing X1 means **secure and recoverable production candidate**, not production approval.
 
 As re-scoped on 2026-10-15, X1 acceptance is limited to repository-owned implementation and local,
 production-representative verification. Every exit criterion above that requires the real Windows
-host, Cloudflare account, DNS zone, Internet path, router share, or live alert destination is an X3
-criterion. The requirement remains unchanged; only its delivery increment moved.
+host, Cloudflare account, DNS zone, Internet path, or router share is an X3 criterion. Every criterion
+requiring the administrator Mac, live monitoring source, or alert destination is an X4 criterion.
+The requirement remains unchanged; only its delivery increment moved.
 
-## 6. Handoff to X2 and X3
+## 6. Handoff to X2, X3, and X4
 
 The X1 handoff provides X2 with stable audit/projection contracts and representative fixtures. It
 provides X3 with the signed release contract, expected image/schema identities, firewall and
 certificate procedures, runtime principals, backup/restore commands, characterization tools,
-unresolved environment values, and evidence checklist. X2 and X3 must not infer production values
-from developer-machine rehearsal defaults.
+unresolved environment values, and evidence checklist. It provides X4 with the monitoring
+projection/principal contract, characterization tooling, and monitoring safety limits. X2, X3, and
+X4 must not infer production values from developer-machine rehearsal defaults.
 
 ## 7. Implementation-readiness audit resolution ledger
 

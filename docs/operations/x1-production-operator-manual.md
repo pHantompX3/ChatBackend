@@ -13,8 +13,9 @@ evidence to retain. Use only the named repository commands; do not invent substi
 complete without their required evidence.
 
 Passing this manual produces an X1 production candidate. It does not authorize normal production use
-or the `1.0.0` release; those decisions belong to X3 after the independently accepted X2 monitoring
-foundation is available.
+or the `1.0.0` release. X3 uses this manual to accept the independently deployed production
+candidate; X4 owns normal-use and `1.0.0` approval after the independently accepted X2 monitoring
+foundation is onboarded from the administrator Mac.
 
 ## 1. Safety rules
 
@@ -440,7 +441,8 @@ private keys.
 1. Review every X1 exit criterion against evidence, not recollection.
 2. Mark each item passed, blocked, or risk-accepted with owner and review date.
 3. Confirm this manual and the governing X1 guide match the deployed candidate.
-4. Produce the independent X2 monitoring-foundation and X3 production-activation handoff packages.
+4. Produce the independent X2 monitoring-foundation, X3 production-host activation, and X4
+   administrator-monitoring onboarding handoff packages.
 5. Describe the result as a **secure and recoverable production candidate**, never as production
    approval.
 

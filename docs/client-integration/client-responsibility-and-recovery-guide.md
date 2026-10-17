@@ -346,7 +346,7 @@ An official client that later participates must:
 - treat telemetry as fail-open diagnostics: inability to report must never block login, message
   submission, recovery, or logout.
 
-No public telemetry endpoint is approved by X2 or X3. A later implementation must separately define
+No public telemetry endpoint is approved by X2, X3, or X4. A later implementation must separately define
 the authenticated edge, enrollment/revocation model, consent and privacy behavior, quotas, abuse
 controls, and threat model. Native IE-01 installation identity is the preferred future authentication
 foundation; browser code must not contain a shared monitoring secret.

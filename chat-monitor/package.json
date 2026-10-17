@@ -1,0 +1,52 @@
+{
+  "name": "@wmkj/chat-monitor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local, source-neutral operational monitoring for ChatBackend",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0 <23",
+    "npm": ">=11 <12"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env scripts/dev.js",
+    "build": "vite build",
+    "start": "node --env-file-if-exists=.env src/server/main.js",
+    "test": "node --test --test-reporter=spec test/unit/**/*.test.js test/integration/**/*.test.js",
+    "test:browser": "npm run build && playwright test",
+    "lint": "eslint .",
+    "verify:config": "node --env-file-if-exists=.env scripts/verify-config.js",
+    "scan:browser": "node scripts/scan-browser-bundle.js",
+    "verify": "npm run lint && npm test && npm run build && npm run scan:browser",
+    "container:config": "docker compose config --quiet",
+    "container:build": "docker compose build",
+    "container:up": "docker compose up --detach --build --wait",
+    "container:stop": "docker compose stop",
+    "container:down": "docker compose down",
+    "container:status": "docker compose ps",
+    "container:logs": "docker compose logs --follow --tail=200",
+    "package": "sh scripts/operations/package.sh",
+    "install:local": "sh scripts/operations/install-local.sh",
+    "backup": "sh scripts/operations/backup.sh",
+    "restore": "sh scripts/operations/restore.sh",
+    "tools:config": "docker compose -f compose.monitoring-tools.yaml config --quiet",
+    "tools:up": "docker compose -f compose.monitoring-tools.yaml up --detach --wait",
+    "tools:down": "docker compose -f compose.monitoring-tools.yaml down",
+    "tools:status": "docker compose -f compose.monitoring-tools.yaml ps"
+  },
+  "dependencies": {
+    "@fastify/static": "10.1.6",
+    "better-sqlite3": "13.0.3",
+    "chart.js": "4.5.1",
+    "fastify": "5.12.7",
+    "mssql": "12.7.9",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
+    "eslint": "10.13.0",
+    "globals": "17.13.0",
+    "vite": "8.3.4"
+  }
+}

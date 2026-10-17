@@ -1,0 +1,32 @@
+name: chat-monitor-tools
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.5.5
+    ports:
+      - 127.0.0.1:3001:3001
+    volumes:
+      - uptime-kuma-data:/app/data
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+
+  beszel-hub:
+    image: henrygd/beszel:0.21.0
+    ports:
+      - 127.0.0.1:8091:8090
+    volumes:
+      - beszel-data:/beszel_data
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+
+volumes:
+  uptime-kuma-data:
+    name: chat-monitor-uptime-kuma-data
+  beszel-data:
+    name: chat-monitor-beszel-data

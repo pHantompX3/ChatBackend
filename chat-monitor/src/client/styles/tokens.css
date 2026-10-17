@@ -1,0 +1,36 @@
+:root {
+  --color-canvas: #071117;
+  --color-surface: #10222b;
+  --color-surface-raised: #16313c;
+  --color-border: #2a4a56;
+  --color-text: #f0f6f4;
+  --color-muted: #a9c0bd;
+  --color-accent: #73e2b7;
+  --color-accent-rgb: 115 226 183;
+  --color-warning: #ffd166;
+  --color-danger: #ff7b72;
+  --radius: 1rem;
+  --shadow: 0 1.5rem 4rem rgb(0 0 0 / 20%);
+}
+
+body[data-environment-classification="development"],
+body[data-environment-classification="test"],
+body[data-environment-classification="staging"] {
+  --color-canvas: #07111f;
+  --color-surface: #10243b;
+  --color-surface-raised: #173957;
+  --color-border: #315a78;
+  --color-muted: #b4c9dc;
+  --color-accent: #7db7ff;
+  --color-accent-rgb: 125 183 255;
+}
+
+body[data-environment-classification="production"] {
+  --color-canvas: #171207;
+  --color-surface: #2b2411;
+  --color-surface-raised: #40351a;
+  --color-border: #6b582a;
+  --color-muted: #d4c7a2;
+  --color-accent: #ffd166;
+  --color-accent-rgb: 255 209 102;
+}

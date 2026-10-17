@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "defaultEnvironmentId": "local-dev",
+  "environments": [
+    {
+      "id": "local-dev",
+      "label": "Local development",
+      "classification": "local",
+      "mode": "fixture",
+      "fixturePath": "./normalized-events.json"
+    },
+    {
+      "id": "staging-rehearsal",
+      "label": "Staging rehearsal",
+      "classification": "staging",
+      "mode": "fixture",
+      "fixturePath": "./normalized-events.json"
+    },
+    {
+      "id": "production",
+      "label": "Production",
+      "classification": "production",
+      "mode": "planned",
+      "unavailableReason": "Production is not deployed yet; X4 will onboard its verified SQL telemetry source after X3 activation."
+    }
+  ]
+}

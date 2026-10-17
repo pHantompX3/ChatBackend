@@ -2,18 +2,36 @@
 
 ## Status
 
-**Status:** Implementation-ready on `codex/milestone-x2-monitoring-foundation`; administrator-machine
-deployment is in scope, while production onboarding remains X3 work
+**Status:** Complete and locally verified on `codex/milestone-x2-monitoring-foundation`. Administrator-machine
+deployment is in scope, while production onboarding remains X4 work after X3 deploys the production
+candidate.
 **Parent program:** [Milestone X — Production Activation](milestone-x-production-activation.md)  
-**Required successor:** [Milestone X3 — Production Deployment, Integration, and Acceptance](milestone-x3-production-deployment-and-acceptance.md)
+**Required successor:** [Milestone X4 — Administrator Monitoring Onboarding and Production Acceptance](milestone-x4-admin-monitoring-and-production-acceptance.md)
 **Last refined:** 2026-10-16
+
+### Implementation ledger
+
+| Slice | State | Verified result |
+|---|---|---|
+| X2-A | Implemented | Independent Node/Vite/Fastify project, loopback-only configuration, fixture shell, locked dependencies, CI, scoped agent context, and browser-safe build verification |
+| X2-B | Implemented | Forward-only sanitized audit projection, projection-only `wl_chat_monitor` principal, hardened provisioning, and positive/negative migration integration tests |
+| X2-C | Implemented | Checksummed SQLite migrations, fixture/SQL adapters, atomic event/cursor persistence, bounded non-overlapping catch-up, explicit recovery states, hourly/daily aggregation, and retention tests |
+| X2-D | Complete | Bounded status/metric/operation/sanitized-failure APIs, freshness-first environment dashboard, Chart.js adapter, time filters, accessible semantics, security headers, and browser tests |
+| X2-E | Complete | Durable alert state with confirmation, acknowledgement, bounded suppression, recovery confirmation, privacy-safe local sink, and pinned loopback-only Uptime Kuma/Beszel hub definitions |
+| X2-F | Complete | Hardened persistent Compose runtime, stable lifecycle/package commands, checksum/integrity-verified SQLite backup/restore, replacement/rollback/uninstall procedure, workstation rehearsal, and explicit X4 handoff |
+
+The candidate `(created_at,event_id)` production index remains deliberately unimplemented. X2-B
+proved the bounded seek contract and least privilege; X4 must capture representative production plan,
+size, lock, and audit-insert overhead evidence before an index is authorized. The X2-A through X2-F
+review found no ChatBackend client-facing API, recovery, or UX contract change, so the canonical
+client-integration guide requires no semantic update for these slices.
 
 ## 1. Purpose and boundary
 
 Milestone X2 builds a production-capable monitoring foundation on the administrator's machine. It
 owns ChatMonitor, its local source-neutral telemetry store, SQL-audit collection adapter, dashboard,
 aggregation, retention, local alert-state engine, packaging, startup, backup/recovery, and fixture or
-hardened-rehearsal verification. X3 owns connection to the real production host, live alert delivery,
+hardened-rehearsal verification. X4 owns connection to the X3 production candidate, live alert delivery,
 operational exercises, and the `1.0.0` acceptance decision.
 
 ChatBackend must continue operating when every X2 monitoring component is unavailable. X2 does not
@@ -43,8 +61,8 @@ The following implementation decisions are now frozen for X2:
 | Initial deployment host | The administrator's Apple-silicon macOS workstation |
 | Runtime baseline | Installed Node.js `22.17.0` and npm `11.6.0`; `package.json` and preflight scripts enforce the supported major/runtime range |
 | ChatMonitor exposure | Loopback-only `127.0.0.1:8090`; no public or LAN listener in X2 |
-| Process lifecycle | Native `launchd` user agent, with bounded restart behavior and visible logs |
-| Installed state root | `~/Library/Application Support/ChatMonitor/`, separating versioned application files from persistent data, configuration, logs, backups, and evidence |
+| Process lifecycle | Docker Desktop plus Docker Compose, with `restart: unless-stopped`, health checks, bounded Docker logs, and explicit lifecycle commands |
+| Installed state root | Immutable container image plus Docker-managed `chat-monitor-data` named volume; ignored bind-mounted secret files remain outside the image and volume |
 | Local persistence | SQLite in WAL mode, foreign keys enabled, bounded busy timeout, explicit migrations, and consistent backup API |
 | Server/API | Fastify with explicit schemas and bounded same-origin routes |
 | Source access | `mssql` driver using encrypted SQL Server connections and a dedicated projection-only principal |
@@ -53,7 +71,7 @@ The following implementation decisions are now frozen for X2:
 | Dashboard/charting | Vite vanilla JavaScript, standards-based HTML/CSS, and Chart.js behind the documented chart adapter |
 | Logging | Structured redacted server logs; no message content, credentials, raw headers, or unrestricted source metadata |
 | Automated verification | Node test runner for server/domain tests, targeted DOM tests for browser-safe modules, and Playwright for the built-dashboard/accessibility smoke path |
-| Availability/host tools | Uptime Kuma and Beszel remain separate bounded monitoring layers; their local hub deployment is X2, while production targets/agents and live notification delivery are X3 |
+| Availability/host tools | Uptime Kuma and Beszel remain separate bounded monitoring layers; their local hub deployment is X2, while X3 prepares any production-side agent and X4 owns enrollment plus live notification delivery |
 
 Exact package versions must be selected from supported releases at implementation time, committed in
 `package-lock.json`, licence-checked, vulnerability-scanned, and recorded in ChatMonitor's dependency
@@ -62,11 +80,11 @@ unreviewed versions.
 
 The unresolved stakeholder choices in items 2–5 above do not block core implementation. X2 uses
 deterministic local alert sinks, fixture thresholds, a loopback deployment, and documented defaults.
-X3 replaces those placeholders with live production credentials, targets, alert destinations,
+X4 replaces those placeholders with live production credentials, targets, alert destinations,
 characterized thresholds, and operational ownership evidence.
 
 ChatMonitor is built and accepted in X2 against deterministic fixtures and the hardened local
-rehearsal. X3 validates its production SQL projection, live credentials, network path, query plans,
+rehearsal. X4 validates the X3 production SQL projection, live credentials, network path, query plans,
 locking behavior, thresholds, and alert destinations against the deployed candidate.
 
 ## 3. Preferred Monitoring Topology
@@ -119,9 +137,10 @@ authentication/TLS requirements are resolved. No monitoring dashboard or agent c
 publicly exposed by default.
 
 The workstation must not sleep during an accepted monitoring window unless that blind spot is
-deliberately accepted. Its service lifecycle must start the availability/host-monitoring components,
-ChatMonitor Node service, and alert adapters after networking and required storage are available.
-Repeated startup failures must remain visible rather than creating an infinite silent restart loop.
+deliberately accepted. Docker Desktop starts at login; Compose restart policies then start the
+availability/host-monitoring components, ChatMonitor service, and alert adapters after the engine
+and required storage are available. Repeated startup failures must remain visible through health,
+container state, and bounded Docker logs rather than creating an infinite silent restart loop.
 
 Back up proportionally:
 
@@ -250,6 +269,9 @@ ChatMonitor README and implementation guide.
 chat-monitor/
 ├── README.md                         # setup, operation, recovery, and troubleshooting entrypoint
 ├── CHANGELOG.md                      # ChatMonitor-specific user and operator changes
+├── Dockerfile                        # reproducible non-root immutable production image
+├── compose.yaml                      # loopback publication, lifecycle, health, and durable volume
+├── .dockerignore                     # excludes local state, secrets, and generated artifacts
 ├── package.json                      # scripts, runtime constraints, and direct dependencies
 ├── package-lock.json                 # committed reproducible npm dependency graph
 ├── vite.config.js                    # dashboard build/dev configuration only
@@ -348,6 +370,8 @@ chat-monitor/
 │   ├── verify-config.js               # operator-safe preflight with no secret echoing
 │   ├── backup-monitor-db.js           # consistent local SQLite backup
 │   └── restore-monitor-db.js          # validated local restore workflow
+├── secrets/
+│   └── README.md                      # ignored SQL password/CA file contract
 └── var/                               # runtime-only, ignored local state
     ├── data/chat-monitor.sqlite
     └── logs/
@@ -398,17 +422,21 @@ Rules:
 
 ```text
 CHAT_MONITOR_HOST=127.0.0.1
+CHAT_MONITOR_DEPLOYMENT_MODE=native
 CHAT_MONITOR_PORT=8090
 CHAT_MONITOR_SQLITE_PATH=./var/data/chat-monitor.sqlite
 CHAT_MONITOR_POLL_INTERVAL_SECONDS=60
 CHAT_MONITOR_PAGE_SIZE=500
 CHAT_MONITOR_DETAIL_RETENTION_DAYS=90
 CHAT_MONITOR_AGGREGATE_RETENTION_DAYS=365
+CHAT_MONITOR_ENVIRONMENTS_FILE=<server-only-registry-path>
+CHAT_MONITOR_DEFAULT_ENVIRONMENT_ID=<legacy-single-source-only>
 CHAT_MONITOR_SOURCE_HOST=<private-production-sql-host>
 CHAT_MONITOR_SOURCE_PORT=1433
 CHAT_MONITOR_SOURCE_DATABASE=wl_chat
 CHAT_MONITOR_SOURCE_USERNAME=wl_chat_monitor
 CHAT_MONITOR_SOURCE_PASSWORD=<supply-through-local-secret-mechanism>
+CHAT_MONITOR_SOURCE_PASSWORD_FILE=<preferred-container-secret-path>
 CHAT_MONITOR_SOURCE_ENCRYPT=true
 CHAT_MONITOR_SOURCE_TRUST_SERVER_CERTIFICATE=false
 ```
@@ -423,6 +451,27 @@ Startup must fail clearly—but without printing secret values—when required c
 invalid, unsafe, or contradictory. Page size, polling interval, retention, timeouts, host binding,
 TLS validation, and file paths require explicit bounds or validation.
 
+The Docker runtime sets `CHAT_MONITOR_DEPLOYMENT_MODE=container`, binds internally to `0.0.0.0`, and
+publishes the service only to host `127.0.0.1`. Native mode rejects non-loopback binding. Compose
+mounts the ignored `secrets/` directory read-only; SQL mode reads the password from a file and uses
+the mounted CA through Node's verified TLS trust path. Secrets are never image layers, Compose
+literals, named-volume content, or browser configuration.
+
+The preferred multi-environment configuration is a validated server-only JSON registry mounted
+read-only into the container. It defines stable IDs, labels, classifications, source modes, bounded
+collector overrides, SQL coordinates, and password-file references. It never contains inline
+passwords. All listed collectors run concurrently; browser switching selects a read partition and
+must not start, stop, or reconfigure collectors. The browser receives only allowlisted display
+metadata, never SQL coordinates, usernames, secret paths, or trust paths.
+
+The registry may also declare a `planned` environment that has not yet been deployed or onboarded.
+Such an environment remains visible so operators can understand the intended topology, but it must
+not receive a collector, reuse another environment's fixtures, or display inherited history. Its
+status is `SOURCE_UNAVAILABLE` with an explicit `ENVIRONMENT_NOT_DEPLOYED` reason, no freshness
+claim, and zero environment events. For the X2 workstation deployment, Local and Staging are usable
+rehearsal environments; Production is the gold-themed planned environment until X4 supplies and
+verifies its real telemetry source.
+
 #### 5.1.4 Proposed commands and lifecycle
 
 The package scripts should converge on the following operator contract:
@@ -436,6 +485,12 @@ npm test               # unit and integration tests
 npm run test:browser   # built-dashboard browser and accessibility smoke tests
 npm run lint           # JavaScript/CSS/HTML static checks selected by the implementation guide
 npm run verify         # lint + tests + production build + browser-safe artifact checks
+npm run container:config # validate the Compose model without starting it
+npm run container:up     # build/start/health-wait for the persistent workstation service
+npm run container:stop   # stop while retaining container and named-volume state
+npm run container:down   # remove containers/network while retaining named-volume state
+npm run container:status # inspect health and lifecycle state
+npm run container:logs   # follow bounded Docker-managed logs
 ```
 
 `npm start` must not invoke the Vite development server. The Node process must validate
@@ -527,7 +582,7 @@ Future official-client telemetry must follow these guardrails:
 - a user/operator-visible switch for diagnostic telemetry where future client requirements warrant
   collection beyond essential health signals.
 
-ChatMonitor initially runs on the administrator machine and binds its dashboard/API to loopback. X3
+ChatMonitor initially runs on the administrator machine and binds its dashboard/API to loopback. X4
 may authorize narrowly scoped LAN access. Public client ingestion is not achieved by exposing that
 local Node service directly; any later remote ingestion path requires an intentionally designed edge
 and threat-model update.
@@ -569,11 +624,11 @@ its request occurrence time; an occurrence-time-only cursor could permanently sk
 
 ### 5.5 Incremental collection cycle
 
-On each scheduled cycle:
+On each independently scheduled environment cycle:
 
 1. load the last locally committed `(created_at, event_id)` cursor;
 2. request the next bounded page from the production monitoring view;
-3. insert projected events locally using unique `event_id` idempotency;
+3. insert projected events locally using `(environment_id,event_id)` idempotency;
 4. update the cursor in the same local transaction;
 5. repeat while a full page is returned;
 6. calculate or update local metric buckets; and
@@ -586,7 +641,7 @@ bounded pages and yields between failures; it must not issue one unbounded query
 
 When the monitor restarts, it resumes from its last committed cursor and retrieves all still-retained
 audit events persisted afterward. If local insertion succeeded but cursor persistence did not, the
-unique `event_id` makes re-reading harmless.
+the environment-scoped unique event key makes re-reading harmless.
 
 The monitor must expose these states:
 
@@ -807,7 +862,7 @@ evidence and schedule periodic retesting of delivery and certificate/backup path
 
 ## 9. Monitoring Failure and Recovery Exercises
 
-X2 demonstrates the following with deterministic fixtures and hardened rehearsal; X3 repeats every
+X2 demonstrates the following with deterministic fixtures and hardened rehearsal; X4 repeats every
 item that depends on production, a live alert destination, or the external network:
 
 1. production continues operating while the monitor is stopped;
@@ -871,7 +926,7 @@ architecture-map artifacts. Keep runtime state and credentials ignored.
 **Gate:** `npm ci` and `npm run verify` pass from a clean checkout on the supported Node runtime; the
 built browser assets contain no secret/configuration values; the server binds only to loopback; and a
 fresh contributor can start fixture mode using only documented commands. A cold-agent walk must find
-the ChatMonitor architecture, source boundaries, commands, tests, operational guide, and X3 handoff
+the ChatMonitor architecture, source boundaries, commands, tests, operational guide, and X4 handoff
 from the root `AGENTS.md` and graph without loading the entire X2 specification.
 
 ### X2-B — Backend monitoring projection and least privilege
@@ -924,18 +979,22 @@ notification credentials in this slice.
 and Uptime Kuma/Beszel configuration can be backed up, restored, and removed without affecting
 ChatBackend or ChatMonitor's authoritative local store.
 
-### X2-F — macOS packaging, deployment, recovery, and X3 handoff
+### X2-F — Docker workstation deployment, recovery, and X4 handoff
 
-Create an installation bundle and scripts that place immutable application files beneath the chosen
-ChatMonitor state root while preserving configuration/data across upgrades. Add a `launchd` user
-agent, preflight, start/stop/status, log rotation, SQLite backup/restore, clean-host recovery, and
-rollback instructions. Install and run the accepted candidate on the administrator workstation in
-fixture/rehearsal mode. Assemble sanitized evidence and the explicit X3 onboarding manifest.
+Create the immutable multi-stage image and Compose definition, preserving configuration/data across
+container replacement and upgrades through the named volume. Run as a non-root user with a read-only
+root filesystem, host-loopback-only publication, no Docker socket, dropped capabilities, health
+checks, restart policy, and bounded logs. Add preflight, start/stop/status/log commands, consistent
+SQLite backup/restore, clean-host recovery, rollback, and uninstall instructions. Configure Docker
+Desktop to start at login and install the accepted candidate on the administrator workstation in
+fixture/rehearsal mode. Assemble sanitized evidence and the explicit X4 onboarding manifest.
 
-**Gate:** a clean install, login auto-start, bounded restart failure, upgrade, rollback, SQLite
+**Gate:** a clean image build/install, Docker-at-login auto-start, bounded restart failure, upgrade,
+rollback, SQLite
 backup/restore, replacement-directory recovery, monitor-offline/catch-up exercise, and complete
-uninstall rehearsal pass without losing retained data or exposing credentials. The installed service
-binds only to loopback and reports `CURRENT`, `CATCHING_UP`, `SOURCE_UNAVAILABLE`,
+uninstall rehearsal pass without losing retained data or exposing credentials. Ordinary container
+replacement and `docker compose down` must preserve the named volume. The host publishes only to
+loopback and reports `CURRENT`, `CATCHING_UP`, `SOURCE_UNAVAILABLE`,
 `COLLECTION_FAILED`, or `HISTORY_GAP` truthfully.
 
 ### 11.1 Command contract
@@ -951,11 +1010,15 @@ npm test
 npm run test:browser
 npm run lint
 npm run verify
+npm run container:config
+npm run container:build
+npm run container:up
+npm run container:stop
+npm run container:down
+npm run container:status
+npm run container:logs
 npm run package
 npm run install:local
-npm run service:start
-npm run service:stop
-npm run service:status
 npm run backup
 npm run restore -- <verified-backup>
 ```
@@ -966,12 +1029,12 @@ not rely on a developer remembering to run a second project manually.
 
 ### 11.2 Definition of deployed for X2
 
-“Deployed” in X2 means the accepted ChatMonitor candidate and selected monitoring hubs are installed
-on the administrator workstation, start through the documented local lifecycle, operate against
-fixtures or the hardened rehearsal source, retain and recover their local state, and expose only
-loopback interfaces. It does **not** mean they have production SQL credentials, production agents,
+“Deployed” in X2 means the accepted ChatMonitor image and selected monitoring hubs are installed on
+the administrator workstation, Docker Desktop starts at login, Compose restores healthy services,
+fixtures or the hardened rehearsal source operate correctly, the named volume retains/recover local
+state, and the host exposes only loopback interfaces. It does **not** mean they have production SQL credentials, production agents,
 live external probes, public dashboard reachability, or approved notification destinations. Those
-connections and their evidence belong to X3.
+connections and their evidence belong to X4.
 
 ### 11.3 Agent context and architecture-map contract
 
@@ -1000,12 +1063,32 @@ dependency, deployment boundary, capability, or canonical documentation route. I
 artifacts are updated in the same change set. Internal edits that do not change navigation or
 architecture do not trigger redraws. X2-F repeats the cold-agent walk and records whether a new agent
 can identify both projects, their one-way integration contract, their independent verification
-commands, and the X2/X3 responsibility boundary using routed context rather than broad document
+commands, and the X2/X4 responsibility boundary using routed context rather than broad document
 loading.
 
 ---
 
 ## 12. X2 Exit Criteria
+
+### 12.1 Closeout evidence — 2026-10-16
+
+- `npm run verify`: 27 Node unit/integration tests, lint, Vite production build, and browser-secret
+  scan passed.
+- `npm run test:browser`: the built dashboard passed its Chromium environment-switching,
+  freshness, operational-view, theme, keyboard-focus, empty-state, and planned-production checks.
+- `npm run container:config` and `npm run tools:config`: both Compose models validated.
+- `npm run container:up`: the non-root read-only ChatMonitor image rebuilt and became healthy on
+  `127.0.0.1:8090` while retaining the existing named volume.
+- `npm run backup` followed by `npm run restore -- <backup>`: online SQLite backup, SHA-256 and
+  integrity verification, replacement, restart, and health recovery passed.
+- Uptime Kuma 2.5.5 and Beszel hub 0.21.0 are pinned, isolated, and verified healthy on loopback-only
+  listeners; their local first-run accounts and later production targets remain operator/X4 inputs,
+  not X2 secrets.
+- `./mvnw clean verify`: passed 139 ChatBackend tests with zero failures or errors, clean SpotBugs
+  analysis, successful Quarkus packaging, and generated CycloneDX SBOMs.
+
+The client-responsibility audit found no new messaging-client recovery contract: X2 adds an
+administrator-only monitoring companion and does not change public HTTP/WebSocket behavior.
 
 X2 is complete when:
 
@@ -1019,7 +1102,7 @@ X2 is complete when:
 - its dependency installation, automated tests, Vite production build, Node service, and clean-host
   recovery are reproducible, with no SQL credential in browser-delivered assets;
 - the SQL projection/principal contract has migrations and positive/negative integration tests, while
-  live query-plan and lock evidence is explicitly handed to X3;
+  live query-plan and lock evidence is explicitly handed to X4;
 - the source-adapter contract accepts SQL-audit and synthetic source-neutral fixtures without
   changing normalized persistence, aggregation, or dashboard APIs;
 - malformed, oversized, unknown-version, duplicate, high-cardinality, or content-bearing fixture
@@ -1030,7 +1113,7 @@ X2 is complete when:
 - the monitoring threat model and canonical runbooks match the implemented foundation;
 - all residual risks and accepted monitoring blind spots have an owner, reason, and review date;
 - no unaccepted High or Critical implementation risk remains; and
-- the X3 handoff identifies every live credential, network, threshold, alert-destination, production
+- the X4 handoff identifies every live credential, network, threshold, alert-destination, production
   query-plan, and operational exercise still requiring external evidence.
 
 Passing X2 means the monitoring foundation is independently deployable and ready for production

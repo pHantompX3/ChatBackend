@@ -16,10 +16,10 @@
 - Active local database name: `wl_chat`
 - Active app login: `wl_chat_app`
 - Audit transport: RabbitMQ-backed delivery is optional; if the audit transport is not configured, the app falls back to local async persistence and still boots cleanly
-- Original roadmap status: Milestones 0–9 complete; X1 repository implementation is complete and
-  locally verified, X2 monitoring implementation is planned, and X3 owns all production-host and
-  external activation work.
-- No production deployment is claimed until the X1 operator evidence is accepted.
+- Original roadmap status: Milestones 0–9 complete; X1 repository implementation and X2
+  administrator-Mac monitoring foundation are complete and locally verified; X3 owns remote production
+  host and edge activation, and X4 owns live monitoring onboarding and final acceptance.
+- No production deployment is claimed until X3 host/edge evidence and X4 final acceptance are approved.
 - Production client-ingress decision: public HTTPS/WSS through one hardened NGINX edge; user
   authentication and server authorization are initially authoritative. The required post-X sequence
   adds IE-01 native per-installation trust, IE-02 mobile-authorized linked-browser protocol support,
@@ -556,8 +556,10 @@ production-activation prerequisites and are not claimed.
     `docs/operations/x1-production-operator-manual.md`
   - X2 monitoring foundation:
     `docs/development-guide/milestone-x2-monitoring-and-production-acceptance.md`
-  - X3 production deployment, external integration, and acceptance:
-    `docs/development-guide/milestone-x3-production-deployment-and-acceptance.md`
+  - X3 production-host deployment and edge activation:
+    `docs/development-guide/milestone-x3-production-host-deployment-and-edge-activation.md`
+  - X4 administrator monitoring onboarding and production acceptance:
+    `docs/development-guide/milestone-x4-admin-monitoring-and-production-acceptance.md`
 - Canonical client responsibility, offline behavior, and recovery guide:
   - `docs/client-integration/client-responsibility-and-recovery-guide.md`
 - Human-run two-participant WebSocket/Postman integration guide:

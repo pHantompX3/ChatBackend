@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "defaultEnvironmentId": "local",
+  "environments": [
+    {
+      "id": "local",
+      "label": "Local development",
+      "classification": "local",
+      "mode": "sql",
+      "source": {
+        "host": "host.docker.internal",
+        "port": 1433,
+        "database": "wl_chat",
+        "username": "wl_chat_monitor",
+        "passwordFile": "../secrets/local-monitor-password",
+        "encrypt": true,
+        "trustServerCertificate": false
+      }
+    },
+    {
+      "id": "staging",
+      "label": "Staging",
+      "classification": "staging",
+      "mode": "sql",
+      "source": {
+        "host": "replace-with-private-staging-host",
+        "port": 1433,
+        "database": "wl_chat",
+        "username": "wl_chat_monitor",
+        "passwordFile": "../secrets/staging-monitor-password",
+        "encrypt": true,
+        "trustServerCertificate": false
+      }
+    },
+    {
+      "id": "production",
+      "label": "Production",
+      "classification": "production",
+      "mode": "planned",
+      "unavailableReason": "Production is not deployed yet; X4 will onboard its verified SQL telemetry source after X3 activation."
+    }
+  ]
+}

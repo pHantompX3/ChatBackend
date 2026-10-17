@@ -43,6 +43,8 @@ export WL_CHAT_RESTORE_USERNAME=wl_chat_restore
 export WL_CHAT_RESTORE_PASSWORD="$(read_secret sql-restore-password)"
 export WL_CHAT_MAINTENANCE_USERNAME=wl_chat_maintenance
 export WL_CHAT_MAINTENANCE_PASSWORD="$(read_secret sql-maintenance-password)"
+export WL_CHAT_MONITOR_USERNAME=wl_chat_monitor
+export WL_CHAT_MONITOR_PASSWORD="$(read_secret sql-monitor-password)"
 export WL_CHAT_QUEUE_USERNAME=wl_chat_queue
 export WL_CHAT_QUEUE_PASSWORD="$(read_secret rabbitmq-runtime-password)"
 export WL_CHAT_DB_HOST=sqlserver
@@ -52,7 +54,7 @@ export WL_CHAT_SQL_TRUSTSTORE_FILE="${WL_CHAT_SECRET_ROOT}/sql-truststore.p12"
 export WL_CHAT_MIGRATOR_DB_URL="$(sed -n 's/^flyway\.url=//p' "${WL_CHAT_SECRET_ROOT}/flyway.conf")"
 
 for value_name in WL_CHAT_DB_PASSWORD WL_CHAT_MIGRATOR_PASSWORD WL_CHAT_BACKUP_PASSWORD \
-  WL_CHAT_RESTORE_PASSWORD WL_CHAT_MAINTENANCE_PASSWORD; do
+  WL_CHAT_RESTORE_PASSWORD WL_CHAT_MAINTENANCE_PASSWORD WL_CHAT_MONITOR_PASSWORD; do
   if [[ -z "${!value_name}" ]]; then
     echo "Unable to load ${value_name} from its service-specific secret file." >&2
     exit 1

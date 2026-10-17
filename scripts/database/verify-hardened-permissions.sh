@@ -28,9 +28,11 @@ MIGRATOR_USERNAME="${WL_CHAT_MIGRATOR_USERNAME:-messenger_migrator}"
 MIGRATOR_PASSWORD="${WL_CHAT_MIGRATOR_PASSWORD:-}"
 MAINTENANCE_USERNAME="${WL_CHAT_MAINTENANCE_USERNAME:-wl_chat_maintenance}"
 MAINTENANCE_PASSWORD="${WL_CHAT_MAINTENANCE_PASSWORD:-}"
+MONITOR_USERNAME="${WL_CHAT_MONITOR_USERNAME:-wl_chat_monitor}"
+MONITOR_PASSWORD="${WL_CHAT_MONITOR_PASSWORD:-}"
 
-if [[ -z "${RUNTIME_PASSWORD}" || -z "${MIGRATOR_PASSWORD}" ]]; then
-  echo "WL_CHAT_DB_PASSWORD and WL_CHAT_MIGRATOR_PASSWORD are required." >&2
+if [[ -z "${RUNTIME_PASSWORD}" || -z "${MIGRATOR_PASSWORD}" || -z "${MONITOR_PASSWORD}" ]]; then
+  echo "WL_CHAT_DB_PASSWORD, WL_CHAT_MIGRATOR_PASSWORD, and WL_CHAT_MONITOR_PASSWORD are required." >&2
   exit 1
 fi
 
@@ -51,6 +53,15 @@ expect_denied() {
   fi
 }
 
+expect_monitor_denied() {
+  local description="$1"
+  local query="$2"
+  if sqlcmd_as "${MONITOR_USERNAME}" "${MONITOR_PASSWORD}" "${query}" >/dev/null 2>&1; then
+    echo "Monitoring principal unexpectedly succeeded: ${description}" >&2
+    exit 1
+  fi
+}
+
 sqlcmd_as "${RUNTIME_USERNAME}" "${RUNTIME_PASSWORD}" \
   "SELECT TOP (1) [id] FROM [identity].[user_account]; SELECT TOP (1) [id] FROM [messaging].[conversation];" \
   >/dev/null
@@ -60,6 +71,24 @@ expect_denied "Flyway history update" \
   "UPDATE [platform].[flyway_schema_history] SET [description] = [description] WHERE 1 = 0;"
 expect_denied "audit deletion" \
   "DELETE FROM [audit].[http_audit_event] WHERE 1 = 0;"
+
+sqlcmd_as "${MONITOR_USERNAME}" "${MONITOR_PASSWORD}" \
+  "SET LOCK_TIMEOUT 2000; SET DEADLOCK_PRIORITY LOW; SELECT TOP (1) event_id, created_at, occurred_at, operation, method, route_template, response_status, response_code, duration_ms, error_code FROM audit.monitoring_http_event WHERE created_at > '19000101' ORDER BY created_at, event_id;" \
+  >/dev/null
+expect_monitor_denied "raw audit read" \
+  "SELECT TOP (1) event_id FROM audit.http_audit_event;"
+expect_monitor_denied "identity read" \
+  "SELECT TOP (1) id FROM identity.user_account;"
+expect_monitor_denied "conversation read" \
+  "SELECT TOP (1) id FROM messaging.conversation;"
+expect_monitor_denied "message read" \
+  "SELECT TOP (1) id FROM messaging.message;"
+expect_monitor_denied "monitoring-view update" \
+  "UPDATE audit.monitoring_http_event SET duration_ms = duration_ms WHERE 1 = 0;"
+expect_monitor_denied "audit maintenance execution" \
+  "EXEC audit.purge_http_audit_events @retention_days=90, @batch_size=1, @max_batches=1;"
+expect_monitor_denied "DDL" \
+  "CREATE TABLE dbo.__forbidden_monitor_ddl (id int NOT NULL);"
 
 sqlcmd_as "${MIGRATOR_USERNAME}" "${MIGRATOR_PASSWORD}" \
   "BEGIN TRANSACTION; CREATE TABLE [platform].[__migrator_permission_probe] ([id] int NOT NULL); ROLLBACK TRANSACTION; SELECT TOP (1) [installed_rank] FROM [platform].[flyway_schema_history];" \

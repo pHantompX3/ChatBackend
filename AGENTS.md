@@ -15,9 +15,13 @@ ChatBackend is a Java 25 Quarkus backend for a private messaging platform, curre
 - Architecture overview: [docs/architecture/single-host-layered-container-architecture.md](docs/architecture/single-host-layered-container-architecture.md)
 - Architecture decisions (ADR): [docs/architecture/decision](docs/architecture/decision)
 - Development guides: [docs/development-guide](docs/development-guide)
+- X2 monitoring implementation plan: [docs/development-guide/milestone-x2-monitoring-and-production-acceptance.md](docs/development-guide/milestone-x2-monitoring-and-production-acceptance.md)
+- ChatMonitor companion project: [chat-monitor/README.md](chat-monitor/README.md) (scoped agent route:
+  [chat-monitor/AGENTS.md](chat-monitor/AGENTS.md))
 - Operations strategy: [docs/operations/environment-strategy-and-rollout-plan.md](docs/operations/environment-strategy-and-rollout-plan.md)
 - X1 production operator procedure: [docs/operations/x1-production-operator-manual.md](docs/operations/x1-production-operator-manual.md)
-- X3 production deployment and acceptance: [docs/development-guide/milestone-x3-production-deployment-and-acceptance.md](docs/development-guide/milestone-x3-production-deployment-and-acceptance.md)
+- X3 production-host deployment and edge activation: [docs/development-guide/milestone-x3-production-host-deployment-and-edge-activation.md](docs/development-guide/milestone-x3-production-host-deployment-and-edge-activation.md)
+- X4 administrator monitoring onboarding and production acceptance: [docs/development-guide/milestone-x4-admin-monitoring-and-production-acceptance.md](docs/development-guide/milestone-x4-admin-monitoring-and-production-acceptance.md)
 - API/domain specs: [docs/private-instant-messaging-platform-spec-v0.2-sql-server.md](docs/private-instant-messaging-platform-spec-v0.2-sql-server.md)
 - Post-Milestone platform evolution specification and track register:
   [docs/platform-evolution-specification.md](docs/platform-evolution-specification.md)
@@ -32,6 +36,8 @@ ChatBackend is a Java 25 Quarkus backend for a private messaging platform, curre
 - Tests: [src/test](src/test)
 - DB bootstrap/migrations: [scripts/database](scripts/database)
 - CI workflows: [.github/workflows](.github/workflows)
+- ChatMonitor source and tests: [chat-monitor](chat-monitor) (verify with
+  `cd chat-monitor && npm ci && npm run verify`)
 
 ## Graph-first context optimization
 
@@ -79,12 +85,14 @@ This repository supports diverse AI agent environments. All agents, regardless o
   - Global rules: [.agents/rules/repository-instructions.md](.agents/rules/repository-instructions.md)
   - Scoped Java rules: [.agents/rules/backend-java.md](.agents/rules/backend-java.md)
   - Scoped DB rules: [.agents/rules/database-scripts.md](.agents/rules/database-scripts.md)
+  - Scoped ChatMonitor rules: [.agents/rules/chat-monitor.md](.agents/rules/chat-monitor.md)
   - Context architecture skill: [.agents/skills/workspace-context-architecture/SKILL.md](.agents/skills/workspace-context-architecture/SKILL.md)
   - Quarkus graph skill: [.agents/skills/quarkus-graph-generator/SKILL.md](.agents/skills/quarkus-graph-generator/SKILL.md)
 - **GitHub Copilot customization surface**:
   - Global instructions: [.github/copilot-instructions.md](.github/copilot-instructions.md)
   - Scoped Java instructions: [.github/instructions/backend-java.instructions.md](.github/instructions/backend-java.instructions.md)
   - Scoped DB instructions: [.github/instructions/database-scripts.instructions.md](.github/instructions/database-scripts.instructions.md)
+  - Scoped ChatMonitor instructions: [.github/instructions/chat-monitor.instructions.md](.github/instructions/chat-monitor.instructions.md)
   - Context architecture skill: [.github/skills/workspace-context-architecture/SKILL.md](.github/skills/workspace-context-architecture/SKILL.md)
   - Quarkus graph skill: [.github/skills/quarkus-graph-generator/SKILL.md](.github/skills/quarkus-graph-generator/SKILL.md)
   - Workspace architect prompt: [.github/prompts/workspace-context-architect.prompt.md](.github/prompts/workspace-context-architect.prompt.md)
